@@ -1,6 +1,6 @@
 <?php
 /**
- * Clase para manejo de valores registrados en $_SERVER y otras funcionalidades.
+ * Clase para manejo de valores registrados en $_SERVER y  funcionalidades asociadas.
  * relacionadas con la información propia del servidor Web, como path a los directorios
  * de trabajo (Ej. DOCUMENT_ROOT), consulta y creación de URLs referidas al servidor,
  * etc.
