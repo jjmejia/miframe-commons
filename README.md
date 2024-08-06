@@ -6,7 +6,7 @@ En el directorio `demos` pueden encontrarse ejemplos de uso de estas librerías.
 
 ## miframe_autoload()
 
-Facilita la definición de enrutamientos para las clases requeridas. Hace uso de la clase `miFrame\Commons\Class\AutoLoader`.
+Facilita la definición de enrutamientos para las clases requeridas.
 
 Ejemplo de uso:
 ````
@@ -17,7 +17,7 @@ miframe_autoload()->register('miFrame\Commons\Classes\*', __DIR__ . '/classes/*.
 
 ## miframe_server()
 
-Provee métodos y propiedades relacionadas con variables (`$_SERVER`), características (por Ej. la dirección IP del usuario) y acciones asociadas con la sesión Web o de Consola que se encuentre en curso. Hace uso de la clase `miFrame\Commons\Class\ServerData`.
+Provee métodos y propiedades relacionadas con variables (`$_SERVER`), características (por Ej. la dirección IP del usuario) y acciones asociadas con la sesión Web o de Consola que se encuentre en curso.
 
 Ejemplo de uso:
 ````
