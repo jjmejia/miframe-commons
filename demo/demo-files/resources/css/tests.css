@@ -1,0 +1,133 @@
+/* Estilos para archivos de test */
+html {
+	padding: 0;
+	margin:0;
+}
+body {
+	font-family: "Segoe UI",Helvetica,Arial,sans-serif;
+	font-size: 14px;
+	line-height: 1.5;
+	word-wrap: break-word;
+	padding:0;
+	margin:0;
+	}
+h1 {
+    /* padding-bottom: .3em; */
+    font-size: 1.5em;
+    /* border-bottom: 1px solid hsla(210,18%,87%,1); */
+	background-color: #000000;
+	color:#fefefe;
+	padding:10px;
+	margin:0;
+	}
+h1 small {
+	color:#f5f537;
+	font-size:0.5em;
+	display:block;
+	padding-top:5px;
+	font-weight: 400;
+	text-transform: uppercase;
+}
+h2 {
+	margin-top: 24px;
+	font-size: 1.3em;
+}
+h1, h2 {
+	margin-bottom: 16px;
+	font-weight: 600;
+	line-height: 1.25;
+}
+.content-test {
+	padding: 20px;
+	padding-top: 0;
+}
+code {
+	padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    /* white-space: break-spaces; */
+    background-color: rgba(175, 184, 193, 0.2);
+    border-radius: 6px;
+}
+pre.code, .pre-fake {
+	background-color: rgba(175, 184, 193, 0.2);
+	border: 1px dashed #aaaaaa;
+	padding:16px;
+	font-size: 0.95em;
+	margin-top:20px;
+	margin-bottom:20px;
+	color:#555555;
+}
+.foot {
+	font-size: 12px;
+	padding-top: 40px;
+	padding-bottom: 8px;
+	margin-top: 40px;
+	color: #24292f;
+	border-top: 1px solid hsla(210,18%,87%,1);
+}
+.cli-fake {
+	font-family: Consolas;
+	background:#333;
+	color:#f2f2f2;
+	margin:20px 0;
+	padding:10px;
+	white-space:pre-wrap;
+	/* overflow:auto; */
+}
+/* .cli-fake p, .cli-fake h1, .cli-fake h2 {
+	margin:0;
+	white-space: pre-line;
+	color:#ccc;
+}
+.cli-fake p {
+	margin-left:20px;
+}
+.cli-fake h1, .cli-fake h2 {
+	margin-top:20px;
+} */
+.cli-fake pre.code {
+	color:#eee;
+	margin:0 20px;
+}
+/* .cli-fake a {
+	color:yellow;
+}
+.cli-fake a:visited {
+	color:darkgoldenrod;
+} */
+
+/*.debug-item-value, .debug-item-name {
+	line-height: 10px;
+	font-size:14px;
+	padding: 12px !important;
+}
+
+.box-footnote {
+	line-height: 12px;
+	font-size:14px;
+	padding: 20px 0 !important;
+	color:#ccc !important;
+}
+*/
+
+li {
+	/* padding:15px auto !important; */
+	margin:4px auto !important;
+}
+
+li a {
+	text-decoration: none !important;
+}
+
+li a:hover {
+	text-decoration: underline !important;
+}
+
+input[type=submit] {
+	padding:5px;
+	border-radius: 4px;
+	min-width: 180px;
+	font-weight: 400;
+	border-color: #d4d4d4;
+}
