@@ -63,6 +63,6 @@ echo "<p>Y respecto al uso de la librería <code>autoload.php</code>, estas son 
 
 miframe_test_dump(miframe_autoload()->matches());
 
-echo "<p>y estos los <i>namespaces</i> registrados:</p>";
+echo "<p>Estos son los <i>namespaces</i> registrados:</p>";
 
 miframe_test_dump(miframe_autoload()->namespaces());

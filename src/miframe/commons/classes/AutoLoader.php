@@ -52,7 +52,7 @@ class AutoLoader extends Singleton {
 	 */
 	public function register(string $className, string $path) {
 
-		$this->namespaces[strtolower($className)] = $path;
+		$this->namespaces[strtolower(trim($className))] = trim($path);
 	}
 
 	/**
@@ -72,13 +72,9 @@ class AutoLoader extends Singleton {
 		else {
 			// Registra este modelo
 			if (count($this->namespaces) <= 0) {
-				// Classes in commons
-				$dirname = dirname(__FILE__);
-				$this->namespaces[strtolower(dirname(__CLASS__)) . '\*'] = $dirname . '\*.php';
-				// Patterns in commons
-				$class_parent = dirname(get_parent_class($this));
-				$dirname = realpath(dirname($dirname) . DIRECTORY_SEPARATOR . basename($class_parent));
-				$this->namespaces[strtolower($class_parent) . '\*'] = $dirname . '\*.php';
+				$class_pattern = dirname(dirname(__CLASS__));
+				$file_path = dirname(dirname(__FILE__));
+				$this->register($class_pattern . '\*', $file_path . DIRECTORY_SEPARATOR . '*.php');
 			}
 			// Busca parciales
 			foreach ($this->namespaces as $nameclass => $namepath) {
