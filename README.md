@@ -15,6 +15,8 @@ require_once 'miframe/commons/autoload.php';
 miframe_autoload()->register('miFrame\Commons\Classes\*', __DIR__ . '/classes/*.php');
 ````
 
+Más información sobre este helper está disponible en [docs/miframe-commons-autoload.md](https://github.com/jjmejia/miframe-commons/blob/main/docs/miframe-commons-autoload.md).
+
 ## miframe_server()
 
 Provee métodos y propiedades relacionadas con variables (`$_SERVER`), características (por Ej. la dirección IP del usuario) y acciones asociadas con la sesión Web o de Consola que se encuentre en curso.
@@ -26,7 +28,8 @@ require_once 'miframe/commons/helpers.php';
 echo miframe_server()->get('REQUEST_METHOD');
 ````
 
-Más información sobre en [docs/miframe-commons-server.md](miframe-commons/docs/miframe-commons-server.md).
+Más información sobre este helper está disponible en [docs/miframe-commons-server.md](https://github.com/jjmejia/miframe-commons/blob/main/docs/miframe-commons-server.md).
+
 
 **_Importante:_**
 _Hasta nuevo aviso, esta colección de librerías se encuentra en continuo proceso de Desarrollo._

@@ -19,7 +19,7 @@ echo $server->get('REQUEST_METHOD');
 
 A la fecha (agosto/2024) la clase ServerData proporciona los siguientes métodos públicos:
 
-* browser` -- Provee información relativa al navegador Web (browser) usado por el usuario.
+* `browser` -- Provee información relativa al navegador Web (browser) usado por el usuario.
 * `client` -- Dirección IP del cliente remoto.
 * `createTempSubdir` -- Crea el subdirectorio indicado dentro del directorio temporal.
 * `documentRoot` -- Ruta física del directorio Web.
