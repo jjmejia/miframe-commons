@@ -20,7 +20,7 @@ class Singleton
     protected static $instances = array();
 
     /**
-     * Retorna la instancia actual, creada solamante una vez por tipo de Clase hija.
+     * Retorna la instancia actual, creada solamente una vez por tipo de Clase hija.
      *
      * Para manejo de diferentes tipos de Clases hijas y que cada una tenga su "Singleton",
      * requiere manejo de multiples instancias, de lo contrario todas las hijas apuntarían al
