@@ -6,13 +6,13 @@
  * @since Julio 2024
  */
 
-include_once __DIR__ . '/demo-files/lib/testfunctions.php';
+include_once __DIR__ . '/support/lib/testfunctions.php';
 
 // Ruta a los scripts
 miframe_test_src_path(__DIR__ . '/../src');
 
 // URL para descargar recursos web
-miframe_test_url(dirname($_SERVER['SCRIPT_NAME']) . '/demo-files');
+miframe_test_url(dirname($_SERVER['SCRIPT_NAME']) . '/support');
 
 // Cabezote de presentación
 miframe_test_start('Demos para miframe-commons');
@@ -20,7 +20,7 @@ miframe_test_start('Demos para miframe-commons');
 ?>
 <ul>
 	<li>
-		<a href="demo-files/demo-server.php">miframe_autoload() y miframe_server()</a>
+		<a href="support/demo-server.php">miframe_server() y miframe_autoload()</a>
 	</li>
 </ul>
 
