@@ -1,6 +1,8 @@
 # miframe_autoload()
 
-A través de la Clase `AutoLoader`, se facilita la definición de enrutamientos para las clases requeridas.
+A través de la Clase `AutoLoader`, la función `miframe_autoload()` facilita la definición de enrutamientos para las clases requeridas y realiza de forma automática el registro en PHP de la función a usar para cargar los archivos de declaración de Clases.
+
+**Importante:** Debe ser el primer archivo a incluir en los archivos de proyecto.
 
 Ejemplo de uso:
 ````
