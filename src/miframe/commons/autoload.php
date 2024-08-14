@@ -29,5 +29,5 @@ function miframe_autoload() : AutoLoader {
 
 // Registra función para carga de Clases.
 spl_autoload_register(function ($className) {
-		miframe_autoload()->get($className);
+		miframe_autoload()->load($className);
 	});

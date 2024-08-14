@@ -18,36 +18,32 @@ class ServerData extends Singleton {
 
 	/**
 	 * Definiciones y métodos a usar para manejo de datos locales.
+	 * Define el método "superglobal".
 	 */
 	use GetLocalData;
 
 	/**
-	 * Registra localmente la dirección IP del cliente Web.
-	 * Para consultas de Consola registra "cli"
+	 * @var string $client_ip	Registra localmente la dirección IP del cliente Web.
+	 * 							Para consultas de Consola registra "cli".
 	 */
 	private $client_ip = '';
 
 	/**
-	 * Almacena segmento del path tomado de la URL relativo al
-	 * directorio que contiene el script invocado (cuando se usan
-	 * direcciones URL amigables o "pretty").
+	 * @var string $path_info	Almacena segmento del path tomado de la URL relativo al
+	 * 							directorio que contiene el script invocado (cuando se usan
+	 * 							direcciones URL amigables o "pretty").
 	 */
 	private $path_info = '';
 
 	/**
-	 * Directorio usado para registro de archivos temporales.
-	 * Debe tener permisos de escritura/lectura para el usuario asociado
-	 * al WebServer en el Sistema Operativo.
+	 * @var string $temp_directory	Directorio usado para registro de archivos temporales.
+	 * 								Debe tener permisos de escritura/lectura para el usuario
+	 * 								asociado al WebServer en el Sistema Operativo.
 	 */
 	private $temp_directory = '';
 
 	/**
-	 * En TRUE simula comportamiento de consola en consultas Web.
-	 */
-	public $emulateConsole = false;
-
-	/**
-	 * Retorna valor de elemento contenido en la variable superglobal $_SERVER.
+	 * Valor de elemento contenido en la variable superglobal $_SERVER de PHP.
 	 *
 	 * Si el elemento solicitado no existe, retorna valor en $default.
 	 *
@@ -61,17 +57,17 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Evalua si está ejecutando desde un Web Browser.
+	 * Indica si está ejecutando desde un Web Browser.
 	 *
 	 * @return bool TRUE si está consultando por WEB, FALSE si es por consola (cli).
 	 */
 	public function isWeb() : bool {
 
-		return ($this->get('REMOTE_ADDR') !== '' && !$this->emulateConsole);
+		return ($this->get('REMOTE_ADDR') !== '');
 	}
 
 	/**
-	 * Retorna la dirección IP del cliente remoto.
+	 * Dirección IP del cliente remoto.
 	 *
 	 * Para consultas de consola retorna "cli".
 	 *
@@ -108,7 +104,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Valida si la consulta se realiza directamente en el servidor Web (localhost).
+	 * Indica si la consulta se realiza directamente en el servidor Web (localhost).
 	 *
 	 * @return bool	TRUE para consultas desde el servidor Web, FALSE en otro caso.
 	 */
@@ -124,7 +120,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Valida si la consulta actual se hizo con protocolo "https".
+	 * Indica si la consulta actual se hizo con protocolo "https".
 	 *
 	 * Por definición:
 	 *
@@ -140,33 +136,29 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna una URL completa asociada al servidor Web.
+	 * URL asociada al servidor Web para la consulta actual.
 	 *
 	 * Una URL se compone de los siguientes elementos (los valores entre "[]" son opcionales):
 	 *
 	 * (Scheme)://(domain name)[:puerto]/(path)[?(queries)]
 	 *
+	 * Se retorna el URL con los valores asignados para:
+	 *
 	 * - Scheme: Tradicionalmente es alguno entre "http" o "https".
 	 * - Domain name: Nombre usado para consultar el servidor Web (Ej. "localhost").
 	 * - Puerto: (Opcional) Solamente se indica cuando usa un valor diferente a los
 	 *   puertos estándar 80 o 443 (para "http" y "https" respectivamente)).
-	 * - Path: Path al recurso solicitado por la consulta Web.
-	 * - Queries: Parámetros de consulta (Ej: var1=xxx&var2=xxx).
-	 *
-	 * Los valores a retornar para Scheme y Domain name son los usados por el usuario
-	 * remoto en su consulta al servidor actual.
 	 *
 	 * Referencias:
 	 * - https://developer.mozilla.org/es/docs/Learn/Common_questions/Web_mechanics/What_is_a_URL
 	 * - https://stackoverflow.com/questions/7431313/php-getting-full-server-name-including-port-number-and-protocol
 	 * - https://stackoverflow.com/questions/5800927/how-to-identify-server-ip-address-in-php
 	 *
-	 * @param string $path 		(Opcional) Valor de path a usar. SI no se indica,
-	 * 							retorna solamente el schema, domain name y puerto.
-	 * @param bool $force_https	TRUE forza el valor del scheme a "https".
+	 * @param bool $force_https	TRUE ignora el valor actual del scheme y retorna siempre "https" (a usar por Ej. para
+	 * 							redirigir una consulta no segura con "https" a una segura que use "https").
 	 * @return string 			URL.
 	 */
-	public function host(string $path = '', bool $force_https = false) : string	{
+	public function host(bool $force_https = false) : string	{
 
 		$scheme = 'http://';
 		if ($force_https || $this->useHTTPSecure()) {
@@ -180,41 +172,39 @@ class ServerData extends Singleton {
 			$port = '';
 		}
 
-		$path = trim($path);
-		if ($path != '' && substr($path, 0, 1) !== '/') {
-			// Adiciona conector
-			$path = '/' . $path;
-		}
-
-		return $scheme . $domain_name . $port . $path;
+		return $scheme . $domain_name . $port . '/';
 	}
 
 	/**
-	 * Retorna URL path (URI) al script ejecutado en la consulta actual.
+	 * Retorna el path Web al script ejecutado en la consulta actual.
 	 *
 	 * El valor del path es tomado de $_SERVER['SCRIPT_NAME'].
-	 * Si indica un valor de path ($script_path) lo complementa con el path
-	 * al script actual (no incluye el nombre del script). Es decir:
+	 *
+	 * @return string URI.
+	 */
+	public function self() : string {
+
+		return $this->get('SCRIPT_NAME');
+	}
+
+	/**
+	 * Complementa el path indicado adicionando el subdirectorio del script actual.
+	 *
+	 * El valor del path local es tomado de $_SERVER['SCRIPT_NAME'].
+	 * Es decir, se complementa así:
 	 *
 	 *     (dirname(SCRIPT_NAME))/($script_path).
 	 *
-	 * @param string $script_path	(Opcional) Path asociado.
-	 * @return string 				URI.
+	 * @param string $path	(Opcional) Path a complementar.
+	 * @return string 		URI.
 	 */
-	public function self(string $script_path = '') : string {
+	public function local(string $path = '') : string {
 
-		$path = trim($this->get('SCRIPT_NAME'));
-		$script_path = $this->cleanPath($script_path, '/');
-		if ($script_path !== '') {
-			// Adiciona este path al directorio definido por SCRIPT_NAME
-			$path = dirname($path) . '/' . $script_path;
-		}
-
-		return $path;
+		return $this->dirname($this->self(), $path, '/');
 	}
 
 	/**
-	 * Retorna el nombre del servidor Web.
+	 * Retorna el nombre real del servidor Web.
 	 *
 	 * @return string Nombre del servidor o FALSE si no está disponible.
 	 */
@@ -223,7 +213,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna la dirección IPv4 asociada al servidor Web.
+	 * Dirección IPv4 asociada al servidor Web.
 	 *
 	 * @return string Retorna la dirección IP del servidor o el nombre del servidor
 	 * 				  en caso de ocurrir algún error.
@@ -233,7 +223,21 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna el path consultado por el usuario (referido como URI).
+	 * Retorna el path Web consultado por el usuario.
+	 *
+	 * Una URL se compone de los siguientes elementos (los valores entre "[]" son opcionales):
+	 *
+	 * (Scheme)://(domain name)[:puerto]/(path)[?(queries)]
+	 *
+	 * Se retorna el URL con los valores asignados para:
+	 *
+	 * - Path: Path al recurso solicitado por la consulta Web.
+	 *
+	 * Este valor puede o no coincidir con el valor en $this->self().
+	 * $this->self() retorna el componente URI real del script ejecutado.
+	 * Esta función retorna el componente URI consultado por el usuario.
+	 * Son diferentes cuando se emplean "URLs amigables" para acceder a los
+	 * servicios Web disponibles.
 	 *
 	 * @return string Path.
 	 */
@@ -299,12 +303,12 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Estandariza path, sea de un archivo o un URL.
+	 * Estandariza path indicado y remueve elementos no deseados.
 	 *
 	 * Remueve ".." y ".", asi previene acceso a rutas restringidas.
-	 * Aplica tanto para separadores de directorio Windows ("\") como
-	 * Linux/Unix ("/"), por lo que puede usarse para limpiar tanto paths
-	 * de archivos/directorios en disco del servidor, como a URLs de consulta.
+	 * Aplica tanto para separadores de directorio Windows ("\") como Linux/Unix o
+	 * de rutas web ("/"), por lo que puede usarse para limpiar tanto paths de
+	 * archivos/directorios en disco del servidor, como a URLs de consulta.
 	 *
 	 * Referencia:
 	 * - https://www.php.net/manual/en/dir.constants.php#114579
@@ -317,7 +321,7 @@ class ServerData extends Singleton {
 	 * 									usa este para construir el path depurado.
 	 * @return string					Path depurado.
 	 */
-	public function cleanPath(string $path, string $force_separator = '') : string {
+	public function purgePath(string $path, string $force_separator = '') : string {
 
 		$path = trim($path);
 
@@ -377,78 +381,133 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Estandariza path físico, sea de un archivo o un directorio.
+	 * Estandariza formato del path físico indicado.
 	 *
-	 * Remueve ".." y ".", asi previene acceso a rutas restringidas.
+	 * Remueve elementos no deseados (tales como "..", "." y segmentos vacios),
+	 * sean de un archivo o un directorio. De esta forma previene acceso a rutas
+	 * restringidas.
+	 *
 	 * Aplica tanto para separadores de directorio Windows ("\") como
 	 * Linux/Unix ("/").
 	 *
-	 * @param string $path				Path a depurar.
-	 * @return string					Path depurado.
+	 * @param string $filename	Path a depurar, sea de archivo o directorio.
+	 * @return string			Path depurado.
 	 */
-	public function cleanFilePath(string $path) : string {
-		if (file_exists($path)) {
-			return realpath($path);
-		}
+	public function purgeFilename(string $filename) : string {
+
 		// Realiza limpieza manual
-		return $this->cleanPath($path, DIRECTORY_SEPARATOR);
+		return $this->purgePath($filename, DIRECTORY_SEPARATOR);
 	}
 
 	/**
-	 * Retorna la ruta física del script usado.
+	 * Retorna la ruta física del script ejecutado.
 	 *
-	 * Si indica un valor de directorio o archivo lo complementa con el
-	 * path al script actual (no incluye el nombre del script ejecutado). Es decir:
+	 * @return string 		Path.
+	 */
+	public function script() : string {
+
+		return realpath($this->get('SCRIPT_FILENAME'));
+	}
+
+	/**
+	 * Retorna la ruta física real o esperada para el archivo/directorio indicado.
+	 *
+	 * Complementa el path recibido con el directorio que contiene al script actual,
+	 * es decir:
 	 *
 	 *     (dirname(SCRIPT_FILENAME))/($path_to_scriptdir).
 	 *
-	 * @param string $path_to_scriptdir	(Opcional) Directorio/nombre de archivo asociado.
-	 * @return string 					Path.
+	 * @param string $filename	(Opcional) Archivo/directorio a complementar.
+	 * @return string 			Path.
 	 */
-	public function script(string $path_to_scriptdir = '') : string {
+	public function localScript(string $filename = '') : string {
 
-		$path = realpath($this->get('SCRIPT_FILENAME'));
-		$path_to_scriptdir = $this->cleanFilePath($path_to_scriptdir);
-		if ($path_to_scriptdir !== '') {
-			$path = dirname($path) . DIRECTORY_SEPARATOR . $path_to_scriptdir;
-		}
-
-		return $path;
+		return $this->dirname($this->script(), $filename, DIRECTORY_SEPARATOR);
 	}
 
 	/**
-	 * Retorna la ruta física del directorio Web asignado al Servidor (DOCUMENT_ROOT).
+	 * Complementa paths usando el separador indicado.
+	 *
+	 * Adiciona al path hijo ($son) el directorio al que pertenece el padre ($parent).
+	 * Si el hijo ya contiene el valor de padre, no hace cambios.
+	 *
+	 * @param string $parent	Path padre.
+	 * @param string $son		Path hijo.
+	 * @param string $separator	Separador de segmentos del path.
+	 * @return string			Path hijo completo.
+	 */
+	private function dirname(string $parent, string $son, string $separator) : string {
+
+		$parent = dirname($parent) . $separator;
+		// Da formato de path para archivo fisico, siempre
+		$son = $this->purgePath($son, $separator);
+		if ($son !== '') {
+			// Si ya contiene el directorio local, ignora.
+			if (strtolower(substr($son, 0, strlen($parent))) === strtolower($parent)) {
+				return $son;
+			}
+			// Si no lo contiene, lo adiciona.
+			else {
+				return $parent . $son;
+			}
+		}
+
+		return $parent;
+	}
+
+
+	/**
+	 * Ruta física del directorio Web.
 	 *
 	 * Si indica un valor de directorio o archivo lo complementa con el path
-	 * al script actual (no incluye el nombre del script ejecutado). Es decir:
+	 * al directorio web (DOCUMENT_ROOT). Es decir:
 	 *
 	 *     (DOCUMENT_ROOT)/($path_to_root).
 	 *
-	 * @param string $path_to_root	(Opcional) Directorio/nombre de archivo asociado.
-	 * @return string 				Path.
+	 * @param string $filename	(Opcional) Directorio/nombre de archivo asociado.
+	 * @return string 			Path.
 	 */
-	public function documentRoot(string $path_to_root = '') {
-		return realpath($this->get('DOCUMENT_ROOT')) . DIRECTORY_SEPARATOR . $this->cleanFilePath($path_to_root);
+	public function documentRoot(string $filename = '') {
+		return realpath($this->get('DOCUMENT_ROOT')) . DIRECTORY_SEPARATOR . $this->purgeFilename($filename);
 	}
 
 	/**
-	 * Valida que el path indicado esté contenido en DOCUMENT_ROOT.
+	 * Valida que el archivo/directorio indicado sea subdirectorio del directorio Web.
 	 *
-	 * @param string $path	Path a evaluar.
-	 * @return string		TRUE si $path es subdirectorio de DOCUMENT_ROOT,
-	 * 						FALSE en otro caso.
+	 * @param string $filename	Path de archivo o directorio a evaluar.
+	 * @return bool				TRUE si $path es subdirectorio de DOCUMENT_ROOT,
+	 * 							FALSE en otro caso.
 	 */
-	public function inDocumentRoot(string $path) : bool {
+	public function inDocumentRoot(string $filename) : bool {
 
-		$path = $this->cleanFilePath($path);
+		$filename = $this->purgeFilename($filename);
 		$document_root = $this->documentRoot();
 
-		return ($path !== '' &&
-			strtolower(substr($path, 0, strlen($document_root))) === strtolower($document_root));
+		return ($filename !== '' &&
+			strtolower(substr($filename, 0, strlen($document_root))) === strtolower($document_root));
 	}
 
 	/**
-	 * Valida que el path indicado esté contenido en el directorio temporal.
+	 * Remueve ruta al directorio Web.
+	 *
+	 * @param string $filename	Path de archivo o directorio a evaluar.
+	 * @return string			Path corregido si es un subdirectorio del directorio Web,
+	 * 							FALSE en otro caso.
+	 */
+	public function removeDocumentRoot(string $filename) : string|false {
+
+		if ($this->inDocumentRoot($filename)) {
+			// Debe purgar el path para asegurar que remueva correctamente si incluye ".."
+			$filename = $this->purgeFilename($filename);
+			$document_root = $this->documentRoot();
+			return substr($filename, strlen($document_root));
+		}
+
+		return false;
+	}
+
+	/**
+	 * Valida que el archivo/directorio indicado sea subdirectorio del directorio temporal.
 	 *
 	 * @param string $path	Path a evaluar.
 	 * @return string		TRUE si $path es subdirectorio del directorio temporal,
@@ -457,7 +516,7 @@ class ServerData extends Singleton {
 	public function inTempDir(string $path) : bool {
 
 		$tempdir = $this->tempDir();
-		$path = $this->cleanFilePath($path);
+		$path = $this->purgeFilename($path);
 
 		return ($tempdir !== '' &&
 			strtolower(substr($path, 0, strlen($tempdir))) === strtolower($tempdir));
@@ -479,7 +538,7 @@ class ServerData extends Singleton {
 	public function mkdir(string $pathname, bool $recursive = true) : bool {
 
 		$result = false;
-		$pathname = $this->cleanFilePath($pathname);
+		$pathname = $this->purgeFilename($pathname);
 		if ($pathname !== '') {
 			// TRUE si el directorio ya existe
 			$result = is_dir($pathname);
@@ -496,43 +555,78 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna directorio temporal a usar o asigna valor a ser usado.
+	 * Asigna o retorna valor del directorio temporal a usar.
 	 *
-	 * El directorio temporal se recupera de:
-	 * - Valor registrado previamente, o
+	 * El directorio temporal se recupera (en su orden) de:
+	 *
+	 * - Valor indicado por el usuario.
+	 * - Valor registrado previamente.
 	 * - Directorio temporal del sistema.
+	 * - Directorio "Temp" a crear en el directorio Web.
+	 * - Directorio "Temp" a crear en el directorio actual.
 	 *
-	 * Si no puede encontrar un directorio temporal valido, retorna vacio.
+	 * Si no puede encontrar un directorio temporal valido, genera una "PHP Exception".
 	 *
-	 * @param string $pathname	Opcional. Directorio temporal a usar.
+	 * @param string $pathname	(Opcional) Directorio temporal a usar.
 	 * @return string 			Path.
 	 */
 	public function tempDir(string $pathname = '') : string {
 
+		// 1. Asigna path dado por el usuario
 		if ($pathname !== '') {
-			$pathname = realpath($this->cleanFilePath($pathname));
-			if ($pathname != '') {
-				$this->temp_directory = $pathname;
+			$path = realpath($this->purgeFilename($pathname));
+			if ($path != '' && is_dir($path)) {
+				$this->temp_directory = $path;
+			}
+			else {
+				// El path indicado por el usuario no es valido
+				throw new \Exception('El directorio temporal indicado no es valido (' . $pathname . ').');
 			}
 		}
+		// 2. Si ya existe, lo retorna
+		if ($this->temp_directory !== '' && is_dir($this->temp_directory)) {
+			return $this->temp_directory;
+		}
+		// 3. Toma el directorio del sistema (o el asignado en PHP.INI)
 		if ($this->temp_directory === '') {
 			$this->temp_directory = realpath(sys_get_temp_dir());
 		}
+		// 4. Intenta crear/acceder a un directorio "Temp" a crear en el DOCUMENT_ROOT
+		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
+			$path = $this->documentRoot('Temp');
+			if ($this->mkdir($path)) {
+				$this->temp_directory = $path;
+			}
+		}
+		// 5. Intenta crear/acceder a un directorio "Temp" en el directorio local
+		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
+			$path = $this->local('Temp');
+			if ($this->mkdir($path)) {
+				$this->temp_directory = $path;
+			}
+		}
+		// Valida que haya podido recuperarlo o reporta error
+		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
+			throw new \Exception('No pudo recuperar un directorio temporal valido. Revise la configuración del Sistema.');
+		}
+
+		// Adiciona separador siempre
+		$this->temp_directory .= DIRECTORY_SEPARATOR;
 
 		return $this->temp_directory;
 	}
 
 	/**
-	 * Valida el subdirectorio indicado en el directorio temporal y retorna el path completo.
+	 * Crea el subdirectorio indicado dentro del directorio temporal.
 	 *
 	 * @param string $pathname	Subdirectorio temporal a validar.
-	 * @return string 			Path o FALSE si el subdirectorio deseado no existe y no pudo
-	 * 							ser debidamente creado.
+	 * @return string 			Path o FALSE si el subdirectorio deseado no existe y tampoco pudo
+	 * 							ser creado.
 	 */
 	public function createTempSubdir(string $pathname) : string|false {
 
 		$temp = $this->tempDir();
-		$path = $temp . DIRECTORY_SEPARATOR . $this->cleanFilePath($pathname);
+		$path = $temp . DIRECTORY_SEPARATOR . $this->purgeFilename($pathname);
 		if ($temp !== '' && !$this->mkdir($path)) {
 			return false;
 		}
@@ -556,7 +650,8 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Información relativa al servidor Web.
+	 * Descripción del servidor Web.
+	 *
 	 * Por Ej. "Apache/2.4.48 (Win64) OpenSSL/1.1.1k PHP/8.3.6".
 	 *
 	 * @return string Información del servidor Web.
@@ -566,7 +661,8 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Información relativa al navegador Web (browser) usado por el usuario.
+	 * Provee información relativa al navegador Web (browser) usado por el usuario.
+	 *
 	 * Por Ej. "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
 	 *
 	 * @return string Información del browser.
@@ -577,7 +673,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna el espacio libre en el disco donde se encuentra el DOCUMENT_ROOT.
+	 * Espacio libre en el disco donde se encuentra el directorio Web.
 	 *
 	 * @return float Devuelve el número de bytes disponibles como un float.
 	 */

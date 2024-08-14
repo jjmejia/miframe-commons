@@ -15,7 +15,7 @@ namespace miFrame\Commons\Patterns;
 class Singleton
 {
     /**
-     * @var cached reference to singleton instance
+     * @var array $instances Referencias a las instancias singleton.
      */
     protected static $instances = array();
 

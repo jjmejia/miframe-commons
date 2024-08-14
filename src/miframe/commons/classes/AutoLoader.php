@@ -19,21 +19,22 @@ use \miFrame\Commons\Patterns\Singleton;
 class AutoLoader extends Singleton {
 
 	/**
-	 * Registra las listas de busqueda. Arreglo asociativo del tipo:
-	 * (Patrón de la Clase) => (Path en disco del script que define la Clase)
+	 * @var array $namespaces	Registra las listas de busqueda. Arreglo asociativo del tipo:
+	 * 							(Patrón de la Clase) => (Path en disco del script que define la Clase)
 	 */
 	private $namespaces = array();
 
 	/**
-	 * Registro de namespaces correctamente identificados.
+	 * @var array $matches Registro de namespaces correctamente identificados.
 	 */
-	private $matches = array();
+	private array $matches = array();
 
 	/**
-	 * Registra namespaces a buscar.
+	 * Registra los namespaces que identifican las Clases PHP y los archivos donde se definen.
+	 *
 	 * Los namespaces a registrar son del tipo:
 	 *
-	 *     (Patrón de la Clase) => (Path del script que define la Clase)
+	 *    (Patrón de la Clase) => (Path del script que define la Clase)
 	 *
 	 * Se puede usar el caracter "*" al final de la cadena usada en el patrón de Clase para
 	 * indicar que el resto del path asociado a la clase puede ser buscado en el Path de los
@@ -44,8 +45,8 @@ class AutoLoader extends Singleton {
 	 * Cuando se solicita la Clase "miFrame\Common\Classes\ServerData" la busca en el archivo
 	 * "C:\classes\ServerData.php".
 	 *
-	 * Nota: No es necesario registrar las clases registradas en el mismo directorio de esta
-	 * clase (AutoLoader) ya que se adiciona automáticamente.
+	 * Nota: No es necesario registrar las clases contenidas en el mismo directorio de esta
+	 * Clase (AutoLoader) ya que se adicionan automáticamente.
 	 *
 	 * @param string $className	Patrón de la Clase
 	 * @param string $path		Path del script que define la clase
@@ -56,11 +57,11 @@ class AutoLoader extends Singleton {
 	}
 
 	/**
-	 * Evalua el nombre de Clase indicado y realiza el cargue de scripts requeridos.
+	 * Realiza el cargue del archivo que contiene la Clase indicada.
 	 *
-	 * @param string $className	Nombre de clase.
+	 * @param string $className	Nombre de Clase.
 	 */
-	public function get(string $className) {
+	public function load(string $className) {
 
 		$class = strtolower($className);
 		$path = '';

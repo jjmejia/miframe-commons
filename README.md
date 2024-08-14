@@ -2,7 +2,7 @@
 
 Este repositorio contiene una colección de librerías de uso común para proyectos de PHP.
 
-En el directorio `demos` pueden encontrarse ejemplos de uso de estas librerías.
+El directorio `demos` contiene ejemplos de uso y el directorio `docs` contiene más información sobre estas librerías.
 
 ## miframe_autoload()
 
@@ -25,6 +25,8 @@ require_once 'miframe/commons/helpers.php';
 // Imprime contenido de $_SERVER['REQUEST_METHOD']
 echo miframe_server()->get('REQUEST_METHOD');
 ````
+
+Más información sobre en [docs/miframe-commons-server.md](miframe-commons/docs/miframe-commons-server.md).
 
 **_Importante:_**
 _Hasta nuevo aviso, esta colección de librerías se encuentra en continuo proceso de Desarrollo._
