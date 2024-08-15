@@ -11,9 +11,11 @@
 
 use miFrame\Commons\Classes\AutoLoader;
 
-// Carga directamente las librerias requeridas
-// (Recuerde que esta es la librería que implementa el autoload,
-// a esta altura deben cargarse manualmente cada librería requerida).
+/**
+ * Es necesario cargar directamente las librerías requeridas.
+ * Recuerde que esta es la librería que implementa el autoload,
+ * a esta altura deben cargarse manualmente cada librería requerida.
+ */
 include_once __DIR__ . '/patterns/Singleton.php';
 include_once __DIR__ . '/classes/AutoLoader.php';
 

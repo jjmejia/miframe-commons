@@ -50,6 +50,8 @@ $data = array(
 	'miframe_server()->localScript($path_dummy)' => $server->localScript($path_dummy),
 	'miframe_server()->tempDir()' => $server->tempDir(),
 	'miframe_server()->tempDirSpace()' => $server->tempDirSpace(),
+	'miframe_server()->startAt()' => $server->startAt() . ' (' . date('Y/m/d H:i:s', $server->startAt()). ')',
+	'miframe_server()->executionTime()' => $server->executionTime(),
 	// Validaciones
 	'miframe_server()->inDocumentRoot($path_dummy)' => $server->inDocumentRoot($path_dummy),
 	'miframe_server()->inDocumentRoot($this->script())' => $server->inDocumentRoot($server->script()),

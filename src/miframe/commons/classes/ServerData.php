@@ -747,14 +747,24 @@ class ServerData extends Singleton {
 	}
 
 	/**
+	 * Tiempo en que inicia la ejecución del script.
+	 *
+	 * @return float Tiempo de inicio en microsegundos.
+	 */
+	public function startAt() : float {
+
+		// REQUEST_TIME_FLOAT:
+		// El tiempo de inicio de atención a la consulta del usuario, en microsegundos.
+		return $this->get('REQUEST_TIME_FLOAT', 0);
+	}
+
+	/**
 	 * Tiempo transcurrido desde el inicio del script (microsegundos).
 	 *
 	 * @return float Tiempo de ejecución en microsegundos.
 	 */
-	public function executionTime() {
+	public function executionTime() : float {
 
-		// REQUEST_TIME_FLOAT:
-		// El tiempo de inicio de atención a la consulta del usuario, en microsegundos.
-		return microtime(true) - $this->get('REQUEST_TIME_FLOAT', 0);
+		return microtime(true) - $this->startAt();
 	}
 }
