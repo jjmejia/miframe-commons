@@ -5,6 +5,9 @@
  * de trabajo (Ej. DOCUMENT_ROOT), consulta y creación de URLs referidas al servidor,
  * etc.
  *
+ * Documentación respecto a la variable superglobal $_SERVER disponible en:
+ * https://www.php.net/manual/en/reserved.variables.server.php
+ *
  * @author John Mejía
  * @since Julio 2024
  */
@@ -63,15 +66,16 @@ class ServerData extends Singleton {
 	 */
 	public function isWeb() : bool {
 
-		return ($this->get('REMOTE_ADDR') !== '');
+		// REMOTE_ADDR:
+		// La dirección IP desde donde el usuario está viendo la página actual.
+		// Si se consulta desde Consola, no es asignada por el servidor.
+		return empty($this->get('REMOTE_ADDR', false));
 	}
 
 	/**
 	 * Dirección IP del cliente remoto.
 	 *
 	 * Para consultas de consola retorna "cli".
-	 *
-	 * Referencia: https://stackoverflow.com/questions/11452938/how-to-use-http-x-forwarded-for-properly
 	 *
 	 * @return string Dirección IP del cliente remoto.
 	 */
@@ -81,21 +85,30 @@ class ServerData extends Singleton {
 			$this->client_ip = 'cli';
 		}
 		elseif ($this->client_ip === '') {
-			// Recupera dirección IP
+			// Recupera dirección IP.
+
+			// HTTP_X_FORWARDED_FOR:
+			// Usado en vez de REMOTE_ADDR cuando se consulta detrás de un proxy server.
+			// Puede contener múltiples IPs de proxies por los que se ha pasado.
+			// Solamente la IP del último proxy (última IP de la lista) es de fiar.
+			// ( https://stackoverflow.com/questions/11452938/how-to-use-http-x-forwarded-for-properly )
+			// Si no se emplean proxys para la consulta, retorna vacio.
 			$proxys = $this->get('HTTP_X_FORWARDED_FOR');
 			if (!empty($proxys)){
-				// Header can contain multiple IP-s of proxies that are passed through.
-				// Only the IP added by the last proxy (last IP in the list) can be trusted.
 				$proxy_list = explode (",", $proxys);
 				$this->client_ip = trim(end($proxy_list));
 			}
 			else {
+				// REMOTE_ADDR:
+				// La dirección IP desde donde el usuario está viendo la página actual.
 				$this->client_ip = $this->get('REMOTE_ADDR');
 				if (empty($client_ip)) {
+					// HTTP_CLIENT_IP:
+					// Opcional para algunos servidores Web en remplazo de REMOTE_ADDR.
 					$client_ip = $this->get('HTTP_CLIENT_IP');
 				}
 			}
-			// En caso de usar nombres asociativos (como "localhost") se asegura esté en
+			// En caso que retorne un nombre (como "localhost") se asegura esté en
 			// minusculas para facilitar comparaciones.
 			$this->client_ip = strtolower($this->client_ip);
 		}
@@ -120,7 +133,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Indica si la consulta actual se hizo con protocolo "https".
+	 * Indica si la consulta actual se hizo con protocolo HTTPS.
 	 *
 	 * Por definición:
 	 *
@@ -128,11 +141,13 @@ class ServerData extends Singleton {
 	 * > las comunicaciones entre un navegador y un sitio web.
 	 * > (https://www.cloudflare.com/learning/ssl/what-is-https/)
 	 *
-	 * @return bool TRUE si la consulta fue hecha con "https".
+	 * @return bool TRUE si la consulta fue hecha usando HTTPS.
 	 */
 	public function useHTTPSecure() : bool {
-		$https = strtolower($this->get('HTTPS', ''));
-		return ($https === 'on' || intval($https) > 0);
+
+		// HTTPS:
+		// Asignado a un valor no vacio si el script fue consultado usando protocolo HTTPS.
+		return !empty($this->get('HTTPS'));
 	}
 
 	/**
@@ -165,9 +180,16 @@ class ServerData extends Singleton {
 			$scheme = 'https://';
 		}
 
+		// SERVER_NAME:
+		// Nombre del servidor host que está ejecutando este script. Si se ejecuta en un host virtual, este será el valor asignado a ese host virtual.
 		$domain_name = $this->get('SERVER_NAME', 'nn');
+
+		// SERVER_PORT:
+		// Puerto en la maquina del servidor usado por el servidor Web para comunicación. Por defecto será de '80'; Para SSL (HTTPS) cambia a cualquiera sea
+		// el puerto usado para dicha comunicación (por defecto 443).
 		$port = ':' . $this->get('SERVER_PORT', 80);
-		// Adiciona puerto si no es 80 (http) ni 443 (https)
+
+		// Ignora puertos estándar 80 (HTTP) y 443 (HTTPS)
 		if (in_array($port, [ ':80', ':443' ])) {
 			$port = '';
 		}
@@ -184,6 +206,9 @@ class ServerData extends Singleton {
 	 */
 	public function self() : string {
 
+		// SCRIPT_NAME:
+		// Contiene la ruta al script actual, vista desde el servidor Web.
+		// Puede diferir de la ingresada por el usuario cuando se usan "URL amigables".
 		return $this->get('SCRIPT_NAME');
 	}
 
@@ -229,21 +254,23 @@ class ServerData extends Singleton {
 	 *
 	 * (Scheme)://(domain name)[:puerto]/(path)[?(queries)]
 	 *
-	 * Se retorna el URL con los valores asignados para:
-	 *
-	 * - Path: Path al recurso solicitado por la consulta Web.
+	 * Este método retorna el valor del path al recurso solicitado por la consulta Web.
 	 *
 	 * Este valor puede o no coincidir con el valor en $this->self().
-	 * $this->self() retorna el componente URI real del script ejecutado.
-	 * Esta función retorna el componente URI consultado por el usuario.
+	 * $this->self() retorna el path real del script ejecutado, en tanto que
+	 * este método retorna el componente URI tal como fue consultado por el usuario.
 	 * Son diferentes cuando se emplean "URLs amigables" para acceder a los
 	 * servicios Web disponibles.
 	 *
 	 * @return string Path.
 	 */
 	public function path() : string {
-		// REQUEST_URI puede contener valores GET (Ej. path?var1=xxx).
-		// Usa parse_url() para garantizar recupere solamente el path.
+
+		// REQUEST_URI:
+		// El URI dado por el usuario para acceder a esta página.
+		// Puede contener valores GET (queryes) separados por "?".
+		// Ejemplo: var1=xxx&var2=zzz...
+		// Se usa parse_url() para garantizar que recupere solamente el path.
 		return parse_url($this->get('REQUEST_URI'), PHP_URL_PATH);
 	}
 
@@ -279,16 +306,22 @@ class ServerData extends Singleton {
 	 */
 	public function pathInfo() : string {
 
-		$script_name = $this->get('SCRIPT_NAME');
+		$script_name = $this->self();
 		$request_uri = $this->path();
 
 		// Escenarios:
 		// 1. Ya fue asignada o no existe porque $script_name == $request_uri
 		if ($this->path_info === '' && $script_name !== $request_uri) {
 			// 2. Existe valor en $_SERVER
-			$this->path_info = $this->get('PATH_INFO');
-			if ($this->path_info === '') {
-				// 3. Debe recuperarlo manualmente.
+
+			// PATH_INFO:
+			// Contiene cualquier información (pathname) diferente a la del script actual,
+			// que precede a la información de queryes.
+			// Nota: No todos los servidores Web reportan este valor.
+			$this->path_info = $this->get('PATH_INFO', false);
+
+			if ($this->path_info === false) {
+				// 3. No existe y debe recuperarlo manualmente.
 				// Puede venir en el URI:
 				// $request_uri = $script_name . $path_info, o
 				// $request_uri = dirname($script_name) . $path_info
@@ -406,6 +439,14 @@ class ServerData extends Singleton {
 	 */
 	public function script() : string {
 
+		// SCRIPT_FILENAME:
+		// Ruta absoluta en disco al script en ejecución.
+		// Nota: Si un script es ejecutado por Consola se retorna la ruta indicada por
+		// el usuario. Esto es, si indica solo el nombre (file.php) o un enrutamiento
+		// relativo (../file.php), ese mismo valor será retornado.
+		// La función realpath() garantiza que se retorne la ruta completa
+		// (para Consolas, puede verse afectado si modifica el directorio por defecto
+		// usando la función chdir()).
 		return realpath($this->get('SCRIPT_FILENAME'));
 	}
 
@@ -468,6 +509,10 @@ class ServerData extends Singleton {
 	 * @return string 			Path.
 	 */
 	public function documentRoot(string $filename = '') {
+
+		// DOCUMENT_ROOT:
+		// El directorio raíz bajo el que se ejecuta este script, tal como fuera
+		// definido en la configuración del servidor Web.
 		return realpath($this->get('DOCUMENT_ROOT')) . DIRECTORY_SEPARATOR . $this->purgeFilename($filename);
 	}
 
@@ -657,6 +702,10 @@ class ServerData extends Singleton {
 	 * @return string Información del servidor Web.
 	 */
 	public function software() {
+
+		// SERVER_SOFTWARE:
+		// Cadena de identificación del servidor Web. tal como se envía en los
+		// headers HTTP de respuesta.
 		return $this->get('SERVER_SOFTWARE');
 	}
 
@@ -668,6 +717,7 @@ class ServerData extends Singleton {
 	 * @return string Información del browser.
 	 */
 	public function browser() {
+
 		// PENDIENTE:Ampliar funcionalidad usando get_browser().
 		return $this->get('HTTP_USER_AGENT');
 	}
@@ -678,6 +728,7 @@ class ServerData extends Singleton {
 	 * @return float Devuelve el número de bytes disponibles como un float.
 	 */
 	public function documentRootSpace() : float {
+
 		// disk_free_space() puede retornar false, por lo que se convierte a
 		// float para prevenir conflictos de type.
 		return floatval(disk_free_space($this->documentRoot()));
@@ -689,8 +740,21 @@ class ServerData extends Singleton {
 	 * @return float Devuelve el número de bytes disponibles como un float.
 	 */
 	public function tempDirSpace() : float {
+
 		// disk_free_space() puede retornar false, por lo que se convierte a
 		// float para prevenir conflictos de type.
 		return floatval(disk_free_space($this->tempDir()));
+	}
+
+	/**
+	 * Tiempo transcurrido desde el inicio del script (microsegundos).
+	 *
+	 * @return float Tiempo de ejecución en microsegundos.
+	 */
+	public function executionTime() {
+
+		// REQUEST_TIME_FLOAT:
+		// El tiempo de inicio de atención a la consulta del usuario, en microsegundos.
+		return microtime(true) - $this->get('REQUEST_TIME_FLOAT', 0);
 	}
 }
