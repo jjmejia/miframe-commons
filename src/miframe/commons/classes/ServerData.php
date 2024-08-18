@@ -69,7 +69,7 @@ class ServerData extends Singleton {
 		// REMOTE_ADDR:
 		// La dirección IP desde donde el usuario está viendo la página actual.
 		// Si se consulta desde Consola, no es asignada por el servidor.
-		return empty($this->get('REMOTE_ADDR', false));
+		return !empty($this->get('REMOTE_ADDR', false));
 	}
 
 	/**
@@ -108,6 +108,7 @@ class ServerData extends Singleton {
 					$client_ip = $this->get('HTTP_CLIENT_IP');
 				}
 			}
+
 			// En caso que retorne un nombre (como "localhost") se asegura esté en
 			// minusculas para facilitar comparaciones.
 			$this->client_ip = strtolower($this->client_ip);

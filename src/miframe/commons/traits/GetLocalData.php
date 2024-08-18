@@ -1,6 +1,6 @@
 <?php
 /**
- * Clase de soporte para maejo de datos globales.
+ * Clase de soporte para manejo de datos globales.
  *
  * @author John Mejía
  * @since Agosto 2024

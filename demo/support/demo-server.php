@@ -16,6 +16,7 @@ miframe_test_start('miframe_server() y miframe_autoload()');
 $server = miframe_server();
 
 $path_dummy = '../path/to/other/script/ignora/..';
+$script = $server->script();
 
 $data = array(
 	// Limpieza
@@ -48,13 +49,15 @@ $data = array(
 	'miframe_server()->script()' => $server->script(),
 	'miframe_server()->localScript()' => $server->localScript(),
 	'miframe_server()->localScript($path_dummy)' => $server->localScript($path_dummy),
+	'miframe_server()->removeDocumentRoot($script)' => $server->removeDocumentRoot($script),
+	'miframe_server()->removeDocumentRoot($path_dummy)' => $server->removeDocumentRoot($path_dummy),
 	'miframe_server()->tempDir()' => $server->tempDir(),
 	'miframe_server()->tempDirSpace()' => $server->tempDirSpace(),
-	'miframe_server()->startAt()' => $server->startAt() . ' (' . date('Y/m/d H:i:s', $server->startAt()). ')',
+	'miframe_server()->startAt()' => $server->startAt() . ' (' . date('Y/m/d H:i:s', intval($server->startAt())) . ')',
 	'miframe_server()->executionTime()' => $server->executionTime(),
 	// Validaciones
 	'miframe_server()->inDocumentRoot($path_dummy)' => $server->inDocumentRoot($path_dummy),
-	'miframe_server()->inDocumentRoot($this->script())' => $server->inDocumentRoot($server->script()),
+	'miframe_server()->inDocumentRoot($script)' => $server->inDocumentRoot($script),
 	'miframe_server()->inTempDir($path_dummy)' => $server->inTempDir($path_dummy),
 	// 'miframe_server()->inTempDir($this->script())' => $server->inTempDir($server->script()),
 	// Acciones sobre el servidor
@@ -86,7 +89,7 @@ if (!$server->isLocalhost()) {
 echo "<h2>miframe_server()</h2>";
 echo "<p>Ejemplos de uso:</p>" . $aviso_ocultar;
 
-miframe_test_dump([ '$path_dummy' => $path_dummy ]);
+miframe_test_dump(compact( 'path_dummy', 'script'));
 miframe_test_dump($data);
 
 echo "<h2>miframe_autoload()</h2>";
