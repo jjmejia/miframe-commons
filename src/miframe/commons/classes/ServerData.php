@@ -14,6 +14,7 @@
 
 namespace miFrame\Commons\Classes;
 
+use Error;
 use \miFrame\Commons\Patterns\Singleton;
 use \miFrame\Commons\Traits\GetLocalData;
 
@@ -29,21 +30,26 @@ class ServerData extends Singleton {
 	 * @var string $client_ip	Registra localmente la dirección IP del cliente Web.
 	 * 							Para consultas de Consola registra "cli".
 	 */
-	private $client_ip = '';
+	private string $client_ip = '';
 
 	/**
 	 * @var string $path_info	Almacena segmento del path tomado de la URL relativo al
 	 * 							directorio que contiene el script invocado (cuando se usan
 	 * 							direcciones URL amigables o "pretty").
 	 */
-	private $path_info = '';
+	private string $path_info = '';
 
 	/**
 	 * @var string $temp_directory	Directorio usado para registro de archivos temporales.
 	 * 								Debe tener permisos de escritura/lectura para el usuario
 	 * 								asociado al WebServer en el Sistema Operativo.
 	 */
-	private $temp_directory = '';
+	private string $temp_directory = '';
+
+	/**
+	 * @var float $check_time Tiempo entre intervalos de chequeo.
+	 */
+	private float $check_time = 0;
 
 	/**
 	 * Valor de elemento contenido en la variable superglobal $_SERVER de PHP.
@@ -199,11 +205,11 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna el path Web al script ejecutado en la consulta actual.
+	 * Path al script ejecutado en la consulta actual, relativo al directorio Web.
 	 *
 	 * El valor del path es tomado de $_SERVER['SCRIPT_NAME'].
 	 *
-	 * @return string URI.
+	 * @return string Path.
 	 */
 	public function self() : string {
 
@@ -214,23 +220,24 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Complementa el path indicado adicionando el subdirectorio del script actual.
+	 * Path al directorio que contiene el script ejecutado en la consulta actual, relativo al directorio Web.
 	 *
 	 * El valor del path local es tomado de $_SERVER['SCRIPT_NAME'].
-	 * Es decir, se complementa así:
+	 * Si se recibe el argumento $path, lo complementa adicionando el
+	 * subdirectorio del script actual. Es decir, retorna:
 	 *
-	 *     (dirname(SCRIPT_NAME))/($script_path).
+	 *     (dirname(SCRIPT_NAME))/($path).
 	 *
 	 * @param string $path	(Opcional) Path a complementar.
-	 * @return string 		URI.
+	 * @return string 		Path.
 	 */
-	public function local(string $path = '') : string {
+	public function relativePath(string $path = '') : string {
 
 		return $this->dirname($this->self(), $path, '/');
 	}
 
 	/**
-	 * Retorna el nombre real del servidor Web.
+	 * Nombre real del servidor Web.
 	 *
 	 * @return string Nombre del servidor o FALSE si no está disponible.
 	 */
@@ -249,7 +256,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna el path Web consultado por el usuario.
+	 * Path Web consultado por el usuario.
 	 *
 	 * Una URL se compone de los siguientes elementos (los valores entre "[]" son opcionales):
 	 *
@@ -276,7 +283,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna el segmento del path con información útil cuando se usan URL amigables.
+	 * Segmento del path del URL con información útil cuando se usan URL amigables.
 	 *
 	 * Las "URL amigables" son URLs diseñadas para proveer en si mismas información
 	 * respecto a lo que hacen. Por ejemplo, si se tiene un script para editar usuarios,
@@ -434,7 +441,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna la ruta física del script ejecutado.
+	 * Ruta física del script ejecutado.
 	 *
 	 * @return string 		Path.
 	 */
@@ -462,7 +469,7 @@ class ServerData extends Singleton {
 	 * @param string $filename	(Opcional) Archivo/directorio a complementar.
 	 * @return string 			Path.
 	 */
-	public function localScript(string $filename = '') : string {
+	public function scriptDirectory(string $filename = '') : string {
 
 		return $this->dirname($this->script(), $filename, DIRECTORY_SEPARATOR);
 	}
@@ -646,7 +653,7 @@ class ServerData extends Singleton {
 		}
 		// 5. Intenta crear/acceder a un directorio "Temp" en el directorio local
 		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
-			$path = $this->local('Temp');
+			$path = $this->scriptDirectory('Temp');
 			if ($this->mkdir($path)) {
 				$this->temp_directory = $path;
 			}
@@ -681,7 +688,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna información recibida en el "body" de la consulta realizada por el usuario.
+	 * Información recibida en el "body" de la consulta realizada por el usuario.
 	 *
 	 * Del manual:
 	 * https://www.php.net/manual/en/wrappers.php.php
@@ -698,7 +705,7 @@ class ServerData extends Singleton {
 	/**
 	 * Descripción del servidor Web.
 	 *
-	 * Por Ej. "Apache/2.4.48 (Win64) OpenSSL/1.1.1k PHP/8.3.6".
+	 * Ej. "Apache/2.4.48 (Win64) OpenSSL/1.1.1k PHP/8.3.6".
 	 *
 	 * @return string Información del servidor Web.
 	 */
@@ -713,7 +720,7 @@ class ServerData extends Singleton {
 	/**
 	 * Provee información relativa al navegador Web (browser) usado por el usuario.
 	 *
-	 * Por Ej. "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+	 * Ej. "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
 	 *
 	 * @return string Información del browser.
 	 */
@@ -736,7 +743,7 @@ class ServerData extends Singleton {
 	}
 
 	/**
-	 * Retorna el espacio libre en el disco donde se encuentra el directorio temporal.
+	 * Espacio libre en el disco donde se encuentra el directorio temporal.
 	 *
 	 * @return float Devuelve el número de bytes disponibles como un float.
 	 */
@@ -750,13 +757,23 @@ class ServerData extends Singleton {
 	/**
 	 * Tiempo en que inicia la ejecución del script.
 	 *
+	 * Puede retornarse como texto en un formato de fecha definido por el usuario,
+	 * entre los valores establecidos para el manejo de la función PHP date()
+	 * (consultar https://www.php.net/manual/es/function.date.php ).
+	 *
+	 * @param string $format (Opcional) Formato en que se retorna la fecha de inicio.
 	 * @return float Tiempo de inicio en microsegundos.
 	 */
-	public function startAt() : float {
+	public function startAt(string $format = '') : float|string {
 
 		// REQUEST_TIME_FLOAT:
 		// El tiempo de inicio de atención a la consulta del usuario, en microsegundos.
-		return $this->get('REQUEST_TIME_FLOAT', 0);
+		$time = $this->get('REQUEST_TIME_FLOAT', 0);
+		if ($format !== '') {
+			$time = date($format, intval($time));
+		}
+
+		return $time;
 	}
 
 	/**
@@ -767,5 +784,111 @@ class ServerData extends Singleton {
 	public function executionTime() : float {
 
 		return microtime(true) - $this->startAt();
+	}
+
+	/**
+	 * Tiempo transcurrido desde la anterior invocación a este método.
+	 *
+	 * La primera vez que se invoca, retorna el tiempo transcurrido desde el
+	 * inicio del script.
+	 *
+	 * Si se indica una etiqueta ($label) impirme el tiempo en pantalla.
+	 *
+	 * @param string $label			Marca a imprimir en pantalla.
+	 * @param bool $full_precision	Presenta en pantalla tiempo con todos sus
+	 * 								decimales. Por defecto muestra solamente 7.
+	 * @return float 				Tiempo transcurrido en microsegundos.
+	 */
+	public function checkPoint(string $label = '', bool $full_precision = false) : float {
+
+		if ($this->check_time <= 0) {
+			$this->check_time = $this->startAt();
+		}
+		// Actualiza tiempos
+		$previous_check = $this->check_time;
+		$this->check_time = microtime(true);
+		$time = $this->check_time - $previous_check;
+
+		if ($label !== '') {
+			// Registra también en el log de eventos
+			// Muestra siempre 7 decimales máximo
+			$time_short = $time;
+			if (!$full_precision) {
+				$len = strlen(intval($time)) + 8;
+				$time_short = substr($time, 0, $len);
+			}
+			$this->log("CHECKPOINT> <b>{$time_short}</b> -- {$label}", true);
+		}
+
+		return $time;
+	}
+
+	/**
+	 * Registra mensaje en el log de errores de PHP y en pantalla (opcional).
+	 *
+	 * Si el texto contiene tags HTML, los remueve antes de guardar al log.
+	 * También los remueve si se imprime a pantalla en ejecución por consola.
+	 *
+	 * @param string $text 	Texto a incluir en el log de errores.
+	 * @param bool $show	TRUE para imprimir a pantalla. FALSE, solo guarda en log.
+	 * @return string		Texto registrado en el log.
+	 */
+	public function log(string $text, bool $show = false) {
+
+		$text = trim($text);
+		if ($text === '') { return; }
+
+		$from = $this->From();
+		if ($from !== false) {
+			$text .= ' (' . miframe_server()->removeDocumentRoot($from['file']) . ':' . $from['line'] . ')';
+		}
+		if ($show) {
+			// Por defecto, texto a mostrar en pantalla
+			$text_show = $text;
+			// Remueve tags para guardar al log en limpio
+			$text = strip_tags($text);
+
+			if ($this->isWeb()) {
+				// Da formato de texto normal
+				$text_show = "<div style=\"background-color:#000;color:#f4f4f4;font-size:14px;font-family:Consolas;padding:4px 8px;margin:2px 0;\">".
+				'<span style="color:gold">@</span>' . $text_show .
+				"</div>";
+			}
+			else {
+				$text_show = '@' . $text;
+			}
+			echo PHP_EOL . $text_show . PHP_EOL;
+		}
+		// Registra en log de eventos
+		error_log($text);
+
+		return $text;
+	}
+
+	/**
+	 * Trace con el nombre de script y línea desde donde se invoca un evento.
+	 *
+	 * @param int $index Indice del arreglo de backtrace a usar. Por defecto es 2.
+	 * 					 Si no encuentra el elemento, reduce hasta encontrar uno valido.
+	 * @return array 	 Arreglo de backtrace, contiene elementos "file", "line" y
+	 * 					 "class" entre otros (adiciona elemento "index" con el valor del
+	 * 					 índice usado). Retorna FALSE si no encuentra el elemento.
+	 */
+	public function from(int $index = 2) : false|array {
+
+		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		while ($index >= 0 && !isset($trace[$index])) {
+			$index --;
+		}
+		if (isset($trace[$index])) {
+			// 0 - este script
+			// 1 - quien invoca esta función
+			// 2 - origen deseado
+			$trace[$index]['index'] = $index;
+
+			return $trace[$index];
+		}
+
+		return false;
 	}
 }
