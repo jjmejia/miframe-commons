@@ -76,6 +76,8 @@ $data = array(
 );
 
 $variables = array('$path_dummy' => $path_dummy, '$script' => $script);
+$matches = miframe_autoload()->matches();
+$namespaces = miframe_autoload()->namespaces();
 
 $aviso_ocultar = '';
 // Por razones de seguridad, se ocultan algunos valores cuando no se ejecuta desde localhost
@@ -92,10 +94,16 @@ if (!$server->isLocalhost()) {
 	foreach ($data as $k => $v) {
 		$data[$k] = trim(str_replace($que, $con, $v));
 	}
+	foreach ($matches as $k => $v) {
+		$matches[$k] = trim(str_replace($que, $con, $v));
+	}
+	foreach ($namespaces as $k => $v) {
+		$namespaces[$k] = trim(str_replace($que, $con, $v));
+	}
 	// Oculta variable
 	$variables['$script'] = '[SCRIPT_FILENAME]';
 	// Mensaje informativo
-	$aviso_ocultar = '<p><b>Importante:</b> Algunos valores se han ocultado por seguridad, pero son visibles para consultas dede Localhost.</p>';
+	$aviso_ocultar = '<p><b>Importante:</b> Algunos valores se han ocultado por seguridad, pero son visibles para consultas desde Localhost.</p>';
 }
 
 echo "<p>Variables usadas para crear el arreglo de muestra:</p>" . $aviso_ocultar;
@@ -110,11 +118,14 @@ echo "<h2>miframe_autoload()</h2>";
 echo "<p>Respecto al uso de la librería <code>autoload.php</code>, " .
 	"estas son las Clases evaluadas durante esta presentación:</p>";
 
-$Test->dump(miframe_autoload()->matches(), 'miframe_autoload()->matches()');
+$Test->dump($matches, 'miframe_autoload()->matches()');
 
 echo "<p>Y estos son los <i>namespaces</i> registrados:</p>";
 
-$Test->dump(miframe_autoload()->namespaces(), 'miframe_autoload()->namespaces()');
+$Test->dump($namespaces, 'miframe_autoload()->namespaces()');
+
+echo "<h2>Repositorio</h2>";
+echo '<p style="margin-top:30px"><a href="https://github.com/jjmejia/miframe-commons/tree/01-miframe-server-y-miframe-autoload" target="_blank">Repositorio disponible en <b>github.com/jjmejia</b></a></p>';
 
 // Registra visita
 $Test->visitorLog('demo-server');
