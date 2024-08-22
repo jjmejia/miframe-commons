@@ -6,11 +6,16 @@
  * @since Julio 2024
  */
 
-require_once __DIR__ . '/lib/testfunctions.php';
-require_once miframe_test_src_path() . '/miframe/commons/autoload.php';
-require_once miframe_test_src_path() . '/miframe/commons/helpers.php';
+require_once __DIR__ . '/lib/miCodeTest.php';
 
-miframe_test_start('miframe_server() y miframe_autoload()');
+$Test = new miCodeTest();
+
+require_once $Test->includePath('/miframe/commons/autoload.php');
+require_once $Test->includePath('/miframe/commons/helpers.php');
+
+$Test->start('miframe_server() y miframe_autoload()',
+	'Demos para ilustrar uso de los utilitarios <code>miframe_server()</code> y <code>miframe_autoload()</code> de la librería <code>miFrame\\Commons</code>'
+	);
 
 echo "<h2>miframe_server()</h2>";
 
@@ -19,16 +24,17 @@ $server = miframe_server();
 $path_dummy = '../path/to/other/script/ignora/..';
 $script = $server->script();
 
+// Fija directorio temporal
+$server->tempDir($Test->tmpDir(__DIR__ . '/tmp'), true);
+
 // Arreglo de muestras
 $data = array(
 	'miframe_server()->startAt()' => $server->startAt(),
 	'miframe_server()->startAt(\'Y/m/d H:i:s\')' => $server->startAt('Y/m/d H:i:s'),
-	'miframe_server()->checkPoint(\'Inicio\')' => $server->checkPoint('Inicio'),
+	'miframe_server()->checkPoint() [Inicio]' => $server->checkPoint(),
 	// Limpieza
-	'miframe_server()->purgePath($path_dummy)' => $server->purgePath($path_dummy),
+	'miframe_server()->purgeURLPath($path_dummy)' => $server->purgeURLPath($path_dummy),
 	'miframe_server()->purgeFilename($path_dummy)' => $server->purgeFilename($path_dummy),
-	// 'miframe_server()->purgePath(\'/../path1\\path2\\./ignorar/..//path3/\', \'|\')' => $server->purgePath('/../path1\\path2\\./ignorar/..//path3/', '|'),
-	// 'miframe_server()->purgeFilename(\'/../path1\\path2\\./ignorar/..//path3/\', \'|\')' => $server->purgeFilename('/../path1\\path2\\./ignorar/..//path3/', '|'),
 	// Consultas
 	'miframe_server()->get(\'REQUEST_METHOD\')' => $server->get('REQUEST_METHOD'),
 	'miframe_server()->client()' => $server->client(),
@@ -59,18 +65,17 @@ $data = array(
 	'miframe_server()->tempDir()' => $server->tempDir(),
 	'miframe_server()->tempDirSpace()' => $server->tempDirSpace(),
 	// Validaciones
-	'miframe_server()->inDocumentRoot($path_dummy)' => $server->inDocumentRoot($path_dummy),
-	'miframe_server()->inDocumentRoot($script)' => $server->inDocumentRoot($script),
-	'miframe_server()->inTempDir($path_dummy)' => $server->inTempDir($path_dummy),
-	// 'miframe_server()->inTempDir($this->script())' => $server->inTempDir($server->script()),
+	'miframe_server()->hasAccessTo($path_dummy)' => $server->hasAccessTo($path_dummy),
+	'miframe_server()->hasAccessTo($script)' => $server->hasAccessTo($script),
 	// Acciones sobre el servidor
 	'miframe_server()->mkdir($path_dummy)' => $server->mkdir($path_dummy),
 	'miframe_server()->createTempSubdir($path_dummy)' => $server->createTempSubdir($path_dummy),
 	// punto de chequeo
-	'miframe_server()->checkPoint(\'Fin\')' => $server->checkPoint('Fin'),
 	'miframe_server()->executionTime()' => $server->executionTime(),
-	'miframe_server()->log(...)' => $server->log('Ejecutado desde ' . $server->client()),
+	'miframe_server()->checkPoint() [Fin]' => $server->checkPoint(),
 );
+
+$variables = array('$path_dummy' => $path_dummy, '$script' => $script);
 
 $aviso_ocultar = '';
 // Por razones de seguridad, se ocultan algunos valores cuando no se ejecuta desde localhost
@@ -87,23 +92,32 @@ if (!$server->isLocalhost()) {
 	foreach ($data as $k => $v) {
 		$data[$k] = trim(str_replace($que, $con, $v));
 	}
+	// Oculta variable
+	$variables['$script'] = '[SCRIPT_FILENAME]';
 	// Mensaje informativo
 	$aviso_ocultar = '<p><b>Importante:</b> Algunos valores se han ocultado por seguridad, pero son visibles para consultas dede Localhost.</p>';
 }
 
-// ksort($data);
+echo "<p>Variables usadas para crear el arreglo de muestra:</p>" . $aviso_ocultar;
 
-echo "<p>Ejemplos de uso:</p>" . $aviso_ocultar;
+$Test->dump($variables);
 
-miframe_test_dump(compact( 'path_dummy', 'script'));
-miframe_test_dump($data);
+echo "<p>Arreglo de muestra:</p>";
+
+$Test->dump($data);
 
 echo "<h2>miframe_autoload()</h2>";
 echo "<p>Respecto al uso de la librería <code>autoload.php</code>, " .
 	"estas son las Clases evaluadas durante esta presentación:</p>";
 
-miframe_test_dump(miframe_autoload()->matches(), 'miframe_autoload()->matches()');
+$Test->dump(miframe_autoload()->matches(), 'miframe_autoload()->matches()');
 
 echo "<p>Y estos son los <i>namespaces</i> registrados:</p>";
 
-miframe_test_dump(miframe_autoload()->namespaces(), 'miframe_autoload()->namespaces()');
+$Test->dump(miframe_autoload()->namespaces(), 'miframe_autoload()->namespaces()');
+
+// Registra visita
+$Test->visitorLog('demo-server');
+
+// Cierre de la página
+$Test->end();

@@ -6,16 +6,28 @@
  * @since Julio 2024
  */
 
-include_once __DIR__ . '/support/lib/testfunctions.php';
+include_once __DIR__ . '/support/lib/miCodeTest.php';
+
+$Test = new miCodeTest();
 
 // Ruta a los scripts
-miframe_test_src_path(__DIR__ . '/../src');
-
-// URL para descargar recursos web
-miframe_test_url(dirname($_SERVER['SCRIPT_NAME']) . '/support');
+$Test->config([
+	// Path con el código fuente
+	'src-path' => __DIR__ . '/../src',
+	// URL para descargar recursos web
+	'url-resources' => dirname($_SERVER['SCRIPT_NAME']) . '/support',
+	// Registrar página de inicio
+	'home' => $_SERVER['SCRIPT_NAME'],
+	// Pie de página adicional (si existe)
+	'footer' => __DIR__ . '/footer.htm',
+	// Visitors log
+	'logs-path' => __DIR__ . '/logs',
+	// Temporal
+	'tmp-path' => __DIR__ . '/tmp'
+	]);
 
 // Cabezote de presentación
-miframe_test_start('Demos para miframe-commons');
+$Test->start('miFrame\\Commons', 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.');
 
 ?>
 <ul>
@@ -26,5 +38,7 @@ miframe_test_start('Demos para miframe-commons');
 
 <?php
 
+$Test->visitorLog('demo-index');
+
 // Cierre de la página
-miframe_test_end();
+$Test->end();

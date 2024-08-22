@@ -1,0 +1,7 @@
+DirectoryIndex index.php
+# Options +FollowSymLinks
+RewriteEngine on
+
+# Niega toda consulta web
+RewriteRule (^|/)logs(/|$) - [F]
+RewriteRule (^|/)tmp(/|$) - [F]
