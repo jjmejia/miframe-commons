@@ -52,6 +52,16 @@ class ServerData extends Singleton {
 	private float $check_time = 0;
 
 	/**
+	 * @var array $dir_white_list Listado de directorios permitidos para crear directorios.
+	 */
+	private array $dir_white_list = array();
+
+	/**
+	 * @var array $cache_path Cache de paths corregidos para agilizar procesos repetitivos.
+	 */
+	private array $cache_path = array();
+
+	/**
 	 * Valor de elemento contenido en la variable superglobal $_SERVER de PHP.
 	 *
 	 * Si el elemento solicitado no existe, retorna valor en $default.
@@ -85,7 +95,7 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Dirección IP del cliente remoto.
 	 */
-	public function client() {
+	public function client() : string {
 
 		if (!$this->isWeb()) {
 			$this->client_ip = 'cli';
@@ -108,10 +118,10 @@ class ServerData extends Singleton {
 				// REMOTE_ADDR:
 				// La dirección IP desde donde el usuario está viendo la página actual.
 				$this->client_ip = $this->get('REMOTE_ADDR');
-				if (empty($client_ip)) {
+				if (empty($this->client_ip)) {
 					// HTTP_CLIENT_IP:
 					// Opcional para algunos servidores Web en remplazo de REMOTE_ADDR.
-					$client_ip = $this->get('HTTP_CLIENT_IP');
+					$this->client_ip = $this->get('HTTP_CLIENT_IP');
 				}
 			}
 
@@ -233,7 +243,7 @@ class ServerData extends Singleton {
 	 */
 	public function relativePath(string $path = '') : string {
 
-		return $this->dirname($this->self(), $path, '/');
+		return $this->connect(dirname($this->self()), $path, '/');
 	}
 
 	/**
@@ -355,14 +365,15 @@ class ServerData extends Singleton {
 	 * - https://www.php.net/manual/en/dir.constants.php#114579
 	 *   (Builds a file path with the appropriate directory separator).
 	 *
-	 * @param string $path				Path a depurar.
-	 * @param string $force_separator	Separador a usar. SI no se define este valor,
-	 * 									por defecto se usara "/" (separador URL).
-	 * 									Si encuentra algún separador "\" en $path,
-	 * 									usa este para construir el path depurado.
-	 * @return string					Path depurado.
+	 * @param string $path			Path a depurar.
+	 * @param string $separator		Separador a usar. SI no se define este valor,
+	 * 								por defecto se usara "/" (separador URL).
+	 * 								Si encuentra algún separador "\" en $path,
+	 * 								usa este para construir el path depurado.
+	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
+	 * @return string				Path depurado.
 	 */
-	public function purgePath(string $path, string $force_separator = '') : string {
+	private function purgePath(string $path, string $separator = '', bool $remove_first = false) : string {
 
 		$path = trim($path);
 
@@ -371,54 +382,89 @@ class ServerData extends Singleton {
 			return $path;
 		}
 
-		// NOTA: No usa siempre realpath() porque puede reportar erroneamente
-		// un path con una ruta en disco físico para un path de una URL
-		// (indicada por $path).
-
-		// Determina path a usar al final
-		$separator = DIRECTORY_SEPARATOR;
-		// Hay al menos un separador de directorio
-		// (En Windows son diferentes, en Linux son el mismo)
-		$exists_separator = (strpos($path, $separator));
-		$path = str_replace($separator, '/', $path);
-		if (!$exists_separator) {
-			// Estandariza al modelo Linux (URL)
+		// Valida si debe forzar el separador a usar
+		if ($separator == '') {
 			$separator = '/';
 		}
-		// Valida si debe forzar el separador a usar
-		if ($force_separator !== '') {
-			$separator = $force_separator;
-		}
 
-		// Remueve ".." y "." sobre paths de archivos que no existen
-		$segments = explode('/', $path);
+		// Normaliza separadores para usar "/" durante el proceso
+		// de remplazo.
+		$path = str_replace('\\', '/', $path);
 
-		// Procesa arreglo si encuentra un caracter ".", aunque sea un separador
-		// de extensión, por si ha definido ".." o "." en alguno de los segmentos.
-		if (strpos($path, '.') !== false) {
-			$total_segments = count($segments);
-			for ($i = 0; $i < $total_segments; $i++) {
-				$segments[$i] = trim($segments[$i]);
-				if ($segments[$i] == '..') {
-					// Limpia segmentdo
-					$segments[$i] = '';
-					// Retrocede. Ignora segmentos vacios, del tipo: "xxx//xxx"
-					while ($i > 0 && $segments[$i - 1] == '') { $i--; }
-					// Retrocede un segmento
-					if ($i > 0) {
-						$segments[$i - 1] = '';
+		// Consulta cache (esto para paths que se invocan muchas veces, por ejemplo
+		// al validar directorios).
+		$key = strtolower($path);
+		if (!isset($this->cache_path[$key])) {
+			// Segmentos ya depurados
+
+			// NOTA: No usa siempre realpath() porque puede reportar erroneamente
+			// un path con una ruta en disco físico para un path de una URL
+			// (indicada por $path).
+
+			// Remueve ".." y "." sobre paths de archivos que no existen
+			$segments = explode('/', $path);
+
+			// Procesa arreglo si encuentra un caracter ".", aunque sea un separador
+			// de extensión, por si ha definido ".." o "." en alguno de los segmentos.
+			if (strpos($path, '.') !== false) {
+				$total_segments = count($segments);
+				for ($i = 0; $i < $total_segments; $i++) {
+					$segments[$i] = trim($segments[$i]);
+					if ($segments[$i] == '..') {
+						// Limpia segmentdo
+						$segments[$i] = '';
+						// Retrocede. Ignora segmentos vacios, del tipo: "xxx//xxx"
+						while ($i > 0 && $segments[$i - 1] == '') { $i--; }
+						// Retrocede un segmento
+						if ($i > 0) {
+							$segments[$i - 1] = '';
+						}
+					}
+					elseif ($segments[$i] == '.') {
+						$segments[$i] = '';
 					}
 				}
-				elseif ($segments[$i] == '.') {
-					$segments[$i] = '';
-				}
 			}
+
+			// Remueve elementos en blanco (se asegura de preservar siempre
+			// el primer elemento, ya que en Linux los path fisicos empiezan con "/")
+			$first = array_shift($segments);
+			if (count($segments) > 0) {
+				$segments = array_filter($segments);
+			}
+
+			// Registra cache
+			$this->cache_path[$key] = [ $first, ...$segments ];
 		}
 
-		// Remueve elementos en blanco
-		$path = implode($separator, array_filter($segments));
+		$segments = $this->cache_path[$key];
+
+		// Remueve elementos en blanco (se asegura de preservar siempre
+		// el primer elemento, ya que en Linux los path fisicos empiezan con "/")
+		$path = implode($separator, $segments);
+
+		$len = strlen($separator);
+		// Valida si conscientemente solicita remover el primer separador
+		if ($remove_first && substr($path, 0, $len) === $separator) {
+			$path = substr($path, $len);
+		}
 
 		return $path;
+	}
+
+	/**
+	 * Estandariza formato del URL path indicado.
+	 *
+	 * Remueve elementos no deseados (tales como "..", "." y segmentos vacios).
+	 * De esta forma previene acceso a rutas restringidas.
+	 *
+	 * @param string $path			Path a depurar.
+	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
+	 * @return string				Path depurado.
+	 */
+	public function purgeURLPath(string $path, bool $remove_first = false) : string {
+
+		return $this->purgePath($path, '/', $remove_first);
 	}
 
 	/**
@@ -431,13 +477,16 @@ class ServerData extends Singleton {
 	 * Aplica tanto para separadores de directorio Windows ("\") como
 	 * Linux/Unix ("/").
 	 *
-	 * @param string $filename	Path a depurar, sea de archivo o directorio.
-	 * @return string			Path depurado.
+	 * Nota: En Linux se tiene el mismo resultado que purgeURLPath() ya que el
+	 * separador de directorios usados es el mismo ("/").
+	 *
+	 * @param string $filename		Path del archivo o directorio a depurar.
+	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
+	 * @return string				Path depurado.
 	 */
-	public function purgeFilename(string $filename) : string {
+	public function purgeFilename(string $filename, bool $remove_first = false) : string {
 
-		// Realiza limpieza manual
-		return $this->purgePath($filename, DIRECTORY_SEPARATOR);
+		return $this->purgePath($filename, DIRECTORY_SEPARATOR, $remove_first);
 	}
 
 	/**
@@ -466,12 +515,12 @@ class ServerData extends Singleton {
 	 *
 	 *     (dirname(SCRIPT_FILENAME))/($path_to_scriptdir).
 	 *
-	 * @param string $filename	(Opcional) Archivo/directorio a complementar.
+	 * @param string $filename	(Opcional) Path del archivo o directorio a complementar.
 	 * @return string 			Path.
 	 */
 	public function scriptDirectory(string $filename = '') : string {
 
-		return $this->dirname($this->script(), $filename, DIRECTORY_SEPARATOR);
+		return $this->connect(dirname($this->script()), $filename, DIRECTORY_SEPARATOR);
 	}
 
 	/**
@@ -482,22 +531,30 @@ class ServerData extends Singleton {
 	 *
 	 * @param string $parent	Path padre.
 	 * @param string $son		Path hijo.
-	 * @param string $separator	Separador de segmentos del path.
+	 * @param string $separator	Separador de segmentos del path ("\" o "/").
 	 * @return string			Path hijo completo.
 	 */
-	private function dirname(string $parent, string $son, string $separator) : string {
+	private function connect(string $parent, string $son, string $separator) : string {
 
-		$parent = dirname($parent) . $separator;
-		// Da formato de path para archivo fisico, siempre
+		$parent .= $separator;
+		// Da formato de path para archivo fisico, siempre (no lo termina en "/"
+		// porque puede ser un nombre de archivo)
 		$son = $this->purgePath($son, $separator);
 		if ($son !== '') {
 			// Si ya contiene el directorio local, ignora.
-			if (strtolower(substr($son, 0, strlen($parent))) === strtolower($parent)) {
-				return $son;
+			// Para la validación si adiciona el separador "/" a $son, para garantizar
+			// hallazgo del directorio padre.
+			if ($this->inDirectory($son . $separator, $parent)) {
+				$parent .= substr($son, strlen($parent));
 			}
 			// Si no lo contiene, lo adiciona.
 			else {
-				return $parent . $son;
+				// Valida si debe remover separador al inicio de $son
+				$len = strlen($separator);
+				if (substr($son, 0, $len) === $separator) {
+					$son = substr($son, $len);
+				}
+				$parent .= $son;
 			}
 		}
 
@@ -513,7 +570,7 @@ class ServerData extends Singleton {
 	 *
 	 *     (DOCUMENT_ROOT)/($path_to_root).
 	 *
-	 * @param string $filename	(Opcional) Directorio/nombre de archivo asociado.
+	 * @param string $filename	(Opcional) Path de archivo o directorio a incluir.
 	 * @return string 			Path.
 	 */
 	public function documentRoot(string $filename = '') {
@@ -521,29 +578,25 @@ class ServerData extends Singleton {
 		// DOCUMENT_ROOT:
 		// El directorio raíz bajo el que se ejecuta este script, tal como fuera
 		// definido en la configuración del servidor Web.
-		return realpath($this->get('DOCUMENT_ROOT')) . DIRECTORY_SEPARATOR . $this->purgeFilename($filename);
+		return $this->connect(realpath($this->get('DOCUMENT_ROOT')), $filename, DIRECTORY_SEPARATOR);
 	}
 
 	/**
 	 * Valida que el archivo/directorio indicado sea subdirectorio del directorio Web.
 	 *
-	 * @param string $filename	Path de archivo o directorio a evaluar.
+	 * @param string $filename	Path del archivo o directorio a evaluar.
 	 * @return bool				TRUE si $path es subdirectorio de DOCUMENT_ROOT,
 	 * 							FALSE en otro caso.
 	 */
-	public function inDocumentRoot(string $filename) : bool {
+	private function inDocumentRoot(string $filename) : bool {
 
-		$filename = $this->purgeFilename($filename);
-		$document_root = $this->documentRoot();
-
-		return ($filename !== '' &&
-			strtolower(substr($filename, 0, strlen($document_root))) === strtolower($document_root));
+		return $this->inDirectory($filename, $this->documentRoot());
 	}
 
 	/**
 	 * Remueve ruta al directorio Web.
 	 *
-	 * @param string $filename	Path de archivo o directorio a evaluar.
+	 * @param string $filename	Path del archivo o directorio a modificar.
 	 * @return string			Path corregido si es un subdirectorio del directorio Web,
 	 * 							FALSE en otro caso.
 	 */
@@ -553,6 +606,7 @@ class ServerData extends Singleton {
 			// Debe purgar el path para asegurar que remueva correctamente si incluye ".."
 			$filename = $this->purgeFilename($filename);
 			$document_root = $this->documentRoot();
+
 			return substr($filename, strlen($document_root));
 		}
 
@@ -562,17 +616,97 @@ class ServerData extends Singleton {
 	/**
 	 * Valida que el archivo/directorio indicado sea subdirectorio del directorio temporal.
 	 *
-	 * @param string $path	Path a evaluar.
-	 * @return string		TRUE si $path es subdirectorio del directorio temporal,
-	 * 						FALSE en otro caso.
+	 * @param string $filename	Path del archivo o directorio a evaluar.
+	 * @return string			TRUE si es archivo o subdirectorio del directorio temporal,
+	 * 							FALSE en otro caso.
 	 */
-	public function inTempDir(string $path) : bool {
+	/*private function inTempDir(string $filename) : bool {
 
-		$tempdir = $this->tempDir();
-		$path = $this->purgeFilename($path);
+		return $this->inDirectory($filename, $this->tempDir());
+	}*/
 
-		return ($tempdir !== '' &&
-			strtolower(substr($path, 0, strlen($tempdir))) === strtolower($tempdir));
+	/**
+	 * Valida que el archivo/directorio indicado sea subdirectorio del directorio actual.
+	 *
+	 * Util para validar cuando se ejecuta por consola desde un directorio diferente al Web.
+	 *
+	 * @param string $filename	Path del archivo o directorio a evaluar.
+	 * @return string			TRUE si es archivo o subdirectorio del directorio actual,
+	 * 							FALSE en otro caso.
+	 */
+	/*private function inScriptDirectory(string $filename) : bool {
+
+		return $this->inDirectory($filename, $this->scriptDirectory());
+	}*/
+
+	/**
+	 * Auxiliar para detectar un directorio o archivo dentro de otro.
+	 *
+	 * @param string $filename	Path del archivo o directorio a evaluar.
+	 * @return string			TRUE si es archivo o subdirectorio del directorio actual,
+	 * 							FALSE en otro caso.
+	 */
+   	private function inDirectory(string $filename, string $src_dir) : bool {
+
+		$filename = $this->purgeFilename($filename);
+
+		return ($src_dir !== '' &&
+			strtolower(substr($filename, 0, strlen($src_dir))) === strtolower($src_dir));
+   }
+
+	/**
+	 * Adiciona paths al listado de directorios permitidos para crear subdirectorios.
+	 *
+	 * Usado para casos que requiera acceso a directorios diferentes al Web y
+	 * al temporal, por ejemplo, al ejecutar desde consola.
+	 *
+	 * @param string $path Directorio existente.
+	 */
+	public function accessDir(string $path) {
+
+		if (is_dir($path)) {
+			$path = realpath($path) . DIRECTORY_SEPARATOR;
+			$key = strtolower($path);
+			$this->dir_white_list[$key] = $path;
+		}
+	}
+
+	/**
+	 * Valida que el archivo o directorio dado esté en la lista de permitidos.
+	 *
+	 * Valida por defecto el directorio Web y el directorio temporal antes de
+	 * contrastar contra el listado de directorios manualmente adicionados.
+	 *
+	 * @param string $filename 	Path del archivo o directorio a evaluar.
+	 * @return bool				TRUE si el archivo o directorio pertenece a un directorio
+	 * 							registrado como valido.
+	 */
+	public function hasAccessTo(string $filename) : bool {
+
+		$filename = $this->purgeFilename($filename);
+		if ($filename !== '') {
+			// Valida directorios básicos
+			if ($this->inDocumentRoot($filename)
+				// || $this->inTempDir($filename)
+				// Tradicionalmente scriptDirectory() está en el root,
+				// a menos que sea ejecutado por consola.
+				// || $this->inScriptDirectory($filename)
+				) {
+				return true;
+			}
+			// Valida lista permitida
+			// $this->dir_white_list['@root'] = $this->documentRoot();
+			$this->dir_white_list['@temp'] = $this->tempDir();
+			$this->dir_white_list['@script'] = $this->scriptDirectory();
+			// Valida en los directorios adicionados manualmente
+			foreach ($this->dir_white_list as $dir) {
+				if ($this->inDirectory($filename, $dir)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -598,7 +732,7 @@ class ServerData extends Singleton {
 			// El directorio a crear debe estar contenido en $_SERVER['DOCUMENT_ROOT']
 			// o en el directorio de temporales.
 			if (!$result &&
-				($this->inDocumentRoot($pathname) || $this->inTempDir($pathname))
+				$this->hasAccessTo($pathname)
 				) {
 				$result = @mkdir($pathname, 0777, $recursive);
 			}
@@ -623,11 +757,16 @@ class ServerData extends Singleton {
 	 * @param string $pathname	(Opcional) Directorio temporal a usar.
 	 * @return string 			Path.
 	 */
-	public function tempDir(string $pathname = '') : string {
+	public function tempDir(string $pathname = '', bool $create = false) : string {
 
 		// 1. Asigna path dado por el usuario
 		if ($pathname !== '') {
-			$path = realpath($this->purgeFilename($pathname));
+			$pathname = $this->purgeFilename($pathname);
+			if ($pathname !== '' && !is_dir($pathname) && $create) {
+				// Intenta crear el directorio
+				$this->mkdir($pathname);
+			}
+			$path = realpath($pathname);
 			if ($path != '' && is_dir($path)) {
 				$this->temp_directory = $path;
 			}
@@ -646,14 +785,14 @@ class ServerData extends Singleton {
 		}
 		// 4. Intenta crear/acceder a un directorio "Temp" a crear en el DOCUMENT_ROOT
 		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
-			$path = $this->documentRoot('Temp');
+			$path = $this->documentRoot('tmp');
 			if ($this->mkdir($path)) {
 				$this->temp_directory = $path;
 			}
 		}
 		// 5. Intenta crear/acceder a un directorio "Temp" en el directorio local
 		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
-			$path = $this->scriptDirectory('Temp');
+			$path = $this->scriptDirectory('tmp');
 			if ($this->mkdir($path)) {
 				$this->temp_directory = $path;
 			}
@@ -679,7 +818,7 @@ class ServerData extends Singleton {
 	public function createTempSubdir(string $pathname) : string|false {
 
 		$temp = $this->tempDir();
-		$path = $temp . DIRECTORY_SEPARATOR . $this->purgeFilename($pathname);
+		$path = $this->connect($temp, $pathname, DIRECTORY_SEPARATOR);
 		if ($temp !== '' && !$this->mkdir($path)) {
 			return false;
 		}
@@ -792,14 +931,10 @@ class ServerData extends Singleton {
 	 * La primera vez que se invoca, retorna el tiempo transcurrido desde el
 	 * inicio del script.
 	 *
-	 * Si se indica una etiqueta ($label) impirme el tiempo en pantalla.
-	 *
-	 * @param string $label			Marca a imprimir en pantalla.
-	 * @param bool $full_precision	Presenta en pantalla tiempo con todos sus
-	 * 								decimales. Por defecto muestra solamente 7.
-	 * @return float 				Tiempo transcurrido en microsegundos.
+	 * @param int $precision	(Opcional) Indica cuantos decimales mostrar.
+	 * @return float 			Tiempo transcurrido en microsegundos.
 	 */
-	public function checkPoint(string $label = '', bool $full_precision = false) : float {
+	public function checkPoint(int $precision = 7) : float {
 
 		if ($this->check_time <= 0) {
 			$this->check_time = $this->startAt();
@@ -809,86 +944,15 @@ class ServerData extends Singleton {
 		$this->check_time = microtime(true);
 		$time = $this->check_time - $previous_check;
 
-		if ($label !== '') {
-			// Registra también en el log de eventos
-			// Muestra siempre 7 decimales máximo
-			$time_short = $time;
-			if (!$full_precision) {
-				$len = strlen(intval($time)) + 8;
-				$time_short = substr($time, 0, $len);
-			}
-			$this->log("CHECKPOINT> <b>{$time_short}</b> -- {$label}", true);
+		// Registra también en el log de eventos
+		// Muestra siempre $precision decimales máximo
+		// (suma 1 por el punto decimal).
+		if ($precision > 0) {
+			$len = strlen(intval($time)) + $precision + 1;
+			$time = substr($time, 0, $len);
 		}
 
 		return $time;
 	}
 
-	/**
-	 * Registra mensaje en el log de errores de PHP y en pantalla (opcional).
-	 *
-	 * Si el texto contiene tags HTML, los remueve antes de guardar al log.
-	 * También los remueve si se imprime a pantalla en ejecución por consola.
-	 *
-	 * @param string $text 	Texto a incluir en el log de errores.
-	 * @param bool $show	TRUE para imprimir a pantalla. FALSE, solo guarda en log.
-	 * @return string		Texto registrado en el log.
-	 */
-	public function log(string $text, bool $show = false) {
-
-		$text = trim($text);
-		if ($text === '') { return; }
-
-		$from = $this->From();
-		if ($from !== false) {
-			$text .= ' (' . miframe_server()->removeDocumentRoot($from['file']) . ':' . $from['line'] . ')';
-		}
-		if ($show) {
-			// Por defecto, texto a mostrar en pantalla
-			$text_show = $text;
-			// Remueve tags para guardar al log en limpio
-			$text = strip_tags($text);
-
-			if ($this->isWeb()) {
-				// Da formato de texto normal
-				$text_show = "<div style=\"background-color:#000;color:#f4f4f4;font-size:14px;font-family:Consolas;padding:4px 8px;margin:2px 0;\">".
-				'<span style="color:gold">@</span>' . $text_show .
-				"</div>";
-			}
-			else {
-				$text_show = '@' . $text;
-			}
-			echo PHP_EOL . $text_show . PHP_EOL;
-		}
-		// Registra en log de eventos
-		error_log($text);
-
-		return $text;
-	}
-
-	/**
-	 * Trace con el nombre de script y línea desde donde se invoca un evento.
-	 *
-	 * @param int $index Indice del arreglo de backtrace a usar. Por defecto es 2.
-	 * 					 Si no encuentra el elemento, reduce hasta encontrar uno valido.
-	 * @return array 	 Arreglo de backtrace, contiene elementos "file", "line" y
-	 * 					 "class" entre otros (adiciona elemento "index" con el valor del
-	 * 					 índice usado). Retorna FALSE si no encuentra el elemento.
-	 */
-	public function from(int $index = 2) : false|array {
-
-		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-		while ($index >= 0 && !isset($trace[$index])) {
-			$index --;
-		}
-		if (isset($trace[$index])) {
-			// 0 - este script
-			// 1 - quien invoca esta función
-			// 2 - origen deseado
-			$trace[$index]['index'] = $index;
-
-			return $trace[$index];
-		}
-
-		return false;
-	}
 }

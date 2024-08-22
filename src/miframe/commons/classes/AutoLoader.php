@@ -53,7 +53,16 @@ class AutoLoader extends Singleton {
 	 */
 	public function register(string $className, string $path) {
 
-		$this->namespaces[strtolower(trim($className))] = trim($path);
+		// Usa como llave el nombre en minusculas para prevenir errores al
+		// escribir el nombre. Si empieza con "\" lo remueve.
+		$className = strtolower(trim($className));
+		if ($className !== '' && $className[0] == '\\') {
+			$className = substr($className, 1);
+		}
+		if ($className !== '' && $path !== '') {
+			// Registra path
+			$this->namespaces[$className] = trim($path);
+		}
 	}
 
 	/**
@@ -63,6 +72,9 @@ class AutoLoader extends Singleton {
 	 */
 	public function load(string $className) {
 
+		if ($className !== '' && $className[0] == '\\') {
+			$className = substr($className, 1);
+		}
 		$class = strtolower($className);
 		$path = '';
 
@@ -73,18 +85,24 @@ class AutoLoader extends Singleton {
 		else {
 			// Registra este modelo
 			if (count($this->namespaces) <= 0) {
-				$class_pattern = dirname(dirname(__CLASS__));
-				$file_path = dirname(dirname(__FILE__));
-				$this->register($class_pattern . '\*', $file_path . DIRECTORY_SEPARATOR . '*.php');
+				// __CLASS__ usa "\" como separador de segmentos. En Linux, usar
+				// dirname() con ese separador retorna ".". Por tanto, empleamos
+				// una alternativa diferente, a saber:
+				// $class_pattern = dirname(dirname(__CLASS__));
+				$class_pattern = 'miFrame\\Commons\\*';
+				$file_path = dirname(__DIR__); // Apunta al directorio "commons"
+				$this->register($class_pattern, $file_path . DIRECTORY_SEPARATOR . '*.php');
 			}
 			// Busca parciales
-			foreach ($this->namespaces as $nameclass => $namepath) {
+			foreach ($this->namespaces as $nameclass => $pathclass) {
 				if (substr($nameclass, -1) == '*') {
-					// Valida directorio parcial
-					$pattern = '#^' . str_replace('\\', '\\\\', substr($nameclass, 0, -1)) . '(.+)$#';
-					// Ejemplo: '#^DesignPatterns\\\\(.+)$#'
-					if (preg_match($pattern, $class, $match)) {
-						$path = str_replace('*', $match[1], $namepath);
+					// Valida nombre de clase parcial
+					$pattern = substr($nameclass, 0, -1);
+					$len = strlen($pattern);
+					if (substr($class, 0, $len) === $pattern) {
+						// Genera path conservando sintaxis de $className
+						$subpath = substr($className, $len);
+						$path = str_replace('*', $subpath, $pathclass);
 						break;
 					}
 				}
@@ -94,12 +112,23 @@ class AutoLoader extends Singleton {
 		// Mensaje a pantalla
 		// echo '[' . __CLASS__ . "] $className : $path (" . (file_exists($path) ? 'true' : 'false') . ")<hr>" . PHP_EOL;
 
-		if ($path !== '' && file_exists($path)) {
+		if ($path !== '') {
+			// Valida que exista. Normaliza path.
+			$path = str_replace([ '\\', '/' ], DIRECTORY_SEPARATOR, $path);
+			if (!file_exists($path)) {
+				// Genera path usando todo el path de directorios en minusculas
+				$path = strtolower(dirname($path)) . DIRECTORY_SEPARATOR . basename($path);
+				if (!file_exists($path)) {
+					// Genera todo el path en minusculas
+					$path = strtolower($path);
+				}
+			}
+			if (is_file($path)) {
+				// Registra uso
+				$this->matches[$className] = realpath($path);
 
-			// Registra uso
-			$this->matches[$className] = realpath($path);
-
-			require_once $this->matches[$className];
+				require_once $this->matches[$className];
+			}
 		}
 	}
 
