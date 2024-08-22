@@ -643,6 +643,7 @@ class ServerData extends Singleton {
 	 * Auxiliar para detectar un directorio o archivo dentro de otro.
 	 *
 	 * @param string $filename	Path del archivo o directorio a evaluar.
+	 * @param string $src_dir	Path del directorio que puede o no contener a $filename.
 	 * @return string			TRUE si es archivo o subdirectorio del directorio actual,
 	 * 							FALSE en otro caso.
 	 */
@@ -757,12 +758,12 @@ class ServerData extends Singleton {
 	 * @param string $pathname	(Opcional) Directorio temporal a usar.
 	 * @return string 			Path.
 	 */
-	public function tempDir(string $pathname = '', bool $create = false) : string {
+	public function tempDir(string $pathname = '') : string {
 
 		// 1. Asigna path dado por el usuario
 		if ($pathname !== '') {
 			$pathname = $this->purgeFilename($pathname);
-			if ($pathname !== '' && !is_dir($pathname) && $create) {
+			if ($pathname !== '' && !is_dir($pathname)) {
 				// Intenta crear el directorio
 				$this->mkdir($pathname);
 			}
@@ -819,11 +820,11 @@ class ServerData extends Singleton {
 
 		$temp = $this->tempDir();
 		$path = $this->connect($temp, $pathname, DIRECTORY_SEPARATOR);
-		if ($temp !== '' && !$this->mkdir($path)) {
-			return false;
+		if ($temp !== '' && $this->mkdir($path)) {
+			return realpath($path);
 		}
 
-		return realpath($path);
+		return false;
 	}
 
 	/**

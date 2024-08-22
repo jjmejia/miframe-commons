@@ -25,7 +25,7 @@ $path_dummy = '../path/to/other/script/ignora/..';
 $script = $server->script();
 
 // Fija directorio temporal
-$server->tempDir($Test->tmpDir(__DIR__ . '/tmp'), true);
+$server->tempDir($Test->tmpDir(__DIR__ . '/tmp'));
 
 // Arreglo de muestras
 $data = array(
