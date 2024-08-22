@@ -59,6 +59,14 @@ h1.test-encab, .test-content h2 {
 		padding:10px;
 	}
 
+	.test-aviso {
+		border: 1px solid gold;
+		border-radius: 5px;
+		background-color: #ffffcc;
+		padding: 10px;
+		color: #333;
+	}
+
 	code {
 		padding: 0.2em 0.4em;
 		margin: 0;
@@ -211,7 +219,13 @@ only screen and (max-width: 760px),
 			left: -9999px;
 		}
 
-		/* tr { border: 1px solid #ccc; } */
+		tr {
+			border-bottom: 1px solid #ccc;
+		}
+
+		tr:last-child {
+			border:none;
+		}
 
 		td {
 			/* Behave  like a "row" */
@@ -222,6 +236,13 @@ only screen and (max-width: 760px),
 			overflow:auto;
 
 			margin: 0;
+
+			/* https://stackoverflow.com/a/18891915 */
+			white-space: pre-wrap; /* css-3 */
+			white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
+			white-space: -pre-wrap; /* Opera 4-6 */
+			white-space: -o-pre-wrap; /* Opera 7 */
+			word-wrap: break-word; /* Internet Explorer 5.5+ */
 		}
 	}
 

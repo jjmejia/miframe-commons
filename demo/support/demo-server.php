@@ -86,13 +86,15 @@ if (!$server->isLocalhost()) {
 	// Información sensible
 	$data['miframe_server()->name()'] = $ocultar;
 	$data['miframe_server()->browser()'] = $ocultar;
-	$data['miframe_server()->ip()'] = $ocultar;
+	// $data['miframe_server()->ip()'] = $ocultar;
 	$data['miframe_server()->software()'] = $ocultar;
 	// Oculta directorios
 	$que = [ $server->tempDir(), $server->script(false), $server->documentRoot() ];
 	$con = [ '[TEMP_DIR] ', 	 '[SCRIPT_FILENAME] ',	 '[DOCUMENT_ROOT] ' ];
 	foreach ($data as $k => $v) {
-		$data[$k] = trim(str_replace($que, $con, $v));
+		if (is_string($v)) {
+			$data[$k] = trim(str_replace($que, $con, $v));
+		}
 	}
 	foreach ($matches as $k => $v) {
 		$matches[$k] = trim(str_replace($que, $con, $v));
@@ -103,7 +105,7 @@ if (!$server->isLocalhost()) {
 	// Oculta variable
 	$variables['$script'] = '[SCRIPT_FILENAME]';
 	// Mensaje informativo
-	$aviso_ocultar = '<p><b>Importante:</b> Algunos valores se han ocultado por seguridad, pero son visibles para consultas desde Localhost.</p>';
+	$aviso_ocultar = '<p class="test-aviso"><b>Importante:</b> Algunos valores se han ocultado por seguridad, pero son visibles para consultas desde "localhost".</p>';
 }
 
 echo "<p>Variables usadas para crear el arreglo de muestra:</p>" . $aviso_ocultar;

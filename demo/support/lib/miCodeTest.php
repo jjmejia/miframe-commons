@@ -227,10 +227,17 @@ class miCodeTest {
 		if (is_array($data)) {
 			$info .= '<table cellspacing="0">';
 			foreach ($data as $k => $v) {
+				if (is_bool($v)) {
+					$v = ($v ? 'true' : 'false');
+				}
+				elseif (!is_numeric($v) && !is_float($v)) {
+					// NOTA: var_export() sobre float adiciona muchos decimales (Linux).
+					$v = var_export($v, true);
+				}
 				$info .= '<tr>' .
 					'<td><b>' . $k . '</b></td>' .
 					'<td class="dump-connect">=></td>' .
-					'<td>' . htmlentities(var_export($v, true)) . '</td>' .
+					'<td>' . htmlentities($v) . '</td>' .
 					'</tr>';
 			}
 			$info .= '</table>';

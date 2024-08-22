@@ -747,7 +747,7 @@ class ServerData extends Singleton {
 	 *
 	 * El directorio temporal se recupera (en su orden) de:
 	 *
-	 * - Valor indicado por el usuario.
+	 * - Valor indicado por el usuario (intenta crearlo si no existe).
 	 * - Valor registrado previamente.
 	 * - Directorio temporal del sistema.
 	 * - Directorio "Temp" a crear en el directorio Web.
