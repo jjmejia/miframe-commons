@@ -8,7 +8,7 @@
 
 include_once __DIR__ . '/support/lib/miCodeTest.php';
 
-$Test = new miCodeTest();
+$Test = new miCodeTest(false);
 
 // Ruta a los scripts
 $Test->config([
@@ -27,7 +27,7 @@ $Test->config([
 	]);
 
 // Cabezote de presentación
-$Test->start('miFrame\\Commons', 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.');
+$Test->start('miFrame\\Commons', 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.', '../../../index.php');
 
 ?>
 <ul>
