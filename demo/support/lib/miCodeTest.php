@@ -8,12 +8,14 @@
 
 class miCodeTest {
 
-	public function __construct() {
+	private $choices = [];
+
+	public function __construct(bool $relocate = true) {
 		// Inicializa manejo de sesión PHP
 		if (empty($_SESSION)) {
 			session_start();
 			// Valida si regresa al index
-			if (count($_SESSION) <= 0 && basename($_SERVER['SCRIPT_NAME']) !== 'index.php') {
+			if (count($_SESSION) <= 0 && $relocate) {
 				// Se borraron las variables de sesión
 				// Vuelve a a pagina de inicio inmediatamente anterior
 				echo '<script>window.location = "' . dirname(dirname($_SERVER['SCRIPT_NAME'])) . '"</script>';
@@ -94,29 +96,33 @@ class miCodeTest {
 	/**
 	 * URL home prefijado.
 	 */
-	public function home() {
+	public function home(string $default_home = '') {
 
-		$home = '';
 		if (!empty($_SESSION['MICODE_DEMO_HOME'])
 			&& strtolower(basename($_SESSION['MICODE_DEMO_HOME'])) !== strtolower(basename($_SERVER['SCRIPT_NAME']))) {
 			// Asigna el path usado por el script actual
-			$home = $_SESSION['MICODE_DEMO_HOME'];
+			$default_home = $_SESSION['MICODE_DEMO_HOME'];
 		}
 
-		return $home;
+		return $default_home;
 	}
 
 	/**
 	 * Presenta encabezado para la salida a pantalla.
 	 */
-	public function start(string $title, string $description = '') {
+	public function start(string $title, string $description = '', string $default_home = '') {
 
 		$estilos = $this->resourcesPath('/resources/css/tests.css');
 		$title_meta = strip_tags($title);
 		if ($description == '') {
-			$description = 'miCode-Manager Demos: ' . $title_meta . '.';
+			$description = 'miCode-Manager Demos -- ' . $title_meta . '.';
 		}
 		$description_meta = strip_tags($description);
+
+		$domain_name = 'miCode-Manager';
+		if (isset($_SERVER['SERVER_NAME']) && $_SERVER['SERVER_NAME'] !== 'localhost') {
+			$domain_name = $_SERVER['SERVER_NAME'];
+		}
 
 	?>
 <!DOCTYPE html>
@@ -136,10 +142,10 @@ class miCodeTest {
 <body>
 	<h1 class="test-encab">
 		<?= htmlentities($title) ?>
-		<small>miCode-Manager</small>
+		<small><?= $domain_name ?></small>
 	</h1>
 	<?php
-	$home = $this->home();
+	$home = $this->home($default_home);
 	if ($home !== '') {
 		echo '<a href="' . $home . '" class="test-back-home">
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
@@ -183,11 +189,9 @@ class miCodeTest {
 		echo "</div></body></html>";
 	}
 
-	/*
-	public function link(string $name, array $data) {
+	public function link(string $name, array $data = []) {
 
-		// $enlace_base = basename(miframe_server_get('SCRIPT_FILENAME'));
-		$enlace_base = '';
+		$enlace_base = miframe_server()->self();
 		if (count($data) > 0) {
 			$enlace_base .= '?' . http_build_query($data);
 		}
@@ -196,27 +200,41 @@ class miCodeTest {
 		return $enlace_base;
 	}
 
-	public function option(string $option, string $text_ok, string $text_nok, string &$link) {
+	public function choice(string $option, string $text_nok, string $text_ok) {
 
 		$retornar = false;
 
-		$data = $_REQUEST;
-		$info = $text_ok;
-		if (array_key_exists($option, $_REQUEST)) {
+		$data = $_GET;
+		$info = $text_nok;
+		if (array_key_exists($option, $data)) {
 			$retornar = true;
 			unset($data[$option]);
-			$info = $text_nok;
+			$info = $text_ok;
 		}
 		else {
-			$data[$option] = '';
+			$data[$option] = true;
 		}
 
-		if ($link != '') { $link .= ' | '; }
-		$link .= miframe_test_link($info, $data);
+		$this->choices[$option] = [ 'title' => $info, 'data' => $data ];
+
+		// if ($link != '') { $link .= ' | '; }
+		// $link .= $this->link($info, $data);
 
 		return $retornar;
 	}
-	*/
+
+	public function renderChoices($separator = ' | ') {
+
+		$text = '';
+		foreach ($this->choices as $option => $info) {
+			if ($text !== '') {
+				$text .= $separator;
+			}
+			$text .= $this->link($info['title'], $info['data']);
+		}
+
+		return $text;
+	}
 
 	/**
 	 * Despliega contenido de variable.
@@ -270,11 +288,6 @@ class miCodeTest {
 		$http_referer = '';
 		if (!empty($_SERVER['HTTP_REFERER'])) {
 			$http_referer = trim($_SERVER['HTTP_REFERER']);
-		}
-		// SI el SCRIPT_NAME está contenido en el REFERER, ignora pues es interno
-		if ($http_referer !== '' &&
-			strpos(strtolower(dirname($http_referer)), strtolower(dirname($_SERVER['SCRIPT_NAME']))) !== false) {
-			return;
 		}
 
 		$path = $_SESSION['MICODE_DEMO_LOGS'];

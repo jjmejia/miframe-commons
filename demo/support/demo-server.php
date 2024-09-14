@@ -17,8 +17,6 @@ $Test->start('miframe_server() y miframe_autoload()',
 	'Demos para ilustrar uso de los utilitarios <code>miframe_server()</code> y <code>miframe_autoload()</code> de la librería <code>miFrame\\Commons</code>'
 	);
 
-echo "<h2>miframe_server()</h2>";
-
 // Asocia clase a una variable para agilizar su uso.
 $server = miframe_server();
 $path_dummy = '../path/to/other/script/ignora/..';
@@ -26,6 +24,16 @@ $script = $server->script();
 
 // Fija directorio temporal
 $server->tempDir($Test->tmpDir(__DIR__ . '/tmp'));
+
+$force_no_localhost = false;
+// Retorna TRUE si simula consulta no localhost
+if ($server->isLocalhost()) {
+	$force_no_localhost = $Test->choice('emulate-nolocal', 'Simular vista no Localhost', 'Cancelar vista no Localhost');
+	// Visualiza opciones
+	echo '<p class="test-aviso"><b>Sólo para Localhost:</b> ' . $Test->renderChoices() . '</p>';
+}
+
+echo "<h2>miframe_server()</h2>";
 
 // Arreglo de muestras
 $data = array(
@@ -81,7 +89,7 @@ $namespaces = miframe_autoload()->namespaces();
 
 $aviso_ocultar = '';
 // Por razones de seguridad, se ocultan algunos valores cuando no se ejecuta desde localhost
-if (!$server->isLocalhost()) {
+if (!$server->isLocalhost() || $force_no_localhost) {
 	$ocultar = '[Restringido]';
 	// Información sensible
 	$data['miframe_server()->name()'] = $ocultar;
@@ -90,7 +98,7 @@ if (!$server->isLocalhost()) {
 	$data['miframe_server()->software()'] = $ocultar;
 	// Oculta directorios
 	$que = [ $server->tempDir(), $server->script(false), $server->documentRoot() ];
-	$con = [ '[TEMP_DIR] ', 	 '[SCRIPT_FILENAME] ',	 '[DOCUMENT_ROOT] ' ];
+	$con = [ '[TEMP_DIR]' . DIRECTORY_SEPARATOR, 	 '[SCRIPT_FILENAME]',	 '[DOCUMENT_ROOT]' . DIRECTORY_SEPARATOR ];
 	foreach ($data as $k => $v) {
 		if (is_string($v)) {
 			$data[$k] = trim(str_replace($que, $con, $v));

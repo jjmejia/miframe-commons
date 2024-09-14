@@ -11,8 +11,8 @@ Facilita la definición de enrutamientos para las clases requeridas.
 Ejemplo de uso:
 ````
 require_once 'miframe/commons/autoload.php';
-// Enruta todas las clases que comiencen con "miFrame\Commons\Classes\" al directorio indicado.
-miframe_autoload()->register('miFrame\Commons\Classes\*', __DIR__ . '/classes/*.php');
+// Enruta todas las clases que comiencen con "miFrame\Commons\Core\" al directorio indicado.
+miframe_autoload()->register('miFrame\Commons\Core\*', __DIR__ . '/classes/*.php');
 ````
 
 Más información sobre este helper está disponible en [docs/miframe-commons-autoload.md](https://github.com/jjmejia/miframe-commons/blob/main/docs/miframe-commons-autoload.md).

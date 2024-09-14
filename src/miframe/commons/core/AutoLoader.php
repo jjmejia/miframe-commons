@@ -12,7 +12,7 @@
  * @since Julio 2024
  */
 
-namespace miFrame\Commons\Classes;
+namespace miFrame\Commons\Core;
 
 use \miFrame\Commons\Patterns\Singleton;
 
@@ -40,10 +40,10 @@ class AutoLoader extends Singleton {
 	 * indicar que el resto del path asociado a la clase puede ser buscado en el Path de los
 	 * scripts. Por ejemplo, si define:
 	 *
-	 *     miFrame\Common\Classes\* = C:\classes\*.php
+	 *     miFrame\Common\Core\* = C:\core\*.php
 	 *
-	 * Cuando se solicita la Clase "miFrame\Common\Classes\ServerData" la busca en el archivo
-	 * "C:\classes\ServerData.php".
+	 * Cuando se solicita la Clase "miFrame\Common\Core\ServerData" la busca en el archivo
+	 * "C:\core\ServerData.php".
 	 *
 	 * Nota: No es necesario registrar las clases contenidas en el mismo directorio de esta
 	 * Clase (AutoLoader) ya que se adicionan automáticamente.

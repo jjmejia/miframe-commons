@@ -14,7 +14,7 @@ El enrutamiento se registra internamente en un arreglo asociativo del tipo:
 
     (Patrón de la Clase) => (Path en disco del script que define la Clase)
 
-En el ejemplo citado, al invocar la Clase `miFrame\Commons\Classes\ServerData` se buscará su declaración en el archivo `commons\Classes\ServerData.php`. Nótese que cuando se usa el carácter "\*", este siempre debe ir al final del Patrón de la Clase y todo valor abarcado por este carácter (`Classes\ServerData` en el ejemplo) es trasladado al path en disco, que puede (debe) también incluir el "\*" y usarlo para reflejar su contenido como parte de la ruta de archivo a buscar.
+En el ejemplo citado, al invocar la Clase `miFrame\Commons\Core\ServerData` se buscará su declaración en el archivo `commons\Core\ServerData.php`. Nótese que cuando se usa el carácter "\*", este siempre debe ir al final del Patrón de la Clase y todo valor abarcado por este carácter (`Classes\ServerData` en el ejemplo) es trasladado al path en disco, que puede (debe) también incluir el "\*" y usarlo para reflejar su contenido como parte de la ruta de archivo a buscar.
 
 ## Métodos disponibles
 
