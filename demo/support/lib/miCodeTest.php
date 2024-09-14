@@ -8,6 +8,8 @@
 
 class miCodeTest {
 
+	private $choices = [];
+
 	public function __construct(bool $relocate = true) {
 		// Inicializa manejo de sesión PHP
 		if (empty($_SESSION)) {
@@ -187,11 +189,9 @@ class miCodeTest {
 		echo "</div></body></html>";
 	}
 
-	/*
-	public function link(string $name, array $data) {
+	public function link(string $name, array $data = []) {
 
-		// $enlace_base = basename(miframe_server_get('SCRIPT_FILENAME'));
-		$enlace_base = '';
+		$enlace_base = miframe_server()->self();
 		if (count($data) > 0) {
 			$enlace_base .= '?' . http_build_query($data);
 		}
@@ -200,27 +200,41 @@ class miCodeTest {
 		return $enlace_base;
 	}
 
-	public function option(string $option, string $text_ok, string $text_nok, string &$link) {
+	public function choice(string $option, string $text_nok, string $text_ok) {
 
 		$retornar = false;
 
-		$data = $_REQUEST;
-		$info = $text_ok;
-		if (array_key_exists($option, $_REQUEST)) {
+		$data = $_GET;
+		$info = $text_nok;
+		if (array_key_exists($option, $data)) {
 			$retornar = true;
 			unset($data[$option]);
-			$info = $text_nok;
+			$info = $text_ok;
 		}
 		else {
-			$data[$option] = '';
+			$data[$option] = true;
 		}
 
-		if ($link != '') { $link .= ' | '; }
-		$link .= miframe_test_link($info, $data);
+		$this->choices[$option] = [ 'title' => $info, 'data' => $data ];
+
+		// if ($link != '') { $link .= ' | '; }
+		// $link .= $this->link($info, $data);
 
 		return $retornar;
 	}
-	*/
+
+	public function renderChoices($separator = ' | ') {
+
+		$text = '';
+		foreach ($this->choices as $option => $info) {
+			if ($text !== '') {
+				$text .= $separator;
+			}
+			$text .= $this->link($info['title'], $info['data']);
+		}
+
+		return $text;
+	}
 
 	/**
 	 * Despliega contenido de variable.

@@ -1,7 +1,8 @@
 Leame.txt
-src/miframe/common
-src/miframe/file
-src/miframe/interface
-src/miframe/utils
-src/miframe/admin
-src/miframe/micode-repository.ini
+miframe-commons.code-workspace
+demo/logs
+demo/tmp
+docs/*.txt
+src/miframe/commons/back
+* copy.*
+demo/footer.htm
