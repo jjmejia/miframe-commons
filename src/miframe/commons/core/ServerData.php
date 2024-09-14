@@ -12,13 +12,15 @@
  * @since Julio 2024
  */
 
-namespace miFrame\Commons\Classes;
+namespace miFrame\Commons\Core;
 
-use Error;
+// use Error;
 use \miFrame\Commons\Patterns\Singleton;
 use \miFrame\Commons\Traits\GetLocalData;
+// use \miFrame\Commons\Core\GetLocalData;
 
 class ServerData extends Singleton {
+// class ServerData extends GetLocalData {
 
 	/**
 	 * Definiciones y métodos a usar para manejo de datos locales.
@@ -54,12 +56,14 @@ class ServerData extends Singleton {
 	/**
 	 * @var array $dir_white_list Listado de directorios permitidos para crear directorios.
 	 */
-	private array $dir_white_list = array();
+	private array $dir_white_list = [];
 
 	/**
 	 * @var array $cache_path Cache de paths corregidos para agilizar procesos repetitivos.
 	 */
-	private array $cache_path = array();
+	private array $cache_path = [];
+
+	// protected function __construct() { }
 
 	/**
 	 * Valor de elemento contenido en la variable superglobal $_SERVER de PHP.
@@ -663,7 +667,7 @@ class ServerData extends Singleton {
 	 *
 	 * @param string $path Directorio existente.
 	 */
-	public function accessDir(string $path) {
+	public function addAccessDir(string $path) {
 
 		if (is_dir($path)) {
 			$path = realpath($path) . DIRECTORY_SEPARATOR;
@@ -765,11 +769,14 @@ class ServerData extends Singleton {
 			$pathname = $this->purgeFilename($pathname);
 			if ($pathname !== '' && !is_dir($pathname)) {
 				// Intenta crear el directorio
+				// (Falla si el directorio no es hijo del actual temporal o
+				// del directorio web. Para fijar un temporal en lugar diferente,
+				// asegurese que el directorio indicado YA exista).
 				$this->mkdir($pathname);
 			}
 			$path = realpath($pathname);
 			if ($path != '' && is_dir($path)) {
-				$this->temp_directory = $path;
+				$this->temp_directory = $path . DIRECTORY_SEPARATOR;
 			}
 			else {
 				// El path indicado por el usuario no es valido
@@ -803,8 +810,8 @@ class ServerData extends Singleton {
 			throw new \Exception('No pudo recuperar un directorio temporal valido. Revise la configuración del Sistema.');
 		}
 
-		// Adiciona separador siempre
-		$this->temp_directory .= DIRECTORY_SEPARATOR;
+		// Adiciona separador siempre para las opciones 3, 4 y 5
+		// $this->temp_directory .= DIRECTORY_SEPARATOR;
 
 		return $this->temp_directory;
 	}

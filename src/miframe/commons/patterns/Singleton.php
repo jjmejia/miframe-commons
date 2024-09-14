@@ -2,6 +2,10 @@
 /**
  * Clase usada para definir patrones Singleton.
  *
+ * Permite crear una clase como una extensión de este patrón (con lo cual
+ * la clase creada automáticamente pasa a ser unSingleton) o asociando un
+ * objeto al modelo para que se comporte como unSingleton.
+ *
  * Referencias:
  * - https://github.com/lordvadercito/DesignPatternsPHP/blob/master/Singleton/Singleton.php
  * - https://refactoring.guru/es/design-patterns/singleton/php/example
@@ -39,10 +43,22 @@ class Singleton
     }
 
     /**
-     * No se permite la creación manual de la Clase usando "new".
-     * Se define el método __construct() como privado para realizar este bloqueo.
+     * Asocia una instancia previa creación.
      */
-    private function __construct()
+    public static function assocInstance(string $cls)
+    {
+        if (!isset(self::$instances[$cls])) {
+            static::$instances[$cls] = new $cls();
+        }
+
+        return static::$instances[$cls];
+    }
+
+    /**
+     * No se permite la creación manual de la Clase usando "new".
+     * Se define el método __construct() como protected para realizar este bloqueo.
+     */
+    protected function __construct()
     {
     }
 

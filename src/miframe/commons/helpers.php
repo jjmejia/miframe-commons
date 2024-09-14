@@ -7,12 +7,12 @@
  * @since Julio 2024
  */
 
-use miFrame\Commons\Classes\ServerData;
+use miFrame\Commons\Core\ServerData;
 
 /**
  * Retorna Clase para manejo de valores registrados en $_SERVER y  funcionalidades asociadas.
  *
- * @return object Objeto miFrame\Commons\Classes\ServerData.
+ * @return object Objeto miFrame\Commons\Core\ServerData.
  */
 function miframe_server() : ServerData {
 

@@ -19,7 +19,7 @@ echo $server->get('REQUEST_METHOD');
 
 A la fecha (agosto/2024) la clase ServerData proporciona los siguientes métodos públicos:
 
-* `accessDir` -- Adiciona paths al listado de directorios permitidos para crear subdirectorios.
+* `addAccessDir` -- Adiciona paths al listado de directorios permitidos para crear subdirectorios.
 * `browser` -- Provee información relativa al navegador Web (browser) usado por el usuario.
 * `checkPoint` -- Tiempo transcurrido desde la anterior invocación a este método.
 * `client` -- Dirección IP del cliente remoto.
