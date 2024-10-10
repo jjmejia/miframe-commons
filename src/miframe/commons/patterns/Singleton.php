@@ -16,12 +16,19 @@
 
 namespace miFrame\Commons\Patterns;
 
-class Singleton
+abstract class Singleton
 {
     /**
      * @var array $instances Referencias a las instancias singleton.
      */
     protected static $instances = array();
+
+    /**
+     * Cada clase a usar este Singleton debe definir su método de
+     * inicialización alterno al __construct() para prevenir que esas
+     * clases sean instanciadas usando "new".
+     */
+    abstract protected function singletonStart();
 
     /**
      * Retorna la instancia actual, creada solamente una vez por tipo de Clase hija.
@@ -32,23 +39,13 @@ class Singleton
      *
      * @return self
      */
-    public static function getInstance()
+    final public static function getInstance()
     {
         $cls = static::class;
         if (!isset(self::$instances[$cls])) {
             static::$instances[$cls] = new static;
-        }
-
-        return static::$instances[$cls];
-    }
-
-    /**
-     * Asocia una instancia previa creación.
-     */
-    public static function assocInstance(string $cls)
-    {
-        if (!isset(self::$instances[$cls])) {
-            static::$instances[$cls] = new $cls();
+            // Ejecuta inicialización de la instancia
+            static::$instances[$cls]->singletonStart();
         }
 
         return static::$instances[$cls];
@@ -56,14 +53,15 @@ class Singleton
 
     /**
      * No se permite la creación manual de la Clase usando "new".
-     * Se define el método __construct() como protected para realizar este bloqueo.
+     * Tampoco de ninguna clase que extienda este patrón, esto para
+     * prevenir la existencia de múltiples versiones del mismo objeto.
      */
-    protected function __construct()
+    private function __construct()
     {
     }
 
     /**
-     * Previene la clonación de esta instancia.
+     * Previene la clonación de esta instancia, no de sus hijas.
      */
     private function __clone()
     {

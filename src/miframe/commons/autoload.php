@@ -9,7 +9,7 @@
  * @since Julio 2024
  */
 
-use miFrame\Commons\Classes\AutoLoader;
+use miFrame\Commons\Core\AutoLoader;
 
 /**
  * Es necesario cargar directamente las librerías requeridas.
@@ -17,13 +17,13 @@ use miFrame\Commons\Classes\AutoLoader;
  * a esta altura deben cargarse manualmente cada librería requerida.
  */
 include_once __DIR__ . '/patterns/Singleton.php';
-include_once __DIR__ . '/classes/AutoLoader.php';
+include_once __DIR__ . '/core/AutoLoader.php';
 
 /**
  * Retorna Clase para para la gestión de la autocarga de scripts requeridos para la creación
  * de Clases PHP.
  *
- * @return object Objeto miFrame\Commons\Classes\AutoLoader.
+ * @return object Objeto miFrame\Commons\Core\AutoLoader.
  */
 function miframe_autoload() : AutoLoader {
 	return AutoLoader::getInstance();

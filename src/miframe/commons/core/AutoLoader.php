@@ -30,6 +30,19 @@ class AutoLoader extends Singleton {
 	private array $matches = array();
 
 	/**
+	 * Inicialización de la clase Singleton.
+	 */
+	protected function singletonStart() {
+		// Registra este modelo
+		// __CLASS__ usa "\" como separador de segmentos. En Linux, usar
+		// dirname() con ese separador retorna ".". Por tanto, empleamos
+		// una alternativa diferente, a saber:
+		$class_pattern = 'miFrame\\Commons\\*';
+		$file_path = dirname(__DIR__); // Apunta al directorio "commons"
+		$this->register($class_pattern, $file_path . DIRECTORY_SEPARATOR . '*.php');
+	}
+
+	/**
 	 * Registra los namespaces que identifican las Clases PHP y los archivos donde se definen.
 	 *
 	 * Los namespaces a registrar son del tipo:
@@ -83,16 +96,6 @@ class AutoLoader extends Singleton {
 			$path = $namespaces[$class];
 		}
 		else {
-			// Registra este modelo
-			if (count($this->namespaces) <= 0) {
-				// __CLASS__ usa "\" como separador de segmentos. En Linux, usar
-				// dirname() con ese separador retorna ".". Por tanto, empleamos
-				// una alternativa diferente, a saber:
-				// $class_pattern = dirname(dirname(__CLASS__));
-				$class_pattern = 'miFrame\\Commons\\*';
-				$file_path = dirname(__DIR__); // Apunta al directorio "commons"
-				$this->register($class_pattern, $file_path . DIRECTORY_SEPARATOR . '*.php');
-			}
 			// Busca parciales
 			foreach ($this->namespaces as $nameclass => $pathclass) {
 				if (substr($nameclass, -1) == '*') {

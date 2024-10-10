@@ -28,6 +28,8 @@ class ServerData extends Singleton {
 	 */
 	use GetLocalData;
 
+	private $is_web = false;
+
 	/**
 	 * @var string $client_ip	Registra localmente la dirección IP del cliente Web.
 	 * 							Para consultas de Consola registra "cli".
@@ -63,7 +65,16 @@ class ServerData extends Singleton {
 	 */
 	private array $cache_path = [];
 
-	// protected function __construct() { }
+	/**
+	 * Inicialización de la clase Singleton.
+	 */
+	protected function singletonStart() {
+
+		// REMOTE_ADDR:
+		// La dirección IP desde donde el usuario está viendo la página actual.
+		// Si se consulta desde Consola, no es asignada por el servidor.
+		$this->is_web = !empty($this->get('REMOTE_ADDR', false));
+	}
 
 	/**
 	 * Valor de elemento contenido en la variable superglobal $_SERVER de PHP.
@@ -85,11 +96,7 @@ class ServerData extends Singleton {
 	 * @return bool TRUE si está consultando por WEB, FALSE si es por consola (cli).
 	 */
 	public function isWeb() : bool {
-
-		// REMOTE_ADDR:
-		// La dirección IP desde donde el usuario está viendo la página actual.
-		// Si se consulta desde Consola, no es asignada por el servidor.
-		return !empty($this->get('REMOTE_ADDR', false));
+		return $this->is_web;
 	}
 
 	/**
@@ -101,37 +108,38 @@ class ServerData extends Singleton {
 	 */
 	public function client() : string {
 
-		if (!$this->isWeb()) {
-			$this->client_ip = 'cli';
-		}
-		elseif ($this->client_ip === '') {
-			// Recupera dirección IP.
-
-			// HTTP_X_FORWARDED_FOR:
-			// Usado en vez de REMOTE_ADDR cuando se consulta detrás de un proxy server.
-			// Puede contener múltiples IPs de proxies por los que se ha pasado.
-			// Solamente la IP del último proxy (última IP de la lista) es de fiar.
-			// ( https://stackoverflow.com/questions/11452938/how-to-use-http-x-forwarded-for-properly )
-			// Si no se emplean proxys para la consulta, retorna vacio.
-			$proxys = $this->get('HTTP_X_FORWARDED_FOR');
-			if (!empty($proxys)){
-				$proxy_list = explode (",", $proxys);
-				$this->client_ip = trim(end($proxy_list));
+		if ($this->client_ip === '') {
+			// Recupera dirección IP
+			if (!$this->isWeb()) {
+				$this->client_ip = 'cli';
 			}
 			else {
-				// REMOTE_ADDR:
-				// La dirección IP desde donde el usuario está viendo la página actual.
-				$this->client_ip = $this->get('REMOTE_ADDR');
-				if (empty($this->client_ip)) {
-					// HTTP_CLIENT_IP:
-					// Opcional para algunos servidores Web en remplazo de REMOTE_ADDR.
-					$this->client_ip = $this->get('HTTP_CLIENT_IP');
+				// HTTP_X_FORWARDED_FOR:
+				// Usado en vez de REMOTE_ADDR cuando se consulta detrás de un proxy server.
+				// Puede contener múltiples IPs de proxies por los que se ha pasado.
+				// Solamente la IP del último proxy (última IP de la lista) es de fiar.
+				// ( https://stackoverflow.com/questions/11452938/how-to-use-http-x-forwarded-for-properly )
+				// Si no se emplean proxys para la consulta, retorna vacio.
+				$proxys = $this->get('HTTP_X_FORWARDED_FOR');
+				if (!empty($proxys)){
+					$proxy_list = explode (",", $proxys);
+					$this->client_ip = trim(end($proxy_list));
 				}
-			}
+				else {
+					// REMOTE_ADDR:
+					// La dirección IP desde donde el usuario está viendo la página actual.
+					$this->client_ip = $this->get('REMOTE_ADDR');
+					if (empty($this->client_ip)) {
+						// HTTP_CLIENT_IP:
+						// Opcional para algunos servidores Web en remplazo de REMOTE_ADDR.
+						$this->client_ip = $this->get('HTTP_CLIENT_IP');
+					}
+				}
 
-			// En caso que retorne un nombre (como "localhost") se asegura esté en
-			// minusculas para facilitar comparaciones.
-			$this->client_ip = strtolower($this->client_ip);
+				// En caso que retorne un nombre (como "localhost") se asegura esté en
+				// minusculas para facilitar comparaciones.
+				$this->client_ip = strtolower($this->client_ip);
+			}
 		}
 
 		return $this->client_ip;
