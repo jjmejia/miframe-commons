@@ -29,14 +29,18 @@ $Test->config([
 // Cabezote de presentación
 $Test->start('miFrame\\Commons', 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.', '../../../index.php');
 
-?>
-<ul>
-	<li>
-		<a href="support/demo-server.php">miframe_server() y miframe_autoload()</a>
-	</li>
-</ul>
+$base = dirname($_SERVER['SCRIPT_NAME']) . '/';
 
-<?php
+$links = [
+	'support/demo-server.php' => 'miframe_server() y miframe_autoload()',
+	'support/demo-show.php' => 'miframe_show() y miframe_box()'
+];
+
+echo '<ul>' . PHP_EOL;
+foreach ($links as $href => $title) {
+	echo "<li><a href=\"{$base}{$href}\">{$title}</a></li>" . PHP_EOL;
+}
+echo '</ul>' . PHP_EOL;
 
 $Test->visitorLog('demo-index');
 
