@@ -1,0 +1,89 @@
+/* Estilos para miframe-box */
+
+.miframe-box {
+	font-family: Segoe UI, Arial;
+	font-size: 16px;
+	margin: 15px 0;
+	padding: 16px;
+	border: none;
+	border-left: 8px solid gray;
+	border-radius:5px;
+	background-color: #f4f4f4;
+
+	.box-footnote {
+		margin-top: 20px;
+		padding-top: 10px;
+		border-top: 1px solid #ccc;
+		font-size: 14px;
+	}
+
+	.box-message {
+		max-width: 100%;
+		max-height: 200px;
+		overflow: auto;
+	}
+
+	.box-title {
+		margin: 0;
+		font-size: 16pt;
+		font-weight: 500;
+		padding-bottom: 18px;
+		color: #333;
+	}
+}
+
+.box-mute {
+	background-color: #ffffff;
+	border: 1px solid #ccc;
+
+	.box-footnote {
+		background-color: #f4f4f4;
+		color: #555;
+		padding:10px;
+		border: none;
+		border-radius: 4px;
+	}
+
+	.box-message {
+		max-width: 100%;
+		max-height: fit-content;
+		overflow: visible;
+		font-size: 16px;
+	}
+}
+
+.box-alert {
+	border-color: #e74c3c;
+}
+
+.box-info {
+	border-color: blue;
+}
+
+.box-warning {
+	border-color: #f1c40f;
+}
+
+.box-critical {
+	border-color: none;
+
+	.box-message {
+		max-width: 100%;
+		max-height: none;
+		overflow: auto;
+		font-size: 18px;
+	}
+
+	.box-title {
+		font-size: 18pt;
+		font-weight: 600;
+		margin-bottom: 20px;
+		padding: 10px 20px 15px 20px;
+		background-color: #943126;
+		color: #ffffff;
+	}
+}
+
+.miframe-box.box-critical {
+	border:none;
+}
