@@ -62,7 +62,7 @@ $tipos = [
 // 7. Tipo critical
 foreach ($tipos as $class => $title) {
 	if ($class == 'critical') {
-		$showme->footer(__FILE__ . ':' . __LINE__);
+		$showme->footer('Ocurrido en ' . basename(__FILE__) . ' línea ' . __LINE__);
 	}
 	$showme->title('Tipo ' . $title)
 	->body("Mensaje creado usando <code>miframe_show()->class('{$class}')</code>.")
