@@ -1,0 +1,12 @@
+.box-personalizado {
+	background:yellow;
+	border-color:goldenrod;
+
+	.box-title {
+		color: darkred;
+	}
+
+	code {
+		background-color: gold;
+	}
+}
