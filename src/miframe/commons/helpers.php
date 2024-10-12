@@ -7,6 +7,7 @@
  * @since Julio 2024
  */
 
+use miFrame\Commons\Core\HTMLSupport;
 use miFrame\Commons\Core\ServerData;
 use miFrame\Commons\Core\ShowMe;
 
@@ -18,6 +19,14 @@ use miFrame\Commons\Core\ShowMe;
 function miframe_server() : ServerData {
 
 	return ServerData::getInstance();
+}
+
+/**
+ * HTML Support
+ */
+function miframe_html() : HTMLSupport {
+
+	return HTMLSupport::getInstance();
 }
 
 /**
