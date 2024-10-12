@@ -29,7 +29,7 @@ class HTMLSupport {
 	 *
 	 * @param string $filename Ubicación del archivo CSS.
 	 */
-	public function setFilenameCSS(string $filename) {
+	public function addFilenameCSS(string $filename) {
 
 		$filename = trim($filename);
 		if ($filename !== '' && !$this->isURL($filename)) {
@@ -141,12 +141,16 @@ class HTMLSupport {
 	private function createCSSCode(string $key, string $filename, bool $return = false) : string {
 
 		$text = '';
+
+		// Si ya fue publicado, ignora nuevo contenido
+		if (array_key_exists($key, $this->published)) { return $text; }
+
 		if (!$return || $this->isURL($filename)) {
 			// REmueve el DOCUMENT_ROOT. Si no existe, no tiene nada que retornar pues
 			// el archivo no sería accequible al navegador.
 			$resource = $this->getURLFromPath($filename);
 			if ($resource != '') {
-				$text .= '<link rel="stylesheet" href="' . $resource . '">' . PHP_EOL;
+				$text .= PHP_EOL . '<link rel="stylesheet" href="' . $resource . '">' . PHP_EOL;
 			}
 		}
 		elseif ($filename !== '' && is_file($filename)) {

@@ -22,7 +22,7 @@ class ShowMeRenderer {
 
 	/**
 	 * @var string $emulate_console_class	Nombre de la clase usada para emular la presentación
-	 * 										de consola en un navegador Web.
+	 * 										de consola en un navegador Web (por defecto usa "miframe-box-console").
 	 */
 	protected $emulate_console_class = '';
 
@@ -73,26 +73,11 @@ class ShowMeRenderer {
 	 * @return string Path de archivo físico o URL de un recurso remoto (incluye el prefijo "url:").
 	 */
 	public function cssFilename() : string {
+
 		if (is_file($this->css_filename)) {
 			$this->css_filename = realpath($this->css_filename);
 		}
 		return $this->css_filename;
-	}
-
-	/**
-	 * Modifica el texto a mostrar en pantalla para emular la salida de consola.
-	 *
-	 * @param string $text	Texto a modificar.
-	 * @return string HTML.
-	 */
-	public function emulateConsole(string &$text) {
-
-		// $tag = '<pre style="margin:10px 0;padding:10px;background:#000;color:#f4f4f4;max-width:100%;overflow:auto">';
-		$class = $this->emulate_console_class;
-		if ($class == '') {
-			$class = 'miframe-box-console';
-		}
-		$text = "<pre class=\"{$class}\">" . $text . '</pre>';
 	}
 
 	/**

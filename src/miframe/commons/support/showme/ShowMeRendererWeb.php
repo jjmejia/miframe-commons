@@ -17,19 +17,6 @@ class ShowMeRendererWeb extends ShowMeRenderer {
 	}
 
 	/**
-	 * Caja de texto regular (sin clase asociada).
-	 *
-	 * @param string $message 	Mensaje a mostrar.
-	 * @param string $title 	Título (Opcional).
-	 * @param string $footnote 	Texto de menor prioridad (Opcional).
-	 * @return string 			HTML.
-	 */
-	public function regular(string $message, string $title = '', string $footnote = '') : string {
-
-		return $this->box('mute', $message, $title, $footnote);
-	}
-
-	/**
 	 * Caja de texto para mensajes de error críticos.
 	 *
 	 * @param string $message 	Mensaje a mostrar.
@@ -44,5 +31,23 @@ class ShowMeRendererWeb extends ShowMeRenderer {
 		}
 
 		return $this->box('critical', $message, $title, $footnote);
+	}
+
+	/**
+	 * Caja de texto estandar.
+	 *
+	 * @param string $class 	Tipo de mensaje.
+	 * @param string $body 		Mensaje a mostrar.
+	 * @param string $title 	Título (Opcional).
+	 * @param string $footnote 	Texto de menor prioridad (Opcional).
+	 * @return string 			HTML para consultas web, texto regular para consola.
+	 */
+	public function box(string $class, string $body, string $title = '', string $footnote = '') : string {
+
+		if ($class == '') {
+			$class = 'mute';
+		}
+
+		return parent::box($class, $body, $title, $footnote);
 	}
 }

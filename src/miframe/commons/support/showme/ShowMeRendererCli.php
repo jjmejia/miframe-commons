@@ -25,14 +25,8 @@ class ShowMeRendererCli extends ShowMeRenderer {
 	 */
 	public function __construct() {
 
-		// Estilos a usar para esta caja
-		$this->css_filename = __DIR__ . '/../../resources/emulate.css';
-
-		// Clase a aplicar al simular salida por consola en el navegador web.
-		// $this->emulate_console_class = 'miframe-box-console';
-
 		// Número de carácteres a mostrar por línea.
-		$this->consoleWidth = 120;
+		$this->consoleWidth = 90;
 
 		// Remplazos por defecto
 		$this->replace('a', 	['[', ']']);
@@ -110,11 +104,12 @@ class ShowMeRendererCli extends ShowMeRenderer {
 	 */
 	public function box(string $class, string $body, string $title = '', string $footnote = '') : string {
 
+		$mark = '';
 		if ($class != '') {
-			$class = strtoupper(trim($class)) . '>';
+			$mark = strtoupper(trim($class)) . '>';
 		}
 
-		return $this->localBox($class, '-', $body, $title, $footnote);
+		return $this->localBox($mark, '-', $body, $title, $footnote);
 	}
 
 	/**
