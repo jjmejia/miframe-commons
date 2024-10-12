@@ -33,7 +33,8 @@ $base = dirname($_SERVER['SCRIPT_NAME']) . '/';
 
 $links = [
 	'support/demo-server.php' => 'miframe_server() y miframe_autoload()',
-	'support/demo-show.php' => 'miframe_show() y miframe_box()'
+	'support/demo-html.php' => 'miframe_html()',
+	// 'support/demo-show.php' => 'miframe_show() y miframe_box()'
 ];
 
 echo '<ul>' . PHP_EOL;
