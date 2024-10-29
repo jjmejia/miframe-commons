@@ -28,21 +28,11 @@ class HTMLSupport extends Singleton {
 	private string $last_key = '';
 
 	/**
-	 * @var ServerData $server Objeto miframe_server()
-	 */
-	private ?ServerData $server = null;
-
-	/**
 	 * Inicialización de la clase Singleton.
 	 */
 	protected function singletonStart() {
 
-		// $this->cache_path = miframe_server()->tempDir();
-		// createTempSubdir()
-
 		$this->cssClear();
-
-		$this->server = miframe_server();
 	}
 
 	/**
@@ -62,15 +52,16 @@ class HTMLSupport extends Singleton {
 			$filename = realpath($filename);
 			$src = 'locals';
 			if (!$inline) {
+				$server = miframe_server();
 				// En este caso, debe intentar incluirlo como remoto
-				$path = $this->server->removeDocumentRoot($filename);
+				$path = $server->removeDocumentRoot($filename);
 				if ($path !== false) {
 					// Pudo obtener la URL
 					// Adiciona a listado de publicados el path real
 					$key = $this->keyPath($filename, $src);
 					$this->published['css'][$key] = true;
 					// Asegura formato URL remoto
-					$filename = '/' . $this->server->purgeURLPath($path);
+					$filename = '/' . $server->purgeURLPath($path);
 					// Modifica el calificador
 					$src = 'remote';
 				}
@@ -99,8 +90,6 @@ class HTMLSupport extends Singleton {
 
 		$path = trim($path);
 		if ($path !== '') {
-			// Si no contiene "://" lo registra en el servidor local?
-			// Se asegura siempre de registrar correctamente el path fisico
 			$this->addResourceCSS($path, 'remote');
 		}
 	}
