@@ -6,3 +6,4 @@ docs/*.txt
 src/miframe/commons/back
 * copy.*
 demo/footer.htm
+demo/demo-config-dev.php

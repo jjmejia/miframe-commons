@@ -8,8 +8,11 @@
 
 include_once __DIR__ . '/demo-config.php';
 
+// Define home principal
+$Test->config([ 'home' => '/' ]);
+
 // Cabezote de presentación
-$Test->start('miFrame\\Commons', 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.', '../../../index.php');
+$Test->start('miFrame\\Commons', 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.');
 
 $base = dirname($_SERVER['SCRIPT_NAME']) . '/';
 

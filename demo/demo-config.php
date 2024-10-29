@@ -4,17 +4,14 @@ include_once __DIR__ . '/support/lib/miCodeTest.php';
 
 $Test = new miCodeTest();
 
-// Los recursos se encuentran asociados al directorio /demo/
-$arreglo = explode('/demo/', $_SERVER['SCRIPT_NAME']);
-
-// Ruta a los scripts
+// Configuración general
 $Test->config([
 	// Path con el código fuente
 	'src-path' => __DIR__ . '/../src',
 	// URL para descargar recursos web
-	'url-resources' => $arreglo[0] . '/demo/support',
+	'url-resources' => '/software/miframe-commons/demo/support',
 	// Registrar página de inicio
-	'home' => $arreglo[0] . '/demo/',
+	'home' => '/software/miframe-commons/demo/',
 	// Pie de página adicional (si existe)
 	'footer' => __DIR__ . '/footer.htm',
 	// Visitors log
@@ -25,4 +22,7 @@ $Test->config([
 	'github-repo' => 'https://github.com/jjmejia/miframe-commons/'
 	]);
 
-unset($arreglo);
+// Configuraciones adicionales
+if (file_exists(__DIR__ . '/demo-config-dev.php')) {
+	include_once __DIR__ . '/demo-config-dev.php';
+}

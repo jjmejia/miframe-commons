@@ -10,21 +10,12 @@ class miCodeTest {
 
 	private $config = [];
 	private $choices = [];
-	private $domain_name = '';
 
 	public function __construct() {
 
 		// Inicializa manejo de sesión PHP
 		if (empty($_SESSION)) {
 			session_start();
-		}
-
-		// Dominio
-		$this->domain_name = 'miCode-Manager';
-		if (isset($_SERVER['SERVER_NAME']) &&
-			$_SERVER['SERVER_NAME'] !== 'localhost'
-			) {
-			$this->domain_name = $_SERVER['SERVER_NAME'];
 		}
 
 		// Inicializa config
@@ -37,6 +28,8 @@ class miCodeTest {
 	private function initConfig() {
 
 		$this->config = array(
+			// Identificador del Dominio principal
+			'domain-name' => '',
 			// Path con el código fuente
 			'src-path' => '', 		// 'MICODE_DEMO_INCLUDE_PATH',
 			// URL para descargar recursos web
@@ -115,23 +108,9 @@ class miCodeTest {
 	}
 
 	/**
-	 * URL home prefijado.
-	 */
-	public function home(string $default_home = '') {
-
-		if (!empty($this->config['home'])
-			&& strtolower(basename($this->config['home'])) !== strtolower(basename($_SERVER['SCRIPT_NAME']))) {
-			// Asigna el path usado por el script actual
-			$default_home = $this->config['home'];
-		}
-
-		return $default_home;
-	}
-
-	/**
 	 * Presenta encabezado para la salida a pantalla.
 	 */
-	public function start(string $title, string $description = '', string $default_home = '') {
+	public function start(string $title, string $description = '') {
 
 		$estilos = $this->resourcesPath('/resources/css/tests.css');
 		$title_meta = strip_tags($title);
@@ -139,6 +118,11 @@ class miCodeTest {
 			$description = 'miCode-Manager Demos -- ' . $title_meta . '.';
 		}
 		$description_meta = strip_tags($description);
+
+		// Designa dominio por defecto si no ha definido alguno
+		if ($this->config['domain-name'] == '' && !empty($_SERVER['SERVER_NAME'])) {
+			$this->config['domain-name'] = $_SERVER['SERVER_NAME'];
+		}
 
 		if (empty($_SERVER['REMOTE_ADDR'])) {
 			// Salida por consola
@@ -164,12 +148,12 @@ class miCodeTest {
 <body>
 	<h1 class="test-encab">
 		<?= htmlentities($title) ?>
-		<small><?= $this->domain_name ?></small>
+		<small><?= $this->config['domain-name'] ?></small>
 	</h1>
 	<?php
-	$home = $this->home($default_home);
-	if ($home !== '') {
-		echo '<a href="' . $home . '" class="test-back-home">
+
+	if (!empty($this->config['home'])) {
+		echo '<a href="' . $this->config['home'] . '" class="test-back-home">
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
 <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
 </svg> Regresar</a>';
@@ -226,7 +210,7 @@ class miCodeTest {
 		$this->updateVisitorLog();
 
 		echo '<div class="foot">' .
-			'<b>' . $this->domain_name . '</b> &copy; ' . date('Y') . '.' .
+			'<b>' . $this->config['domain-name'] . '</b> &copy; ' . date('Y') . '.' .
 			$this->footer() .
 			'</div>' . PHP_EOL .
 			'</div>' . // Contenedor "test-content" abierto en $this->start()
