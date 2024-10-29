@@ -6,9 +6,8 @@
  * @since Octubre 2024
  */
 
-include_once __DIR__ . '/lib/miCodeTest.php';
-
-$Test = new miCodeTest();
+// Configuración de demo, crea objeto $Test
+include_once __DIR__ . '/../demo-config.php';
 
 include_once $Test->includePath('/miframe/commons/autoload.php');
 include_once $Test->includePath('/miframe/commons/helpers.php');
@@ -21,19 +20,6 @@ $Test->start(
 // Asocia clase a una variable para agilizar su uso.
 $html = miframe_html();
 
-// En el caso de los estilos remotos, cuando se indique su descarga,
-// el sistema lo intentará y generará un archivo de control para
-// prevenir múltiples descargas del mismo recurso. Este caché se preservará
-// el número de segundos indicado como parámetro o cómo configuración
-// global, usando el método:
-
-// $html->cacheTimeOut(3600);
-
-// Por defecto, se usará el directorio temporal para registro del caché,
-// pero puede indicarse un path alterno, esto mediante el método:
-
-// $html->cachePath($path);
-
 // Adiciona un archivo CSS existente en disco
 $html->cssLocal(__DIR__ . '/demo-html-files/uno.css');
 
@@ -45,18 +31,13 @@ $html->cssLocal(__DIR__ . '/demo-html-files/dos.css', true);
 $url = miframe_server()->relativePath('demo-html-files/tres.css');
 $html->cssRemote($url);
 
-// Adiciona un recurso CSS indicando su URL, se publica
-// capturando su contenido e incluyendolo en línea. Si no
-// es posible, lo registra remoto.
-// $url = miframe_server()->relativePath('demo-html-files/tres.css');
-// $html->cssRemote($url, 3600);
-
 // Adiciona un recurso CSS directamente en línea
 $html->cssInLine('
 .miframe-cuatro {
 	background:darkred;
 	color:lightcoral;
 }');
+
 // Otro bloque en linea
 $html->cssInLine('.demo-div { margin:10px 0; padding:20px; border-radius:4px; }');
 
@@ -92,12 +73,6 @@ echo '<div class="demo-div miframe-cinco"><b>miframe-cinco:</b> Estilos de cssEx
 
 echo '<p>Ejemplo al adicionar un recurso no valido</p>';
 $html->cssLocal(__DIR__ . '/demo-html-files/nn.css');
-
-echo "<h2>Repositorio</h2>";
-echo '<p style="margin-top:30px"><a href="https://github.com/jjmejia/miframe-commons/tree/01-miframe-server-y-miframe-autoload" target="_blank">Repositorio disponible en <b>github.com/jjmejia</b></a></p>';
-
-// Registra visita
-$Test->visitorLog('demo-html');
 
 // Cierre de la página
 $Test->end();

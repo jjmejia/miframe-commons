@@ -6,9 +6,7 @@
  * @since Julio 2024
  */
 
-require_once __DIR__ . '/lib/miCodeTest.php';
-
-$Test = new miCodeTest();
+require_once __DIR__ . '/../demo-config.php';
 
 require_once $Test->includePath('/miframe/commons/autoload.php');
 require_once $Test->includePath('/miframe/commons/helpers.php');
@@ -133,12 +131,6 @@ $Test->dump($matches, 'miframe_autoload()->matches()');
 echo "<p>Y estos son los <i>namespaces</i> registrados:</p>";
 
 $Test->dump($namespaces, 'miframe_autoload()->namespaces()');
-
-echo "<h2>Repositorio</h2>";
-echo '<p style="margin-top:30px"><a href="https://github.com/jjmejia/miframe-commons/tree/01-miframe-server-y-miframe-autoload" target="_blank">Repositorio disponible en <b>github.com/jjmejia</b></a></p>';
-
-// Registra visita
-$Test->visitorLog('demo-server');
 
 // Cierre de la página
 $Test->end();

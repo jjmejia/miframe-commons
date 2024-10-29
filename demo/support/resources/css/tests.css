@@ -184,6 +184,11 @@ h1.test-encab, .test-content h2 {
 			padding-bottom: 0;
 		}
 	}
+
+	a, a:visited {
+		color: #21618c;
+	}
+
 }
 
 .test-back-home {
@@ -195,6 +200,21 @@ h1.test-encab, .test-content h2 {
 	padding:10px;
 	margin: 0;
 	/* margin-top:5px; */
+}
+
+.test-repo {
+	border: 1px dashed #21618c;
+	background-color: #ebf5fb;
+	padding: 10px;
+	margin-top: 20px;
+}
+.test-repo svg {
+	float:left;
+	margin-right: 5px;
+}
+.test-repo h2 {
+	margin:0;
+	padding: 0;
 }
 
 @media

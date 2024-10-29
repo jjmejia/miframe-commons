@@ -4,6 +4,7 @@ Este repositorio contiene una colección de librerías de uso común para proyec
 
 El directorio `demos` contiene ejemplos de uso y el directorio `docs` contiene más información sobre estas librerías.
 
+
 ## miframe_autoload()
 
 Facilita la definición de enrutamientos para las clases requeridas.
@@ -14,8 +15,8 @@ require_once 'miframe/commons/autoload.php';
 // Enruta todas las clases que comiencen con "miFrame\Commons\Core\" al directorio indicado.
 miframe_autoload()->register('miFrame\Commons\Core\*', __DIR__ . '/classes/*.php');
 ````
-
 Más información sobre este helper está disponible en [docs/miframe-commons-autoload.md](https://github.com/jjmejia/miframe-commons/blob/main/docs/miframe-commons-autoload.md).
+
 
 ## miframe_server()
 
@@ -30,6 +31,20 @@ echo miframe_server()->get('REQUEST_METHOD');
 
 Más información sobre este helper está disponible en [docs/miframe-commons-server.md](https://github.com/jjmejia/miframe-commons/blob/main/docs/miframe-commons-server.md).
 
+
+## miframe_html()
+
+Facilita el manejo de recursos CSS y similares, evitando enviar al navegador información duplicada.
+
+Ejemplo de uso:
+````
+require_once 'miframe/commons/helpers.php';
+// Adiciona un archivo CSS existente en disco.
+// Aunque invoque este mismo archivo varias veces, lo incluye solamente una vez.
+miframe_html()->cssLocal($filename_css);
+// Envía estilos al navegador
+echo miframe_html()->cssExport();
+````
 
 **_Importante:_**
 _Hasta nuevo aviso, esta colección de librerías se encuentra en continuo proceso de Desarrollo._

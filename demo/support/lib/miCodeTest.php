@@ -8,20 +8,53 @@
 
 class miCodeTest {
 
+	private $config = [];
 	private $choices = [];
+	private $domain_name = '';
 
-	public function __construct(bool $relocate = true) {
+	public function __construct() {
+
 		// Inicializa manejo de sesión PHP
 		if (empty($_SESSION)) {
 			session_start();
-			// Valida si regresa al index
-			if (count($_SESSION) <= 0 && $relocate) {
-				// Se borraron las variables de sesión
-				// Vuelve a a pagina de inicio inmediatamente anterior
-				echo '<script>window.location = "' . dirname(dirname($_SERVER['SCRIPT_NAME'])) . '"</script>';
-				exit;
-			}
 		}
+
+		// Dominio
+		$this->domain_name = 'miCode-Manager';
+		if (isset($_SERVER['SERVER_NAME']) &&
+			$_SERVER['SERVER_NAME'] !== 'localhost'
+			) {
+			$this->domain_name = $_SERVER['SERVER_NAME'];
+		}
+
+		// Inicializa config
+		$this->initConfig();
+	}
+
+	/**
+	 * Inicializa config
+	 */
+	private function initConfig() {
+
+		$this->config = array(
+			// Path con el código fuente
+			'src-path' => '', 		// 'MICODE_DEMO_INCLUDE_PATH',
+			// URL para descargar recursos web
+			'url-resources' => '', 	// 'MICODE_DEMO_URL_RESOURCES',
+			// Registrar página de inicio
+			'home' => '', 			// 'MICODE_DEMO_HOME',
+			// Pie de página adicional (si existe)
+			'footer-path' => '', 	// 'MICODE_DEMO_PIE_FILENAME',
+			// Visitors log
+			'logs-path' => '', 		// 'MICODE_DEMO_LOGS',
+			// Temporal
+			'tmp-path' => '', 		// 'MICODE_DEMO_TMP',
+			// Repositorio Githbu
+			'github-repo' => '',
+			// Visitor log (nombre base)
+			'visitor-log' => ''
+		);
+
 	}
 
 	/**
@@ -29,28 +62,16 @@ class miCodeTest {
 	 */
 	public function config(array $data) {
 
-		$config = array(
-			// Path con el código fuente
-			'src-path' => 'MICODE_DEMO_INCLUDE_PATH',
-			// URL para descargar recursos web
-			'url-resources' => 'MICODE_DEMO_URL_RESOURCES',
-			// Registrar página de inicio
-			'home' => 'MICODE_DEMO_HOME',
-			// Pie de página adicional (si existe)
-			'footer' => 'MICODE_DEMO_PIE_FILENAME',
-			// Visitors log
-			'logs-path' => 'MICODE_DEMO_LOGS',
-			// Temporal
-			'tmp-path' => 'MICODE_DEMO_TMP',
-			// '' => '',
-			// '' => '',
-		);
-
 		foreach ($data as $k => $v) {
-			if (isset($config[$k])) {
-				$_SESSION[$config[$k]] = $v;
+			if (array_key_exists($k, $this->config)) {
+				$this->config[$k] = $v;
+				if (strpos($k, '-path') !== false) {
+					$this->config[$k] = @realpath($v);
+				}
 			}
 		}
+
+		// print_r($this->config); echo "<hr>";
 	}
 
 	/**
@@ -58,12 +79,12 @@ class miCodeTest {
 	 */
 	public function includePath(string $path) {
 
-		if (empty($_SESSION['MICODE_DEMO_INCLUDE_PATH'])) {
+		if (empty($this->config['src-path'])) {
 			// Asigna el path usado por el script actual
-			$_SESSION['MICODE_DEMO_INCLUDE_PATH'] = __DIR__;
+			$this->config['src-path'] = __DIR__ . DIRECTORY_SEPARATOR;
 		}
 
-		return $_SESSION['MICODE_DEMO_INCLUDE_PATH'] . $path;
+		return $this->config['src-path'] . $path;
 	}
 
 	/**
@@ -71,8 +92,8 @@ class miCodeTest {
 	 */
 	public function tmpDir(string $default = '') {
 
-		if (!empty($_SESSION['MICODE_DEMO_TMP'])) {
-			return $_SESSION['MICODE_DEMO_TMP'];
+		if (!empty($this->config['tmp-path'])) {
+			return $this->config['tmp-path'];
 		}
 
 		return $default;
@@ -85,12 +106,12 @@ class miCodeTest {
 	 */
 	public function resourcesPath(string $path) {
 
-		if (empty($_SESSION['MICODE_DEMO_URL_RESOURCES'])) {
+		if (empty($this->config['url-resources'])) {
 			// Asigna el path usado por el script actual
-			$_SESSION['MICODE_DEMO_URL_RESOURCES'] = dirname($_SERVER['SCRIPT_NAME']);
+			$this->config['url-resources'] = dirname($_SERVER['SCRIPT_NAME']) . '/';
 		}
 
-		return $_SESSION['MICODE_DEMO_URL_RESOURCES'] . $path;
+		return $this->config['url-resources'] . $path;
 	}
 
 	/**
@@ -98,10 +119,10 @@ class miCodeTest {
 	 */
 	public function home(string $default_home = '') {
 
-		if (!empty($_SESSION['MICODE_DEMO_HOME'])
-			&& strtolower(basename($_SESSION['MICODE_DEMO_HOME'])) !== strtolower(basename($_SERVER['SCRIPT_NAME']))) {
+		if (!empty($this->config['home'])
+			&& strtolower(basename($this->config['home'])) !== strtolower(basename($_SERVER['SCRIPT_NAME']))) {
 			// Asigna el path usado por el script actual
-			$default_home = $_SESSION['MICODE_DEMO_HOME'];
+			$default_home = $this->config['home'];
 		}
 
 		return $default_home;
@@ -119,9 +140,10 @@ class miCodeTest {
 		}
 		$description_meta = strip_tags($description);
 
-		$domain_name = 'miCode-Manager';
-		if (isset($_SERVER['SERVER_NAME']) && $_SERVER['SERVER_NAME'] !== 'localhost') {
-			$domain_name = $_SERVER['SERVER_NAME'];
+		if (empty($_SERVER['REMOTE_ADDR'])) {
+			// Salida por consola
+			echo strip_tags($title . PHP_EOL . $description) . PHP_EOL . PHP_EOL;
+			return;
 		}
 
 	?>
@@ -142,7 +164,7 @@ class miCodeTest {
 <body>
 	<h1 class="test-encab">
 		<?= htmlentities($title) ?>
-		<small><?= $domain_name ?></small>
+		<small><?= $this->domain_name ?></small>
 	</h1>
 	<?php
 	$home = $this->home($default_home);
@@ -168,10 +190,17 @@ class miCodeTest {
 	private function footer() {
 
 		$contents = '';
-		if (!empty($_SESSION['MICODE_DEMO_PIE_FILENAME'])
-			&& file_exists($_SESSION['MICODE_DEMO_PIE_FILENAME'])
+		if (!empty($this->config['footer-path'])
+			&& file_exists($this->config['footer-path'])
 			) {
-			$contents = trim(file_get_contents($_SESSION['MICODE_DEMO_PIE_FILENAME']));
+			$contents = trim(file_get_contents($this->config['footer-path']));
+		}
+
+		if ($contents != '') {
+			$contents = PHP_EOL .
+				'<!-- Footer -->' . PHP_EOL .
+				$contents . PHP_EOL .
+				'<!-- Footer ends -->' . PHP_EOL;
 		}
 
 		return $contents;
@@ -180,13 +209,28 @@ class miCodeTest {
 	/**
 	 * Da cierre a la página demo.
 	 */
-	public function end() {
+	public function end(bool $show_repo = true) {
 
-		// Adiciona pie de página
-		$adicional = $this->footer();
+		// Repositorio en Github
+		if ($show_repo && !empty($this->config['github-repo'])) {
+			echo '<div class="test-repo">';
+			echo '<h2>¿Tienes curiosidad por el código fuente?</h2>';
+			echo '<p><a href="' . $this->config['github-repo'] . '" target="_blank">';
+			// https://www.svgrepo.com/svg/475654/github-color
+			echo '<svg width="24px" height="24px" viewBox="0 -0.5 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="Color-" transform="translate(-700.000000, -560.000000)" fill="#3E75C3"> <path d="M723.9985,560 C710.746,560 700,570.787092 700,584.096644 C700,594.740671 706.876,603.77183 716.4145,606.958412 C717.6145,607.179786 718.0525,606.435849 718.0525,605.797328 C718.0525,605.225068 718.0315,603.710086 718.0195,601.699648 C711.343,603.155898 709.9345,598.469394 709.9345,598.469394 C708.844,595.686405 707.2705,594.94548 707.2705,594.94548 C705.091,593.450075 707.4355,593.480194 707.4355,593.480194 C709.843,593.650366 711.1105,595.963499 711.1105,595.963499 C713.2525,599.645538 716.728,598.58234 718.096,597.964902 C718.3135,596.407754 718.9345,595.346062 719.62,594.743683 C714.2905,594.135281 708.688,592.069123 708.688,582.836167 C708.688,580.205279 709.6225,578.054788 711.1585,576.369634 C710.911,575.759726 710.0875,573.311058 711.3925,569.993458 C711.3925,569.993458 713.4085,569.345902 717.9925,572.46321 C719.908,571.928599 721.96,571.662047 724.0015,571.651505 C726.04,571.662047 728.0935,571.928599 730.0105,572.46321 C734.5915,569.345902 736.603,569.993458 736.603,569.993458 C737.9125,573.311058 737.089,575.759726 736.8415,576.369634 C738.3805,578.054788 739.309,580.205279 739.309,582.836167 C739.309,592.091712 733.6975,594.129257 728.3515,594.725612 C729.2125,595.469549 729.9805,596.939353 729.9805,599.18773 C729.9805,602.408949 729.9505,605.006706 729.9505,605.797328 C729.9505,606.441873 730.3825,607.191834 731.6005,606.9554 C741.13,603.762794 748,594.737659 748,584.096644 C748,570.787092 737.254,560 723.9985,560" id="Github"> </path> </g> </g> </g></svg> ';
+			echo 'Repositorio disponible en <b>github.com</b></a></p>';
+			echo '</div>';
+		}
 
-		echo '<div class="foot"><b>miCode-Manager</b> &copy; ' . date('Y') . '. ' . $adicional . '</div>';
-		echo "</div></body></html>";
+		// Registra visita
+		$this->updateVisitorLog();
+
+		echo '<div class="foot">' .
+			'<b>' . $this->domain_name . '</b> &copy; ' . date('Y') . '.' .
+			$this->footer() .
+			'</div>' . PHP_EOL .
+			'</div>' . // Contenedor "test-content" abierto en $this->start()
+			'</body></html>';
 	}
 
 	public function link(string $name, array $data = []) {
@@ -268,38 +312,56 @@ class miCodeTest {
 	}
 
 	/**
+	 * Nombre alterno al los de visitas
+	 */
+	public function visitorLog(string $name) {
+		$this->config['visitor-log'] = $name;
+	}
+
+	/**
 	 * Registra visitas.
 	 */
-	public function visitorLog(string $src) {
+	private function updateVisitorLog() {
+
+		if (empty($_SERVER['REMOTE_ADDR'])) {
+			// No está ejecutando por web
+			return;
+		}
 
 		$date = date('Ymd');
-		$src = trim(strtolower($src));
+		$src = trim(strtolower($this->config['visitor-log']));
+		if ($src == '') {
+			$src = str_replace(['.php', '.'], ['', '-'], strtolower(basename($_SERVER['SCRIPT_NAME'])));
+		}
 
 		// Valida si existe directorio asociado
-		if ($src == '' || empty($_SESSION['MICODE_DEMO_LOGS'])) { return; }
+		if ($src == '' || empty($this->config['logs-path'])) {
+			return;
+		}
 
-		// Valida si ya registró esta visita hoy
-		if (isset($_SESSION['MICODE_DEMO_VISITS'][$src])
-			&& $_SESSION['MICODE_DEMO_VISITS'][$src] == $date
+		// Valida si ya registró esta visita hoy (requiere sesion activa)
+		// Si ya fue registrada, termina.
+		if (isset($_SESSION) &&
+			!empty($_SESSION['MICODE_DEMO_VISITS'][$src]) &&
+			$_SESSION['MICODE_DEMO_VISITS'][$src] == $date
 			) {
 			return;
 		}
 
+		// Valida directorio destino.
+		$path = $this->config['logs-path'];
+		// Si se indica directorio pero no existe, reporta error.
+		if (!is_dir($path)) {
+			throw new \Exception('Directorio para logs no existe (' . $path . ')');
+		}
+
+		// Recupara referencia
 		$http_referer = '';
 		if (!empty($_SERVER['HTTP_REFERER'])) {
 			$http_referer = trim($_SERVER['HTTP_REFERER']);
 		}
 
-		$path = $_SESSION['MICODE_DEMO_LOGS'];
-		// Remueve ultimo caracter "/"
-		if (substr($path, -1, 1) == '/') {
-			$path = substr($path, 0, -1);
-		}
-		if (!is_dir($path)) {
-			throw new \Exception('Directorio para logs no existe (' . $path . ')');
-		}
-
-		$filename = $path . '/visitas-' . $src . '.csv';
+		$filename = realpath($path) . DIRECTORY_SEPARATOR . 'visitas-' . $src . '.csv';
 		$client_ip = '?';
 		if (!empty($_SERVER['REMOTE_ADDR'])) {
 			// REMOTE_ADDR:
@@ -320,6 +382,7 @@ class miCodeTest {
 			'"' . PHP_EOL;
 
 		if (!file_exists($filename)) {
+			// Adiciona encabezado
 			$encab = implode(';', ['Fecha', 'UserIP', 'Browser', 'Referer']) . PHP_EOL;
 			error_log($encab, 3, $filename);
 		}
@@ -332,6 +395,8 @@ class miCodeTest {
 		error_log($message, 3, $filename);
 
 		// Marca como ya visitada
-		$_SESSION['MICODE_DEMO_VISITS'][$src] = $date;
+		if (isset($_SESSION)) {
+			$_SESSION['MICODE_DEMO_VISITS'][$src] = $date;
+		}
 	}
 }
