@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Clase para la gestión de la autocarga de scripts requeridos para la creación
  * de Clases PHP.
@@ -16,7 +17,8 @@ namespace miFrame\Commons\Core;
 
 use \miFrame\Commons\Patterns\Singleton;
 
-class AutoLoader extends Singleton {
+class AutoLoader extends Singleton
+{
 
 	/**
 	 * @var array $namespaces	Registra las listas de busqueda. Arreglo asociativo del tipo:
@@ -32,7 +34,8 @@ class AutoLoader extends Singleton {
 	/**
 	 * Inicialización de la clase Singleton.
 	 */
-	protected function singletonStart() {
+	protected function singletonStart()
+	{
 		// Registra este modelo
 		// __CLASS__ usa "\" como separador de segmentos. En Linux, usar
 		// dirname() con ese separador retorna ".". Por tanto, empleamos
@@ -64,7 +67,8 @@ class AutoLoader extends Singleton {
 	 * @param string $className	Patrón de la Clase
 	 * @param string $path		Path del script que define la clase
 	 */
-	public function register(string $className, string $path) {
+	public function register(string $className, string $path)
+	{
 
 		// Usa como llave el nombre en minusculas para prevenir errores al
 		// escribir el nombre. Si empieza con "\" lo remueve.
@@ -83,7 +87,8 @@ class AutoLoader extends Singleton {
 	 *
 	 * @param string $className	Nombre de Clase.
 	 */
-	public function load(string $className) {
+	public function load(string $className)
+	{
 
 		if ($className !== '' && $className[0] == '\\') {
 			$className = substr($className, 1);
@@ -94,8 +99,7 @@ class AutoLoader extends Singleton {
 		if (isset($namespaces[$class])) {
 			// Valor exacto
 			$path = $namespaces[$class];
-		}
-		else {
+		} else {
 			// Busca parciales
 			foreach ($this->namespaces as $nameclass => $pathclass) {
 				if (substr($nameclass, -1) == '*') {
@@ -117,7 +121,7 @@ class AutoLoader extends Singleton {
 
 		if ($path !== '') {
 			// Valida que exista. Normaliza path.
-			$path = str_replace([ '\\', '/' ], DIRECTORY_SEPARATOR, $path);
+			$path = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $path);
 			if (!file_exists($path)) {
 				// Genera path usando todo el path de directorios en minusculas
 				$path = strtolower(dirname($path)) . DIRECTORY_SEPARATOR . basename($path);
@@ -140,7 +144,8 @@ class AutoLoader extends Singleton {
 	 *
 	 * @return array Arreglo asociativo del tipo (Clase) => (Path del script que define la Clase).
 	 */
-	public function matches() : array {
+	public function matches(): array
+	{
 
 		return $this->matches;
 	}
@@ -150,7 +155,8 @@ class AutoLoader extends Singleton {
 	 *
 	 * @return array Arreglo asociativo del tipo (Patrón) => (Path del script que define la Clase).
 	 */
-	public function namespaces() : array {
+	public function namespaces(): array
+	{
 
 		return $this->namespaces;
 	}

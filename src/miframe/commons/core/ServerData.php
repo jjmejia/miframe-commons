@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Clase para manejo de valores registrados en $_SERVER y  funcionalidades asociadas.
  * relacionadas con la información propia del servidor Web, como path a los directorios
@@ -19,8 +20,9 @@ use \miFrame\Commons\Patterns\Singleton;
 use \miFrame\Commons\Traits\GetLocalData;
 // use \miFrame\Commons\Core\GetLocalData;
 
-class ServerData extends Singleton {
-// class ServerData extends GetLocalData {
+class ServerData extends Singleton
+{
+	// class ServerData extends GetLocalData {
 
 	/**
 	 * Definiciones y métodos a usar para manejo de datos locales.
@@ -68,7 +70,8 @@ class ServerData extends Singleton {
 	/**
 	 * Inicialización de la clase Singleton.
 	 */
-	protected function singletonStart() {
+	protected function singletonStart()
+	{
 
 		// REMOTE_ADDR:
 		// La dirección IP desde donde el usuario está viendo la página actual.
@@ -85,7 +88,8 @@ class ServerData extends Singleton {
 	 * @param string $default (Opcional) Valor a usar si $_SERVER[$name] no existe.
 	 * @return string 		  Valor del elemento solicitado.
 	 */
-	public function get(string $name, string $default = '') : string {
+	public function get(string $name, string $default = ''): string
+	{
 		$server_param = strtoupper(trim($name));
 		return $this->superglobal('_SERVER', $server_param, $default);
 	}
@@ -95,7 +99,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return bool TRUE si está consultando por WEB, FALSE si es por consola (cli).
 	 */
-	public function isWeb() : bool {
+	public function isWeb(): bool
+	{
 		return $this->is_web;
 	}
 
@@ -106,14 +111,14 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Dirección IP del cliente remoto.
 	 */
-	public function client() : string {
+	public function client(): string
+	{
 
 		if ($this->client_ip === '') {
 			// Recupera dirección IP
 			if (!$this->isWeb()) {
 				$this->client_ip = 'cli';
-			}
-			else {
+			} else {
 				// HTTP_X_FORWARDED_FOR:
 				// Usado en vez de REMOTE_ADDR cuando se consulta detrás de un proxy server.
 				// Puede contener múltiples IPs de proxies por los que se ha pasado.
@@ -121,11 +126,10 @@ class ServerData extends Singleton {
 				// ( https://stackoverflow.com/questions/11452938/how-to-use-http-x-forwarded-for-properly )
 				// Si no se emplean proxys para la consulta, retorna vacio.
 				$proxys = $this->get('HTTP_X_FORWARDED_FOR');
-				if (!empty($proxys)){
-					$proxy_list = explode (",", $proxys);
+				if (!empty($proxys)) {
+					$proxy_list = explode(",", $proxys);
 					$this->client_ip = trim(end($proxy_list));
-				}
-				else {
+				} else {
 					// REMOTE_ADDR:
 					// La dirección IP desde donde el usuario está viendo la página actual.
 					$this->client_ip = $this->get('REMOTE_ADDR');
@@ -150,15 +154,16 @@ class ServerData extends Singleton {
 	 *
 	 * @return bool	TRUE para consultas desde el servidor Web, FALSE en otro caso.
 	 */
-	public function isLocalhost() : bool {
+	public function isLocalhost(): bool
+	{
 
 		$client_ip = $this->client();
 		return (!$this->isWeb() ||
 			// IPv4, IPv6, Associative name, Consola
-			in_array($client_ip, [ '127.0.0.1', '::1', 'localhost', 'cli' ]) ||
+			in_array($client_ip, ['127.0.0.1', '::1', 'localhost', 'cli']) ||
 			// Local server IP (Ej. 192.xxx)
 			$client_ip === $this->ip()
-			);
+		);
 	}
 
 	/**
@@ -172,7 +177,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return bool TRUE si la consulta fue hecha usando HTTPS.
 	 */
-	public function useHTTPSecure() : bool {
+	public function useHTTPSecure(): bool
+	{
 
 		// HTTPS:
 		// Asignado a un valor no vacio si el script fue consultado usando protocolo HTTPS.
@@ -202,7 +208,8 @@ class ServerData extends Singleton {
 	 * 							redirigir una consulta no segura con "https" a una segura que use "https").
 	 * @return string 			URL.
 	 */
-	public function host(bool $force_https = false) : string	{
+	public function host(bool $force_https = false): string
+	{
 
 		$scheme = 'http://';
 		if ($force_https || $this->useHTTPSecure()) {
@@ -219,7 +226,7 @@ class ServerData extends Singleton {
 		$port = ':' . $this->get('SERVER_PORT', 80);
 
 		// Ignora puertos estándar 80 (HTTP) y 443 (HTTPS)
-		if (in_array($port, [ ':80', ':443' ])) {
+		if (in_array($port, [':80', ':443'])) {
 			$port = '';
 		}
 
@@ -233,7 +240,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Path.
 	 */
-	public function self() : string {
+	public function self(): string
+	{
 
 		// SCRIPT_NAME:
 		// Contiene la ruta al script actual, vista desde el servidor Web.
@@ -253,7 +261,8 @@ class ServerData extends Singleton {
 	 * @param string $path	(Opcional) Path a complementar.
 	 * @return string 		Path.
 	 */
-	public function relativePath(string $path = '') : string {
+	public function relativePath(string $path = ''): string
+	{
 
 		return $this->connect(dirname($this->self()), $path, '/');
 	}
@@ -263,7 +272,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Nombre del servidor o FALSE si no está disponible.
 	 */
-	public function name() : string|false {
+	public function name(): string|false
+	{
 		return gethostname();
 	}
 
@@ -273,7 +283,8 @@ class ServerData extends Singleton {
 	 * @return string Retorna la dirección IP del servidor o el nombre del servidor
 	 * 				  en caso de ocurrir algún error.
 	 */
-	public function ip() : string {
+	public function ip(): string
+	{
 		return gethostbyname($this->name());
 	}
 
@@ -294,7 +305,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Path.
 	 */
-	public function path() : string {
+	public function path(): string
+	{
 
 		// REQUEST_URI:
 		// El URI dado por el usuario para acceder a esta página.
@@ -334,7 +346,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Segmento del path o texto vacio si no encuentra alguna.
 	 */
-	public function pathInfo() : string {
+	public function pathInfo(): string
+	{
 
 		$script_name = $this->self();
 		$request_uri = $this->path();
@@ -385,7 +398,8 @@ class ServerData extends Singleton {
 	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
 	 * @return string				Path depurado.
 	 */
-	private function purgePath(string $path, string $separator = '', bool $remove_first = false) : string {
+	private function purgePath(string $path, string $separator = '', bool $remove_first = false): string
+	{
 
 		$path = trim($path);
 
@@ -426,13 +440,14 @@ class ServerData extends Singleton {
 						// Limpia segmentdo
 						$segments[$i] = '';
 						// Retrocede. Ignora segmentos vacios, del tipo: "xxx//xxx"
-						while ($i > 0 && $segments[$i - 1] == '') { $i--; }
+						while ($i > 0 && $segments[$i - 1] == '') {
+							$i--;
+						}
 						// Retrocede un segmento
 						if ($i > 0) {
 							$segments[$i - 1] = '';
 						}
-					}
-					elseif ($segments[$i] == '.') {
+					} elseif ($segments[$i] == '.') {
 						$segments[$i] = '';
 					}
 				}
@@ -446,7 +461,7 @@ class ServerData extends Singleton {
 			}
 
 			// Registra cache
-			$this->cache_path[$key] = [ $first, ...$segments ];
+			$this->cache_path[$key] = [$first, ...$segments];
 		}
 
 		$segments = $this->cache_path[$key];
@@ -474,7 +489,8 @@ class ServerData extends Singleton {
 	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
 	 * @return string				Path depurado.
 	 */
-	public function purgeURLPath(string $path, bool $remove_first = false) : string {
+	public function purgeURLPath(string $path, bool $remove_first = false): string
+	{
 
 		return $this->purgePath($path, '/', $remove_first);
 	}
@@ -496,7 +512,8 @@ class ServerData extends Singleton {
 	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
 	 * @return string				Path depurado.
 	 */
-	public function purgeFilename(string $filename, bool $remove_first = false) : string {
+	public function purgeFilename(string $filename, bool $remove_first = false): string
+	{
 
 		return $this->purgePath($filename, DIRECTORY_SEPARATOR, $remove_first);
 	}
@@ -506,7 +523,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return string 		Path.
 	 */
-	public function script() : string {
+	public function script(): string
+	{
 
 		// SCRIPT_FILENAME:
 		// Ruta absoluta en disco al script en ejecución.
@@ -530,7 +548,8 @@ class ServerData extends Singleton {
 	 * @param string $filename	(Opcional) Path del archivo o directorio a complementar.
 	 * @return string 			Path.
 	 */
-	public function scriptDirectory(string $filename = '') : string {
+	public function scriptDirectory(string $filename = ''): string
+	{
 
 		return $this->connect(dirname($this->script()), $filename, DIRECTORY_SEPARATOR);
 	}
@@ -546,7 +565,8 @@ class ServerData extends Singleton {
 	 * @param string $separator	Separador de segmentos del path ("\" o "/").
 	 * @return string			Path hijo completo.
 	 */
-	private function connect(string $parent, string $son, string $separator) : string {
+	private function connect(string $parent, string $son, string $separator): string
+	{
 
 		$parent .= $separator;
 		// Da formato de path para archivo fisico, siempre (no lo termina en "/"
@@ -585,7 +605,8 @@ class ServerData extends Singleton {
 	 * @param string $filename	(Opcional) Path de archivo o directorio a incluir.
 	 * @return string 			Path.
 	 */
-	public function documentRoot(string $filename = '') {
+	public function documentRoot(string $filename = '')
+	{
 
 		// DOCUMENT_ROOT:
 		// El directorio raíz bajo el que se ejecuta este script, tal como fuera
@@ -600,7 +621,8 @@ class ServerData extends Singleton {
 	 * @return bool				TRUE si $path es subdirectorio de DOCUMENT_ROOT,
 	 * 							FALSE en otro caso.
 	 */
-	private function inDocumentRoot(string $filename) : bool {
+	private function inDocumentRoot(string $filename): bool
+	{
 
 		return $this->inDirectory($filename, $this->documentRoot());
 	}
@@ -612,7 +634,8 @@ class ServerData extends Singleton {
 	 * @return string			Path corregido si es un subdirectorio del directorio Web,
 	 * 							FALSE en otro caso.
 	 */
-	public function removeDocumentRoot(string $filename) : string|false {
+	public function removeDocumentRoot(string $filename): string|false
+	{
 
 		if ($this->inDocumentRoot($filename)) {
 			// Debe purgar el path para asegurar que remueva correctamente si incluye ".."
@@ -659,13 +682,14 @@ class ServerData extends Singleton {
 	 * @return string			TRUE si es archivo o subdirectorio del directorio actual,
 	 * 							FALSE en otro caso.
 	 */
-   	private function inDirectory(string $filename, string $src_dir) : bool {
+	private function inDirectory(string $filename, string $src_dir): bool
+	{
 
 		$filename = $this->purgeFilename($filename);
 
 		return ($src_dir !== '' &&
 			strtolower(substr($filename, 0, strlen($src_dir))) === strtolower($src_dir));
-   }
+	}
 
 	/**
 	 * Adiciona paths al listado de directorios permitidos para crear subdirectorios.
@@ -675,7 +699,8 @@ class ServerData extends Singleton {
 	 *
 	 * @param string $path Directorio existente.
 	 */
-	public function addAccessDir(string $path) {
+	public function addAccessDir(string $path)
+	{
 
 		if (is_dir($path)) {
 			$path = realpath($path) . DIRECTORY_SEPARATOR;
@@ -694,7 +719,8 @@ class ServerData extends Singleton {
 	 * @return bool				TRUE si el archivo o directorio pertenece a un directorio
 	 * 							registrado como valido.
 	 */
-	public function hasAccessTo(string $filename) : bool {
+	public function hasAccessTo(string $filename): bool
+	{
 
 		$filename = $this->purgeFilename($filename);
 		if ($filename !== '') {
@@ -704,7 +730,7 @@ class ServerData extends Singleton {
 				// Tradicionalmente scriptDirectory() está en el root,
 				// a menos que sea ejecutado por consola.
 				// || $this->inScriptDirectory($filename)
-				) {
+			) {
 				return true;
 			}
 			// Valida lista permitida
@@ -735,7 +761,8 @@ class ServerData extends Singleton {
 	 * @param bool $recursive	TRUE Permite la creación de directorios anidados
 	 * 							especificado en $pathname.
 	 */
-	public function mkdir(string $pathname, bool $recursive = true) : bool {
+	public function mkdir(string $pathname, bool $recursive = true): bool
+	{
 
 		$result = false;
 		$pathname = $this->purgeFilename($pathname);
@@ -744,9 +771,10 @@ class ServerData extends Singleton {
 			$result = is_dir($pathname);
 			// El directorio a crear debe estar contenido en $_SERVER['DOCUMENT_ROOT']
 			// o en el directorio de temporales.
-			if (!$result &&
+			if (
+				!$result &&
 				$this->hasAccessTo($pathname)
-				) {
+			) {
 				$result = @mkdir($pathname, 0777, $recursive);
 			}
 		}
@@ -770,7 +798,8 @@ class ServerData extends Singleton {
 	 * @param string $pathname	(Opcional) Directorio temporal a usar.
 	 * @return string 			Path.
 	 */
-	public function tempDir(string $pathname = '') : string {
+	public function tempDir(string $pathname = ''): string
+	{
 
 		// 1. Asigna path dado por el usuario
 		if ($pathname !== '') {
@@ -785,8 +814,7 @@ class ServerData extends Singleton {
 			$path = realpath($pathname);
 			if ($path != '' && is_dir($path)) {
 				$this->temp_directory = $path . DIRECTORY_SEPARATOR;
-			}
-			else {
+			} else {
 				// El path indicado por el usuario no es valido
 				throw new \Exception('El directorio temporal indicado no es valido (' . $pathname . ').');
 			}
@@ -831,7 +859,8 @@ class ServerData extends Singleton {
 	 * @return string 			Path o FALSE si el subdirectorio deseado no existe y tampoco pudo
 	 * 							ser creado.
 	 */
-	public function createTempSubdir(string $pathname) : string|false {
+	public function createTempSubdir(string $pathname): string|false
+	{
 
 		$temp = $this->tempDir();
 		$path = $this->connect($temp, $pathname, DIRECTORY_SEPARATOR);
@@ -853,7 +882,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Datos recibidos (si alguno) o FALSE si ocurre algún error.
 	 */
-	public function rawInput() : string|false {
+	public function rawInput(): string|false
+	{
 		return @file_get_contents("php://input");
 	}
 
@@ -864,7 +894,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Información del servidor Web.
 	 */
-	public function software() {
+	public function software()
+	{
 
 		// SERVER_SOFTWARE:
 		// Cadena de identificación del servidor Web. tal como se envía en los
@@ -879,7 +910,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return string Información del browser.
 	 */
-	public function browser() {
+	public function browser()
+	{
 
 		// PENDIENTE:Ampliar funcionalidad usando get_browser().
 		return $this->get('HTTP_USER_AGENT');
@@ -890,7 +922,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return float Devuelve el número de bytes disponibles como un float.
 	 */
-	public function documentRootSpace() : float {
+	public function documentRootSpace(): float
+	{
 
 		// disk_free_space() puede retornar false, por lo que se convierte a
 		// float para prevenir conflictos de type.
@@ -902,7 +935,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return float Devuelve el número de bytes disponibles como un float.
 	 */
-	public function tempDirSpace() : float {
+	public function tempDirSpace(): float
+	{
 
 		// disk_free_space() puede retornar false, por lo que se convierte a
 		// float para prevenir conflictos de type.
@@ -919,7 +953,8 @@ class ServerData extends Singleton {
 	 * @param string $format (Opcional) Formato en que se retorna la fecha de inicio.
 	 * @return float Tiempo de inicio en microsegundos.
 	 */
-	public function startAt(string $format = '') : float|string {
+	public function startAt(string $format = ''): float|string
+	{
 
 		// REQUEST_TIME_FLOAT:
 		// El tiempo de inicio de atención a la consulta del usuario, en microsegundos.
@@ -936,7 +971,8 @@ class ServerData extends Singleton {
 	 *
 	 * @return float Tiempo de ejecución en microsegundos.
 	 */
-	public function executionTime() : float {
+	public function executionTime(): float
+	{
 
 		return microtime(true) - $this->startAt();
 	}
@@ -950,7 +986,8 @@ class ServerData extends Singleton {
 	 * @param int $precision	(Opcional) Indica cuantos decimales mostrar.
 	 * @return float 			Tiempo transcurrido en microsegundos.
 	 */
-	public function checkPoint(int $precision = 7) : float {
+	public function checkPoint(int $precision = 7): float
+	{
 
 		if ($this->check_time <= 0) {
 			$this->check_time = $this->startAt();
@@ -970,5 +1007,4 @@ class ServerData extends Singleton {
 
 		return $time;
 	}
-
 }

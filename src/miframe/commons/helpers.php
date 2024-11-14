@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Librería de soporte.
  * Facilita acceso a las Clases de uso general.
@@ -16,7 +17,8 @@ use miFrame\Commons\Core\ShowMe;
  *
  * @return object Objeto miFrame\Commons\Core\ServerData.
  */
-function miframe_server() : ServerData {
+function miframe_server(): ServerData
+{
 
 	return ServerData::getInstance();
 }
@@ -24,7 +26,8 @@ function miframe_server() : ServerData {
 /**
  * HTML Support
  */
-function miframe_html() : HTMLSupport {
+function miframe_html(): HTMLSupport
+{
 
 	return HTMLSupport::getInstance();
 }
@@ -32,7 +35,8 @@ function miframe_html() : HTMLSupport {
 /**
  * ShowMe
  */
-function miframe_show() : ShowMe {
+function miframe_show(): ShowMe
+{
 
 	return ShowMe::getInstance();
 }
@@ -40,7 +44,8 @@ function miframe_show() : ShowMe {
 /**
  * Simplifica uso de ShowMe
  */
-function miframe_box(string $body, string $title = '', string $footnote = '', string $class = '') {
+function miframe_box(string $body, string $title = '', string $footnote = '', string $class = '')
+{
 
 	return miframe_show()->title($title)
 		->body($body)
