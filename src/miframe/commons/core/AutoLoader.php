@@ -19,7 +19,6 @@ use \miFrame\Commons\Patterns\Singleton;
 
 class AutoLoader extends Singleton
 {
-
 	/**
 	 * @var array $namespaces	Registra las listas de busqueda. Arreglo asociativo del tipo:
 	 * 							(Patrón de la Clase) => (Path en disco del script que define la Clase)
@@ -69,7 +68,6 @@ class AutoLoader extends Singleton
 	 */
 	public function register(string $className, string $path)
 	{
-
 		// Usa como llave el nombre en minusculas para prevenir errores al
 		// escribir el nombre. Si empieza con "\" lo remueve.
 		$className = strtolower(trim($className));
@@ -89,7 +87,6 @@ class AutoLoader extends Singleton
 	 */
 	public function load(string $className)
 	{
-
 		if ($className !== '' && $className[0] == '\\') {
 			$className = substr($className, 1);
 		}
@@ -146,7 +143,6 @@ class AutoLoader extends Singleton
 	 */
 	public function matches(): array
 	{
-
 		return $this->matches;
 	}
 
@@ -157,7 +153,6 @@ class AutoLoader extends Singleton
 	 */
 	public function namespaces(): array
 	{
-
 		return $this->namespaces;
 	}
 }

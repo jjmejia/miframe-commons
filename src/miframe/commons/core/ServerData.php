@@ -72,7 +72,6 @@ class ServerData extends Singleton
 	 */
 	protected function singletonStart()
 	{
-
 		// REMOTE_ADDR:
 		// La dirección IP desde donde el usuario está viendo la página actual.
 		// Si se consulta desde Consola, no es asignada por el servidor.
@@ -113,7 +112,6 @@ class ServerData extends Singleton
 	 */
 	public function client(): string
 	{
-
 		if ($this->client_ip === '') {
 			// Recupera dirección IP
 			if (!$this->isWeb()) {
@@ -156,7 +154,6 @@ class ServerData extends Singleton
 	 */
 	public function isLocalhost(): bool
 	{
-
 		$client_ip = $this->client();
 		return (!$this->isWeb() ||
 			// IPv4, IPv6, Associative name, Consola
@@ -179,7 +176,6 @@ class ServerData extends Singleton
 	 */
 	public function useHTTPSecure(): bool
 	{
-
 		// HTTPS:
 		// Asignado a un valor no vacio si el script fue consultado usando protocolo HTTPS.
 		return !empty($this->get('HTTPS'));
@@ -210,7 +206,6 @@ class ServerData extends Singleton
 	 */
 	public function host(bool $force_https = false): string
 	{
-
 		$scheme = 'http://';
 		if ($force_https || $this->useHTTPSecure()) {
 			$scheme = 'https://';
@@ -242,7 +237,6 @@ class ServerData extends Singleton
 	 */
 	public function self(): string
 	{
-
 		// SCRIPT_NAME:
 		// Contiene la ruta al script actual, vista desde el servidor Web.
 		// Puede diferir de la ingresada por el usuario cuando se usan "URL amigables".
@@ -263,7 +257,6 @@ class ServerData extends Singleton
 	 */
 	public function relativePath(string $path = ''): string
 	{
-
 		return $this->connect(dirname($this->self()), $path, '/');
 	}
 
@@ -307,7 +300,6 @@ class ServerData extends Singleton
 	 */
 	public function path(): string
 	{
-
 		// REQUEST_URI:
 		// El URI dado por el usuario para acceder a esta página.
 		// Puede contener valores GET (queryes) separados por "?".
@@ -348,7 +340,6 @@ class ServerData extends Singleton
 	 */
 	public function pathInfo(): string
 	{
-
 		$script_name = $this->self();
 		$request_uri = $this->path();
 
@@ -400,7 +391,6 @@ class ServerData extends Singleton
 	 */
 	private function purgePath(string $path, string $separator = '', bool $remove_first = false): string
 	{
-
 		$path = trim($path);
 
 		// Valida que haya algo que realizar
@@ -491,7 +481,6 @@ class ServerData extends Singleton
 	 */
 	public function purgeURLPath(string $path, bool $remove_first = false): string
 	{
-
 		return $this->purgePath($path, '/', $remove_first);
 	}
 
@@ -514,7 +503,6 @@ class ServerData extends Singleton
 	 */
 	public function purgeFilename(string $filename, bool $remove_first = false): string
 	{
-
 		return $this->purgePath($filename, DIRECTORY_SEPARATOR, $remove_first);
 	}
 
@@ -525,7 +513,6 @@ class ServerData extends Singleton
 	 */
 	public function script(): string
 	{
-
 		// SCRIPT_FILENAME:
 		// Ruta absoluta en disco al script en ejecución.
 		// Nota: Si un script es ejecutado por Consola se retorna la ruta indicada por
@@ -550,7 +537,6 @@ class ServerData extends Singleton
 	 */
 	public function scriptDirectory(string $filename = ''): string
 	{
-
 		return $this->connect(dirname($this->script()), $filename, DIRECTORY_SEPARATOR);
 	}
 
@@ -567,7 +553,6 @@ class ServerData extends Singleton
 	 */
 	private function connect(string $parent, string $son, string $separator): string
 	{
-
 		$parent .= $separator;
 		// Da formato de path para archivo fisico, siempre (no lo termina en "/"
 		// porque puede ser un nombre de archivo)
@@ -593,7 +578,6 @@ class ServerData extends Singleton
 		return $parent;
 	}
 
-
 	/**
 	 * Ruta física del directorio Web.
 	 *
@@ -607,7 +591,6 @@ class ServerData extends Singleton
 	 */
 	public function documentRoot(string $filename = '')
 	{
-
 		// DOCUMENT_ROOT:
 		// El directorio raíz bajo el que se ejecuta este script, tal como fuera
 		// definido en la configuración del servidor Web.
@@ -623,7 +606,6 @@ class ServerData extends Singleton
 	 */
 	private function inDocumentRoot(string $filename): bool
 	{
-
 		return $this->inDirectory($filename, $this->documentRoot());
 	}
 
@@ -636,7 +618,6 @@ class ServerData extends Singleton
 	 */
 	public function removeDocumentRoot(string $filename): string|false
 	{
-
 		if ($this->inDocumentRoot($filename)) {
 			// Debe purgar el path para asegurar que remueva correctamente si incluye ".."
 			$filename = $this->purgeFilename($filename);
@@ -684,7 +665,6 @@ class ServerData extends Singleton
 	 */
 	private function inDirectory(string $filename, string $src_dir): bool
 	{
-
 		$filename = $this->purgeFilename($filename);
 
 		return ($src_dir !== '' &&
@@ -701,7 +681,6 @@ class ServerData extends Singleton
 	 */
 	public function addAccessDir(string $path)
 	{
-
 		if (is_dir($path)) {
 			$path = realpath($path) . DIRECTORY_SEPARATOR;
 			$key = strtolower($path);
@@ -721,7 +700,6 @@ class ServerData extends Singleton
 	 */
 	public function hasAccessTo(string $filename): bool
 	{
-
 		$filename = $this->purgeFilename($filename);
 		if ($filename !== '') {
 			// Valida directorios básicos
@@ -763,7 +741,6 @@ class ServerData extends Singleton
 	 */
 	public function mkdir(string $pathname, bool $recursive = true): bool
 	{
-
 		$result = false;
 		$pathname = $this->purgeFilename($pathname);
 		if ($pathname !== '') {
@@ -800,7 +777,6 @@ class ServerData extends Singleton
 	 */
 	public function tempDir(string $pathname = ''): string
 	{
-
 		// 1. Asigna path dado por el usuario
 		if ($pathname !== '') {
 			$pathname = $this->purgeFilename($pathname);
@@ -861,7 +837,6 @@ class ServerData extends Singleton
 	 */
 	public function createTempSubdir(string $pathname): string|false
 	{
-
 		$temp = $this->tempDir();
 		$path = $this->connect($temp, $pathname, DIRECTORY_SEPARATOR);
 		if ($temp !== '' && $this->mkdir($path)) {
@@ -896,7 +871,6 @@ class ServerData extends Singleton
 	 */
 	public function software()
 	{
-
 		// SERVER_SOFTWARE:
 		// Cadena de identificación del servidor Web. tal como se envía en los
 		// headers HTTP de respuesta.
@@ -912,7 +886,6 @@ class ServerData extends Singleton
 	 */
 	public function browser()
 	{
-
 		// PENDIENTE:Ampliar funcionalidad usando get_browser().
 		return $this->get('HTTP_USER_AGENT');
 	}
@@ -924,7 +897,6 @@ class ServerData extends Singleton
 	 */
 	public function documentRootSpace(): float
 	{
-
 		// disk_free_space() puede retornar false, por lo que se convierte a
 		// float para prevenir conflictos de type.
 		return floatval(disk_free_space($this->documentRoot()));
@@ -937,7 +909,6 @@ class ServerData extends Singleton
 	 */
 	public function tempDirSpace(): float
 	{
-
 		// disk_free_space() puede retornar false, por lo que se convierte a
 		// float para prevenir conflictos de type.
 		return floatval(disk_free_space($this->tempDir()));
@@ -955,7 +926,6 @@ class ServerData extends Singleton
 	 */
 	public function startAt(string $format = ''): float|string
 	{
-
 		// REQUEST_TIME_FLOAT:
 		// El tiempo de inicio de atención a la consulta del usuario, en microsegundos.
 		$time = $this->get('REQUEST_TIME_FLOAT', 0);
@@ -973,7 +943,6 @@ class ServerData extends Singleton
 	 */
 	public function executionTime(): float
 	{
-
 		return microtime(true) - $this->startAt();
 	}
 
@@ -988,7 +957,6 @@ class ServerData extends Singleton
 	 */
 	public function checkPoint(int $precision = 7): float
 	{
-
 		if ($this->check_time <= 0) {
 			$this->check_time = $this->startAt();
 		}

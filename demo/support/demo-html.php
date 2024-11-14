@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Demo para pruebas de las funciones miframe_html().
  *
@@ -15,10 +16,14 @@ include_once $Test->includePath('/miframe/commons/helpers.php');
 $Test->start(
 	'miframe_html()',
 	'Demos para ilustrar uso del utilitario <code>miframe_html()</code> de la librería <code>miFrame\\Commons</code>, para visualización de mensajes en pantalla.'
-	);
+);
 
 // Asocia clase a una variable para agilizar su uso.
 $html = miframe_html();
+
+// Captura opciones
+$nominimizar = $Test->choice('css-nominimize', 'No minimizar estilos en línea', 'Minimizar estilos en línea');
+$html->minimizeCSSCode(!$nominimizar);
 
 // Adiciona un archivo CSS existente en disco
 $html->cssLocal(__DIR__ . '/demo-html-files/uno.css');
@@ -39,7 +44,10 @@ $html->cssInLine('
 }');
 
 // Otro bloque en linea
-$html->cssInLine('.demo-div { margin:10px 0; padding:20px; border-radius:4px; }');
+$html->cssInLine(
+	'.demo-div { margin:10px 0; padding:20px; border-radius:4px; }',
+	'Comentario en línea'
+);
 
 // Duplica para validar que no repita
 $html->cssLocal(__DIR__ . '/demo-html-files/uno.css');
@@ -48,13 +56,13 @@ $html->cssLocal(__DIR__ . '/demo-html-files/uno.css', true);
 // Recupera de archivo puntual
 $styles = $html->cssExportFrom(__DIR__ . '/demo-html-files/cinco.css', true);
 
-echo '<p>Listado de estilos pendientes:</p>';
+echo '<p>Listado de estilos pendientes: (' . $Test->renderChoices() . ')</p>';
 $Test->htmlPre(print_r($html->cssUnpublished(), true));
 
 // Descarga estilos
-$code = $html->cssExport();
-
-echo '<p>Resultado al procesar pendientes:</p>';
+$nocomentar = $Test->choice('no-comments', 'Ocultar comentarios', 'Incluir comentarios');
+echo '<p>Resultado al procesar pendientes: (' . $Test->renderChoices() . ')</p>';
+$code = $html->cssExport(!$nocomentar);
 $Test->htmlPre(htmlentities($code));
 
 echo '<p>Resultado al usar cssExportFrom():</p>';

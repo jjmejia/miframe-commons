@@ -19,7 +19,6 @@ use miFrame\Commons\Core\ShowMe;
  */
 function miframe_server(): ServerData
 {
-
 	return ServerData::getInstance();
 }
 
@@ -28,7 +27,6 @@ function miframe_server(): ServerData
  */
 function miframe_html(): HTMLSupport
 {
-
 	return HTMLSupport::getInstance();
 }
 
@@ -37,7 +35,6 @@ function miframe_html(): HTMLSupport
  */
 function miframe_show(): ShowMe
 {
-
 	return ShowMe::getInstance();
 }
 
@@ -46,7 +43,6 @@ function miframe_show(): ShowMe
  */
 function miframe_box(string $body, string $title = '', string $footnote = '', string $class = '')
 {
-
 	return miframe_show()->title($title)
 		->body($body)
 		->footer($footnote)
