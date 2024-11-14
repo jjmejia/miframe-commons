@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Demo para pruebas de las funciones miframe_autoload() y miframe_server().
  *
@@ -11,9 +12,10 @@ require_once __DIR__ . '/../demo-config.php';
 require_once $Test->includePath('/miframe/commons/autoload.php');
 require_once $Test->includePath('/miframe/commons/helpers.php');
 
-$Test->start('miframe_server() y miframe_autoload()',
+$Test->start(
+	'miframe_server() y miframe_autoload()',
 	'Demos para ilustrar uso de los utilitarios <code>miframe_server()</code> y <code>miframe_autoload()</code> de la librería <code>miFrame\\Commons</code>'
-	);
+);
 
 // Asocia clase a una variable para agilizar su uso.
 $server = miframe_server();
@@ -94,9 +96,9 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 	$data['miframe_server()->browser()'] = $ocultar;
 	// $data['miframe_server()->ip()'] = $ocultar;
 	$data['miframe_server()->software()'] = $ocultar;
-	// Oculta directorios
-	$que = [ $server->tempDir(), $server->script(false), $server->documentRoot() ];
-	$con = [ '[TEMP_DIR]' . DIRECTORY_SEPARATOR, 	 '[SCRIPT_FILENAME]',	 '[DOCUMENT_ROOT]' . DIRECTORY_SEPARATOR ];
+	// Oculta directorios sensibles
+	$que = [$server->tempDir(), $server->script(false), $server->documentRoot()];
+	$con = ['[TEMP_DIR]' . DIRECTORY_SEPARATOR, '[SCRIPT_FILENAME]', '[DOCUMENT_ROOT]' . DIRECTORY_SEPARATOR];
 	foreach ($data as $k => $v) {
 		if (is_string($v)) {
 			$data[$k] = trim(str_replace($que, $con, $v));
@@ -108,9 +110,9 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 	foreach ($namespaces as $k => $v) {
 		$namespaces[$k] = trim(str_replace($que, $con, $v));
 	}
-	// Oculta variable
+	// Oculta variables sensibles
 	$variables['$script'] = '[SCRIPT_FILENAME]';
-	// Mensaje informativo
+	// Mensaje informando de estos valores protegidos
 	$aviso_ocultar = '<p class="test-aviso"><b>Importante:</b> Algunos valores se han ocultado por seguridad, pero son visibles para consultas desde "localhost".</p>';
 }
 

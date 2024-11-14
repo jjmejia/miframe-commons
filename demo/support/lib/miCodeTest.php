@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Clase de soporte para montaje de scripts para test de módulos.
  *
@@ -6,13 +7,14 @@
  * @since Mayo 2022
  */
 
-class miCodeTest {
+class miCodeTest
+{
 
 	private $config = [];
 	private $choices = [];
 
-	public function __construct() {
-
+	public function __construct()
+	{
 		// Inicializa manejo de sesión PHP
 		if (empty($_SESSION)) {
 			session_start();
@@ -25,8 +27,8 @@ class miCodeTest {
 	/**
 	 * Inicializa config
 	 */
-	private function initConfig() {
-
+	private function initConfig()
+	{
 		$this->config = array(
 			// Identificador del Dominio principal
 			'domain-name' => '',
@@ -38,23 +40,22 @@ class miCodeTest {
 			'home' => '', 			// 'MICODE_DEMO_HOME',
 			// Pie de página adicional (si existe)
 			'footer-path' => '', 	// 'MICODE_DEMO_PIE_FILENAME',
-			// Visitors log
+			// Path para log de visitas
 			'logs-path' => '', 		// 'MICODE_DEMO_LOGS',
+			// Nombre del log de visitas
+			'visitor-log' => '',
 			// Temporal
 			'tmp-path' => '', 		// 'MICODE_DEMO_TMP',
 			// Repositorio Githbu
-			'github-repo' => '',
-			// Visitor log (nombre base)
-			'visitor-log' => ''
+			'github-repo' => ''
 		);
-
 	}
 
 	/**
 	 * Fija atributos de presentación
 	 */
-	public function config(array $data) {
-
+	public function config(array $data)
+	{
 		foreach ($data as $k => $v) {
 			if (array_key_exists($k, $this->config)) {
 				$this->config[$k] = $v;
@@ -70,8 +71,8 @@ class miCodeTest {
 	/**
 	 * Define el path a usar para buscar los scripts (directorio "src").
 	 */
-	public function includePath(string $path) {
-
+	public function includePath(string $path)
+	{
 		if (empty($this->config['src-path'])) {
 			// Asigna el path usado por el script actual
 			$this->config['src-path'] = __DIR__ . DIRECTORY_SEPARATOR;
@@ -83,8 +84,8 @@ class miCodeTest {
 	/**
 	 * Retorna directorio temporal a usar.
 	 */
-	public function tmpDir(string $default = '') {
-
+	public function tmpDir(string $default = '')
+	{
 		if (!empty($this->config['tmp-path'])) {
 			return $this->config['tmp-path'];
 		}
@@ -97,8 +98,8 @@ class miCodeTest {
 	 * Puede definirse previamente para acceder a un directorio diferente
 	 * al auto-detectado.
 	 */
-	public function resourcesPath(string $path) {
-
+	public function resourcesPath(string $path)
+	{
 		if (empty($this->config['url-resources'])) {
 			// Asigna el path usado por el script actual
 			$this->config['url-resources'] = dirname($_SERVER['SCRIPT_NAME']) . '/';
@@ -110,8 +111,8 @@ class miCodeTest {
 	/**
 	 * Presenta encabezado para la salida a pantalla.
 	 */
-	public function start(string $title, string $description = '') {
-
+	public function start(string $title, string $description = '')
+	{
 		$estilos = $this->resourcesPath('/resources/css/tests.css');
 		$title_meta = strip_tags($title);
 		if ($description == '') {
@@ -130,9 +131,10 @@ class miCodeTest {
 			return;
 		}
 
-	?>
+?>
 <!DOCTYPE html>
 <html>
+
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -145,6 +147,7 @@ class miCodeTest {
 	<title><?= htmlentities($title) ?></title>
 	<link rel="stylesheet" href="<?= $estilos ?>">
 </head>
+
 <body>
 	<h1 class="test-encab">
 		<?= htmlentities($title) ?>
@@ -152,31 +155,34 @@ class miCodeTest {
 	</h1>
 	<?php
 
+	// Valida si definió enlace a "home"
 	if (!empty($this->config['home'])) {
 		echo '<a href="' . $this->config['home'] . '" class="test-back-home">
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
 <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
 </svg> Regresar</a>';
-	}
+			}
+	// Apertura del contenedor de la página demo a mostrar
 
-?>
-		<div class="test-content">
+	?>
+	<div class="test-content">
 		<p class="test-description"><?= $description ?></p>
 	<?php
 
 	}
 
-	public function htmlPre(string $text) {
-
+	public function htmlPre(string $text)
+	{
 		echo PHP_EOL . '<pre class="code">' . trim($text) . '</pre>' . PHP_EOL;
 	}
 
-	private function footer() {
-
+	private function footer()
+	{
 		$contents = '';
-		if (!empty($this->config['footer-path'])
+		if (
+			!empty($this->config['footer-path'])
 			&& file_exists($this->config['footer-path'])
-			) {
+		) {
 			$contents = trim(file_get_contents($this->config['footer-path']));
 		}
 
@@ -193,8 +199,8 @@ class miCodeTest {
 	/**
 	 * Da cierre a la página demo.
 	 */
-	public function end(bool $show_repo = true) {
-
+	public function end(bool $show_repo = true)
+	{
 		// Repositorio en Github
 		if ($show_repo && !empty($this->config['github-repo'])) {
 			echo '<div class="test-repo">';
@@ -217,8 +223,8 @@ class miCodeTest {
 			'</body></html>';
 	}
 
-	public function link(string $name, array $data = []) {
-
+	public function link(string $name, array $data = [])
+	{
 		$enlace_base = miframe_server()->self();
 		if (count($data) > 0) {
 			$enlace_base .= '?' . http_build_query($data);
@@ -228,8 +234,8 @@ class miCodeTest {
 		return $enlace_base;
 	}
 
-	public function choice(string $option, string $text_nok, string $text_ok) {
-
+	public function choice(string $option, string $text_nok, string $text_ok)
+	{
 		$retornar = false;
 
 		$data = $_GET;
@@ -238,12 +244,11 @@ class miCodeTest {
 			$retornar = true;
 			unset($data[$option]);
 			$info = $text_ok;
-		}
-		else {
+		} else {
 			$data[$option] = true;
 		}
 
-		$this->choices[$option] = [ 'title' => $info, 'data' => $data ];
+		$this->choices[$option] = ['title' => $info, 'data' => $data];
 
 		// if ($link != '') { $link .= ' | '; }
 		// $link .= $this->link($info, $data);
@@ -251,14 +256,16 @@ class miCodeTest {
 		return $retornar;
 	}
 
-	public function renderChoices($separator = ' | ') {
-
+	public function renderChoices($separator = ' | ')
+	{
 		$text = '';
 		foreach ($this->choices as $option => $info) {
 			if ($text !== '') {
 				$text .= $separator;
 			}
 			$text .= $this->link($info['title'], $info['data']);
+			// Remueve opción ya recuperada
+			unset($this->choices[$option]);
 		}
 
 		return $text;
@@ -267,16 +274,15 @@ class miCodeTest {
 	/**
 	 * Despliega contenido de variable.
 	 */
-	public function dump(mixed $data) {
-
+	public function dump(mixed $data)
+	{
 		$info = '';
 		if (is_array($data)) {
 			$info .= '<table cellspacing="0">';
 			foreach ($data as $k => $v) {
 				if (is_bool($v)) {
 					$v = ($v ? 'true' : 'false');
-				}
-				elseif (!is_numeric($v) && !is_float($v)) {
+				} elseif (!is_numeric($v) && !is_float($v)) {
 					// NOTA: var_export() sobre float adiciona muchos decimales (Linux).
 					$v = var_export($v, true);
 				}
@@ -287,8 +293,7 @@ class miCodeTest {
 					'</tr>';
 			}
 			$info .= '</table>';
-		}
-		else {
+		} else {
 			$info = htmlentities(var_export($data, true));
 		}
 
@@ -296,17 +301,10 @@ class miCodeTest {
 	}
 
 	/**
-	 * Nombre alterno al los de visitas
-	 */
-	public function visitorLog(string $name) {
-		$this->config['visitor-log'] = $name;
-	}
-
-	/**
 	 * Registra visitas.
 	 */
-	private function updateVisitorLog() {
-
+	private function updateVisitorLog()
+	{
 		if (empty($_SERVER['REMOTE_ADDR'])) {
 			// No está ejecutando por web
 			return;
@@ -314,9 +312,6 @@ class miCodeTest {
 
 		$date = date('Ymd');
 		$src = trim(strtolower($this->config['visitor-log']));
-		if ($src == '') {
-			$src = str_replace(['.php', '.'], ['', '-'], strtolower(basename($_SERVER['SCRIPT_NAME'])));
-		}
 
 		// Valida si existe directorio asociado
 		if ($src == '' || empty($this->config['logs-path'])) {
@@ -325,10 +320,11 @@ class miCodeTest {
 
 		// Valida si ya registró esta visita hoy (requiere sesion activa)
 		// Si ya fue registrada, termina.
-		if (isset($_SESSION) &&
+		if (
+			isset($_SESSION) &&
 			!empty($_SESSION['MICODE_DEMO_VISITS'][$src]) &&
 			$_SESSION['MICODE_DEMO_VISITS'][$src] == $date
-			) {
+		) {
 			return;
 		}
 
@@ -362,7 +358,7 @@ class miCodeTest {
 				$client_ip,
 				str_replace('"', '""', $_SERVER['HTTP_USER_AGENT']),
 				str_replace('"', '""', $http_referer)
-				]) .
+			]) .
 			'"' . PHP_EOL;
 
 		if (!file_exists($filename)) {

@@ -14,13 +14,15 @@ $Test->config([
 	'home' => '/software/miframe-commons/demo/',
 	// Pie de página adicional (si existe)
 	'footer' => __DIR__ . '/footer.htm',
-	// Visitors log
+	// Path para log de visitas
 	'logs-path' => __DIR__ . '/logs',
+	// Nombre del log de visitas
+	'visitor-log' => str_replace(['.php', '.'], ['', '-'], (!empty($_SERVER['SCRIPT_NAME']) ? strtolower(basename($_SERVER['SCRIPT_NAME'])) : '')),
 	// Temporal
 	'tmp-path' => __DIR__ . '/tmp',
 	// Repositorio
 	'github-repo' => 'https://github.com/jjmejia/miframe-commons/'
-	]);
+]);
 
 // Configuraciones adicionales
 if (file_exists(__DIR__ . '/demo-config-dev.php')) {
