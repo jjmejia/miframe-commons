@@ -97,8 +97,8 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 	// $data['miframe_server()->ip()'] = $ocultar;
 	$data['miframe_server()->software()'] = $ocultar;
 	// Oculta directorios sensibles
-	$que = [$server->tempDir(), $server->script(false), $server->documentRoot()];
-	$con = ['[TEMP_DIR]' . DIRECTORY_SEPARATOR, '[SCRIPT_FILENAME]', '[DOCUMENT_ROOT]' . DIRECTORY_SEPARATOR];
+	$que = [$server->tempDir(), $server->documentRoot()];
+	$con = ['[TEMP_DIR]' . DIRECTORY_SEPARATOR, '[DOCUMENT_ROOT]' . DIRECTORY_SEPARATOR];
 	foreach ($data as $k => $v) {
 		if (is_string($v)) {
 			$data[$k] = trim(str_replace($que, $con, $v));
@@ -111,7 +111,9 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 		$namespaces[$k] = trim(str_replace($que, $con, $v));
 	}
 	// Oculta variables sensibles
-	$variables['$script'] = '[SCRIPT_FILENAME]';
+	foreach ($variables as $k => $v) {
+		$variables[$k] = trim(str_replace($que, $con, $v));
+	}
 	// Mensaje informando de estos valores protegidos
 	$aviso_ocultar = '<p class="test-aviso"><b>Importante:</b> Algunos valores se han ocultado por seguridad, pero son visibles para consultas desde "localhost".</p>';
 }
