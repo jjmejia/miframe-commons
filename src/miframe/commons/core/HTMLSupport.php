@@ -13,7 +13,6 @@ use miFrame\Commons\Patterns\Singleton;
 
 class HTMLSupport extends Singleton
 {
-
 	/**
 	 * @var array $resources	Listado de recursos CSS no publicados.
 	 */
@@ -82,9 +81,8 @@ class HTMLSupport extends Singleton
 			$this->addResourceCSS($filename, $src);
 		} elseif ($filename !== '') {
 			// No pudo acceder al archivo
-			$info = "Recurso CSS \"{$filename}\" no es un archivo valido";
 			// Genera mensaje de error
-			trigger_error($info, E_USER_WARNING);
+			trigger_error("Recurso CSS \"{$filename}\" no es un archivo valido", E_USER_WARNING);
 
 			return false;
 		}
@@ -175,7 +173,7 @@ class HTMLSupport extends Singleton
 	private function keyPath(string $filename): string
 	{
 		// Usa urldecode() en caso que se incluyan URLs con caracteres codificados
-		$this->last_key = '#' . md5(strtolower(urldecode(trim(str_replace("\\", '/', $filename)))));
+		$this->last_key = '#' . sha1(strtolower(urldecode(trim(str_replace("\\", '/', $filename)))));
 
 		return $this->last_key;
 	}

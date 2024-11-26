@@ -57,7 +57,7 @@ $html->cssLocal(__DIR__ . '/demo-html-files/uno.css', true);
 $styles = $html->cssExportFrom(__DIR__ . '/demo-html-files/cinco.css', true);
 
 echo '<p>Listado de estilos pendientes: (' . $Test->renderChoices() . ')</p>';
-$Test->htmlPre(print_r($html->cssUnpublished(), true));
+$Test->dump($html->cssUnpublished());
 
 // Descarga estilos
 $nocomentar = $Test->choice('no-comments', 'Ocultar comentarios', 'Incluir comentarios');

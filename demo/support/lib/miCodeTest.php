@@ -223,13 +223,15 @@ class miCodeTest
 			'</body></html>';
 	}
 
-	public function link(string $name, array $data = [])
+	public function link(string $name, array $data = [], $raw = false)
 	{
 		$enlace_base = miframe_server()->self();
 		if (count($data) > 0) {
 			$enlace_base .= '?' . http_build_query($data);
 		}
-		$enlace_base = '<a href="' . $enlace_base . '">' . $name . '</a>';
+		if (!$raw) {
+			$enlace_base = '<a href="' . $enlace_base . '">' . $name . '</a>';
+		}
 
 		return $enlace_base;
 	}
@@ -248,22 +250,30 @@ class miCodeTest
 			$data[$option] = true;
 		}
 
-		$this->choices[$option] = ['title' => $info, 'data' => $data];
-
-		// if ($link != '') { $link .= ' | '; }
-		// $link .= $this->link($info, $data);
+		$this->choices[$option] = ['title' => $info, 'data' => $data, 'def' => $text_nok];
 
 		return $retornar;
 	}
 
-	public function renderChoices($separator = ' | ')
+	public function renderChoices($separator = ' | ', $use_checkboxes = false)
 	{
 		$text = '';
 		foreach ($this->choices as $option => $info) {
 			if ($text !== '') {
 				$text .= $separator;
 			}
-			$text .= $this->link($info['title'], $info['data']);
+			if ($use_checkboxes) {
+				// print_r($info); echo " -- $option<hr>";
+				$checked = '';
+				if (empty($info['data'][$option])) {
+					$checked = ' checked';
+				}
+				$enlace = $this->link($info['title'], $info['data'], true);
+				$text .= "<label><input type=\"checkbox\"{$checked} onclick=\"window.location='{$enlace}'\">{$info['def']}</label>";
+			}
+			else {
+				$text .= $this->link($info['title'], $info['data']);
+			}
 			// Remueve opción ya recuperada
 			unset($this->choices[$option]);
 		}
@@ -282,13 +292,14 @@ class miCodeTest
 			foreach ($data as $k => $v) {
 				if (is_bool($v)) {
 					$v = ($v ? 'true' : 'false');
-				} elseif (!is_numeric($v) && !is_float($v)) {
+				}
+				elseif (!is_numeric($v) && !is_float($v)) {
 					// NOTA: var_export() sobre float adiciona muchos decimales (Linux).
 					$v = var_export($v, true);
 				}
 				$info .= '<tr>' .
-					'<td><b>' . $k . '</b></td>' .
-					'<td class="dump-connect">=></td>' .
+					'<td valign="top"><b>' . $k . '</b></td>' .
+					'<td valign="top" class="dump-connect">=></td>' .
 					'<td>' . htmlentities($v) . '</td>' .
 					'</tr>';
 			}
