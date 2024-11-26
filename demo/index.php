@@ -20,7 +20,7 @@ $base = dirname($_SERVER['SCRIPT_NAME']) . '/';
 $links = [
 	'support/demo-server.php' => 'miframe_server() y miframe_autoload()',
 	'support/demo-html.php' => 'miframe_html()',
-	// 'support/demo-show.php' => 'miframe_show() y miframe_box()'
+	'support/demo-view.php' => 'miframe_render() y miframe_view()'
 ];
 
 echo '<ul>' . PHP_EOL;

@@ -10,10 +10,10 @@
 
 use miFrame\Commons\Core\HTMLSupport;
 use miFrame\Commons\Core\ServerData;
-use miFrame\Commons\Core\ShowMe;
+use miFrame\Commons\Core\RenderView;
 
 /**
- * Retorna Clase para manejo de valores registrados en $_SERVER y  funcionalidades asociadas.
+ * Retorna objeto Singleton para manejo de valores registrados en $_SERVER y  funcionalidades asociadas.
  *
  * @return object Objeto miFrame\Commons\Core\ServerData.
  */
@@ -23,7 +23,9 @@ function miframe_server(): ServerData
 }
 
 /**
- * HTML Support
+ * Retorna objeto Singleton para manejo de recursos HTML.
+ *
+ * @return object miFrame\Commons\Core\HTMLSupport
  */
 function miframe_html(): HTMLSupport
 {
@@ -31,21 +33,43 @@ function miframe_html(): HTMLSupport
 }
 
 /**
- * ShowMe
+ * Retorna objeto Singleton para manejo de vistas.
+ *
+ * @return object miFrame\Commons\Core\RenderView
  */
-function miframe_show(): ShowMe
+function miframe_render(): RenderView
 {
-	return ShowMe::getInstance();
+	return RenderView::getInstance();
 }
 
 /**
- * Simplifica uso de ShowMe
+ * Ejecuta la vista indicada.
+ *
+ * @param string $viewname Nombre/Path de la vista.
+ * @param array $params Arreglo con valores.
+ *
+ * @return string Contenido renderizado.
  */
-function miframe_box(string $body, string $title = '', string $footnote = '', string $class = '')
+function miframe_view(string $filename, array $params = []): string
 {
-	return miframe_show()->title($title)
-		->body($body)
-		->footer($footnote)
-		->class($class)
-		->render(true);
+	return miframe_render()->view($filename, $params);
+}
+
+/**
+ * Realiza volcado de datos en pantalla.
+ *
+ * Requiere que se encuentre activo tanto el "modo Debug" (miframe_render()->debug = true)
+ * como el "modo Desarrollo" (miframe_render()->developerMode = true) o de lo contrario
+ * retornará una cadena vacia.
+ *
+ * @param mixed $var Variable a mostrar contenido.
+ * @param string $title Título a usar al mostrar contenido.
+ * @param bool $escape_dump TRUE para mostrar información legible (para humanos) sobre
+ * 							el contenido de $var. FALSE muestra el contenido tal
+ * 							cual sin modificar su formato.
+ *
+ * @return string Texto formateado.
+ */
+function miframe_dump(mixed $var, string $title = '', bool $escape_dump = true) {
+	return miframe_render()->dump($var, $title, $escape_dump);
 }
