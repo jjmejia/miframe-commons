@@ -50,9 +50,9 @@ function miframe_render(): RenderView
  *
  * @return string Contenido renderizado.
  */
-function miframe_view(string $filename, array $params = []): string
+function miframe_view(string $viewname, array $params = []): string
 {
-	return miframe_render()->view($filename, $params);
+	return miframe_render()->view($viewname, $params);
 }
 
 /**

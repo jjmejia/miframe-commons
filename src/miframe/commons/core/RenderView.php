@@ -268,15 +268,15 @@ class RenderView extends Singleton
 			$this->currentView == 'layout'
 		) {
 			if (!empty($this->currentFile())) {
-				// Restablece control para prevenir se use al evaluar template
+				// Protege la ejecución del Layout
 				$this->renderingLayout = true;
-				// Asigna a propiedad para permitir su uso en las vistas
+				// Preserva el contenido previamente renderizado para su uso en el Layout
 				$this->content = $content;
 				// Ejecuta vista
 				$content = $this->evalTemplate();
 				// Libera memoria
 				$this->content = '';
-				// Restablece
+				// Habilita de nuevo la ejecución del Layout
 				$this->renderingLayout = false;
 			}
 
@@ -307,10 +307,10 @@ class RenderView extends Singleton
 			// Ya existe referencia
 			return false;
 		}
-		if ($reference !== false) {
-			$this->views[$reference] = ['pre' => $this->currentView, 'file' => '', 'params' => []];
-			$this->currentView = $reference;
-		}
+
+		$this->views[$reference] = ['parent' => $this->currentView, 'file' => '', 'params' => []];
+		// Actualiza vista actual
+		$this->currentView = $reference;
 
 		return true;
 	}
@@ -323,7 +323,7 @@ class RenderView extends Singleton
 		$reference = $this->currentView;
 		if (isset($this->views[$reference])) {
 			// Restablece la vista anterior (o false si no existe)
-			$this->currentView = $this->views[$reference]['pre'];
+			$this->currentView = $this->views[$reference]['parent'];
 			unset($this->views[$reference]);
 		}
 	}
