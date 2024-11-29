@@ -10,7 +10,7 @@
 
 use miFrame\Commons\Core\HTMLSupport;
 use miFrame\Commons\Core\ServerData;
-use miFrame\Commons\Core\RenderView;
+use miFrame\Commons\Extended\ExtendedRenderView;
 
 /**
  * Retorna objeto Singleton para manejo de valores registrados en $_SERVER y  funcionalidades asociadas.
@@ -35,11 +35,11 @@ function miframe_html(): HTMLSupport
 /**
  * Retorna objeto Singleton para manejo de vistas.
  *
- * @return object miFrame\Commons\Core\RenderView
+ * @return object miFrame\Commons\Extended\ExtendedRenderView
  */
-function miframe_render(): RenderView
+function miframe_render(): ExtendedRenderView
 {
-	return RenderView::getInstance();
+	return ExtendedRenderView::getInstance();
 }
 
 /**

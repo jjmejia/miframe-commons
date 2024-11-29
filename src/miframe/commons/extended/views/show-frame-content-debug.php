@@ -27,12 +27,12 @@ padding:0;margin:2px 0;
 </style>' . PHP_EOL;
 }
 
-$model = $target;
+$model = 'layout';
 // Valida si está mostrando views o layout
-if (substr($model, 0, 4) == 'view') {
+if ($target !== md5('layout')) {
 	$model = 'view';
 }
-$utarget = strtoupper($target);
+$utarget = strtoupper($model);
 
 $content = $styles .
 	"<!-- Inicia {$filename} -->" . PHP_EOL .
