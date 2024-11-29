@@ -56,16 +56,23 @@ $html->cssLocal(__DIR__ . '/demo-html-files/uno.css', true);
 // Recupera de archivo puntual
 $styles = $html->cssExportFrom(__DIR__ . '/demo-html-files/cinco.css', true);
 
+/*
 echo '<p>Listado de estilos pendientes: (' . $Test->renderChoices() . ')</p>';
 $Test->dump($html->cssUnpublished());
+*/
 
 // Descarga estilos
 $nocomentar = $Test->choice('no-comments', 'Ocultar comentarios', 'Incluir comentarios');
-echo '<p>Resultado al procesar pendientes: (' . $Test->renderChoices() . ')</p>';
+echo '<p>HTML generado al procesar los ' . count($html->cssUnpublished()) . ' recursos pendientes:</p>';
 $code = $html->cssExport(!$nocomentar);
-$Test->htmlPre(htmlentities($code));
+$Test->htmlPre(
+	htmlentities($code).
+	'<div style="margin-top:10px;border-top:1px solid #999;padding-top:10px">' .
+	$Test->renderChoices() .
+	'</div>'
+);
 
-echo '<p>Resultado al usar cssExportFrom():</p>';
+echo '<p>Resultado al usar <code>cssExportFrom()</code>:</p>';
 $Test->htmlPre(htmlentities($styles));
 
 echo $code . $styles;
@@ -79,8 +86,13 @@ echo '<div class="demo-div miframe-tres"><b>miframe-tres:</b> Estilos de cssRemo
 echo '<div class="demo-div miframe-cuatro"><b>miframe-cuatro:</b> Estilos de cssInLine()</div>' . PHP_EOL;
 echo '<div class="demo-div miframe-cinco"><b>miframe-cinco:</b> Estilos de cssExportFrom()</div>' . PHP_EOL;
 
-echo '<p>Ejemplo al adicionar un recurso no valido</p>';
-$html->cssLocal(__DIR__ . '/demo-html-files/nn.css');
+// Este demo solamente funciona bien para localhost, en remoto pueden estar
+// inactivos los mensajes de error y habilitarlos implica visualizar el path real
+// de los scripts.
+if (miframe_server()->isLocalhost()) {
+	echo '<p>Ejemplo al adicionar un recurso no valido (habilitado sólo para Localhost)</p>';
+	$html->cssLocal(__DIR__ . '/demo-html-files/nn.css');
+}
 
 // Cierre de la página
 $Test->end();

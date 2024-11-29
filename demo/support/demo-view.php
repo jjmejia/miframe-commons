@@ -22,7 +22,9 @@ $Test->start(
 $view = miframe_render();
 
 // Habilita modo developer (habilita dumps y uso del modo Debug)
-$view->developerMode = ($Test->choice('developerMode', 'Modo Desarrollo', 'Habilitar modo Producción'));
+if ($Test->choice('developerMode', 'Modo Desarrollo', 'Habilitar modo Producción')) {
+	$view->developerOn();
+}
 
 // Habilita modo Debug (identifica cada view usado en pantalla)
 $view->debug = $Test->choice('debug', 'Modo Debug ', 'Remover modo Debug');

@@ -28,7 +28,7 @@ $server->tempDir($Test->tmpDir(__DIR__ . '/tmp'));
 $force_no_localhost = false;
 // Retorna TRUE si simula consulta no localhost
 if ($server->isLocalhost()) {
-	$force_no_localhost = $Test->choice('emulate-nolocal', 'Simular vista no Localhost', 'Cancelar vista no Localhost');
+	$force_no_localhost = $Test->choice('emulate-nolocal', 'Simular vista para hosting remoto (no Localhost)', 'Restaurar vista para Localhost');
 	// Visualiza opciones
 	echo '<p class="test-aviso"><b>Sólo para Localhost:</b> ' . $Test->renderChoices() . '</p>';
 }
@@ -115,7 +115,7 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 		$variables[$k] = trim(str_replace($que, $con, $v));
 	}
 	// Mensaje informando de estos valores protegidos
-	$aviso_ocultar = '<p class="test-aviso"><b>Importante:</b> Algunos valores se han ocultado por seguridad, pero son visibles para consultas desde "localhost".</p>';
+	$aviso_ocultar = '<p class="test-aviso"><b>Importante:</b> Algunos valores se han ocultado por seguridad.</p>';
 }
 
 echo "<p>Variables usadas para crear el arreglo de muestra:</p>" . $aviso_ocultar;
