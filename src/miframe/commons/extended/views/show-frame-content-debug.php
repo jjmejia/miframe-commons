@@ -29,7 +29,7 @@ padding:0;margin:2px 0;
 
 $model = 'layout';
 // Valida si está mostrando views o layout
-if ($target !== md5('layout')) {
+if ($target !== '') {
 	$model = 'view';
 }
 $utarget = strtoupper($model);

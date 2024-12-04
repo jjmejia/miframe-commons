@@ -69,12 +69,15 @@ class ExtendedRenderView extends RenderView
 	 * Cuando se habilita el "modo Debug", se enmarca la salida capturada para
 	 * facilitar su identificación en pantalla.
 	 *
+	 * @param string $filename Archivo que contiene la vista.
+	 * @param array $params Arreglo con valores.
+	 *
 	 * @return string Contenido renderizado.
 	 */
-	protected function evalTemplate(): string
+	protected function evalTemplate(string $filename, array $params): string
 	{
-		$content = parent::evalTemplate();
-		return $this->frameContentDebug($content);
+		$content = parent::evalTemplate($filename, $params);
+		return $this->frameContentDebug($filename, $content);
 	}
 
 	/**
@@ -288,7 +291,7 @@ class ExtendedRenderView extends RenderView
 	public function eview(string $viewname, array $params, string $default = ''): string
 	{
 		$content = '';
-		if (!$this->isRunning($viewname)) {
+		if ($this->newTemplate($viewname, true)) {
 			$content = $this->view($viewname, $params);
 		} elseif ($default !== '') {
 			// $default contiene la llave de uno de los $params
@@ -313,18 +316,15 @@ class ExtendedRenderView extends RenderView
 	 * Requiere que se encuentre activo tanto el "modo Debug" ($this->debug = true)
 	 * como el "modo Desarrollo" ($this->developerMode = true).
 	 *
+	 * @param string $filename Archivo que contiene la vista.
 	 * @param string $content Contenido previamente renderizado.
 	 *
 	 * @return string Contenido renderizado.
 	 */
-	private function frameContentDebug(string $content)
+	private function frameContentDebug(string $filename, string $content)
 	{
 		$target = $this->currentView;
 		if ($content != '' && $this->developerMode && $this->debug) {
-			$filename = $this->currentFile();
-			if ($filename == '') {
-				$filename = '(Layout no asignado)';
-			}
 			$content = @$this->eview(
 				'show-frame-content-debug',
 				compact('content', 'filename', 'target'),

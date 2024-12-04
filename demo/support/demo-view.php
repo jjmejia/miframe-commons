@@ -13,10 +13,14 @@ include_once __DIR__ . '/../demo-config.php';
 include_once $Test->includePath('/miframe/commons/autoload.php');
 include_once $Test->includePath('/miframe/commons/helpers.php');
 
+// Apertura de la página demo
 $Test->start(
 	'miframe_view()',
 	'Demos para ilustrar uso del utilitario <code>miframe_render()</code> y <code>miframe_view()</code> de la librería <code>miFrame\\Commons</code>, para visualización de páginas en pantalla.'
 );
+
+// Estilo adicional para esta demo
+echo '<style>.view-container { border:1px dashed #999;padding:10px 20px;margin:10px 0; h1 { margin-top:0; } }</style>' . PHP_EOL;
 
 // Asocia clase a una variable para agilizar su uso.
 $view = miframe_render();
@@ -77,6 +81,7 @@ foreach ($views_list as $k => $view_title) {
 		$views_links .= $Test->link($view_title, $data);
 	}
 }
+
 echo "<p><b>Vistas:</b> {$views_links}</p>";
 
 // Opciones para configuración de layout:
@@ -106,8 +111,12 @@ if ($post_view !== 'd') {
 		PHP_EOL .
 		"echo miframe_view('{$post_view}', compact('dato1', 'dato2'));");
 
+	// Contenedor
+	echo '<div class="view-container">';
 	// Para mostrar en pantalla
 	echo miframe_view($post_view, compact('dato1', 'dato2'));
+	// Cierra contenedor
+	echo '</div>';
 
 } else {
 
@@ -126,10 +135,15 @@ if ($post_view !== 'd') {
 			PHP_EOL .
 			"echo miframe_view('{$p}', compact('dato1', 'dato2'));"
 		);
+		// Contenedor
+		echo '<div class="view-container">';
 		// Para mostrar en pantalla
 		echo miframe_view($p, compact('dato1', 'dato2'));
+		// Cierra contenedor
+		echo '</div>';
 	}
 }
+
 
 // Cierre de la página
 $Test->end();
