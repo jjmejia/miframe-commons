@@ -264,9 +264,9 @@ class RenderView extends Singleton
 		}
 
 		if (!$only_validate) {
-			// No solo valida, crea también la referencia
+			// No solo valida, debe crear la referencia
 			$this->views[$reference] = ['name' => $viewname, 'parent' => $this->currentView];
-			// Actualiza vista actual
+			// Actualiza identificador de vista actual
 			$this->currentView = $reference;
 		}
 
