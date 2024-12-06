@@ -79,7 +79,8 @@ h1.test-encab, .test-content h2 {
 	}
 
 	pre.code, .pre-fake {
-		background-color: #e6e8ea;
+		/* background-color: #e6e8ea; */
+		background-color: #f4f4f4;
 		border: 1px dashed #aaaaaa;
 		padding:16px;
 		font-size: 0.95em;
@@ -88,6 +89,12 @@ h1.test-encab, .test-content h2 {
 		color:#555555;
 		max-width: 100%;
 		overflow: auto;
+	}
+
+	pre.code a, .pre-fake a {
+		font-family: "Segoe UI",Helvetica,Arial,sans-serif;
+		/* background-color: #e6e8ea; */
+		font-weight: bold;
 	}
 
 	.foot {

@@ -38,11 +38,14 @@ class ExtendedRenderView extends RenderView
 	/**
 	 * Acciones a ejecutar al crear un objeto para esta clase.
 	 */
-	public function singletonStart()
+	protected function singletonStart()
 	{
 		parent::singletonStart();
 		// Adiciona layout por defecto
 		$this->layout('layout-default');
+		// Deshabilita salida a pantalla de mensajes de error
+		// (se habilita solo para modo Desarrollo)
+		ini_set("display_errors", "off");
 	}
 
 	/**
@@ -272,42 +275,11 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
-	 * Ejecuta la vista indicada de forma exclusiva.
-	 *
-	 * No permite que esta misma vista pueda invocarse de forma recursiva, si se
-	 * invoca retorna el valor indicado por defecto sin ejecutar la vista. Si no
-	 * se indica valor por defecto se genera un error capturable.
-	 *
-	 * Para prevenir replicar contenido de variables, en $default puede indicar el
-	 * nombre de la variable en $params que desea usar en caso que ya esté en
-	 * ejecución esta vista.
-	 *
-	 * @param string $viewname Nombre/Path de la vista.
-	 * @param array $params Arreglo con valores.
-	 * @param string $default Valor a retornar si esta misma vista ya está en ejecución.
-	 *
-	 * @return string Contenido renderizado.
+	 * Valida si una vista se encuentra en ejecución.
 	 */
-	public function eview(string $viewname, array $params, string $default = ''): string
+	public function isRendering(string $viewname)
 	{
-		$content = '';
-		if ($this->newTemplate($viewname, true)) {
-			$content = $this->view($viewname, $params);
-		} elseif ($default !== '') {
-			// $default contiene la llave de uno de los $params
-			// (esto para evitar duplicar contenido) o
-			// una cadena texto a retornar
-			$content = $default;
-			if (array_key_exists($default, $params)) {
-				$content = $params[$default];
-			}
-		}
-		else {
-			// Error capturable, use get_last_error()
-			trigger_error("Vista exclusiva ya en ejecución ($viewname)", E_USER_NOTICE);
-		}
-
-		return $content;
+		return (!$this->newTemplate($viewname, true));
 	}
 
 	/**
@@ -323,13 +295,15 @@ class ExtendedRenderView extends RenderView
 	 */
 	private function frameContentDebug(string $filename, string $content)
 	{
-		$target = $this->currentView;
 		if ($content != '' && $this->developerMode && $this->debug) {
-			$content = @$this->eview(
+			$target = $this->currentView;
+			$new_content = $this->view(
 				'show-frame-content-debug',
-				compact('content', 'filename', 'target'),
-				'content'
+				compact('filename', 'target', 'content')
 			);
+			if ($new_content !== false) {
+				return $new_content;
+			}
 		}
 
 		return $content;

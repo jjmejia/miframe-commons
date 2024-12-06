@@ -12,6 +12,7 @@ class miCodeTest
 
 	private $config = [];
 	private $choices = [];
+	private $codePre = '';
 
 	public function __construct()
 	{
@@ -281,6 +282,19 @@ class miCodeTest
 		return $text;
 	}
 
+	/**
+	 * Almacena información para mostrar luego.
+	 */
+	public function context(string $info)
+	{
+		$this->codePre .= $info . PHP_EOL;
+	}
+
+	public function getContext() {
+		$text = $this->codePre;
+		$this->codePre = '';
+		return $text;
+	}
 	/**
 	 * Despliega contenido de variable.
 	 */

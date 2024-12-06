@@ -15,7 +15,7 @@ include_once $Test->includePath('/miframe/commons/helpers.php');
 
 // Apertura de la página demo
 $Test->start(
-	'miframe_view()',
+	'miframe_render() y miframe_view()',
 	'Demos para ilustrar uso del utilitario <code>miframe_render()</code> y <code>miframe_view()</code> de la librería <code>miFrame\\Commons</code>, para visualización de páginas en pantalla.'
 );
 
@@ -28,10 +28,14 @@ $view = miframe_render();
 // Habilita modo developer (habilita dumps y uso del modo Debug)
 if ($Test->choice('developerMode', 'Modo Desarrollo', 'Habilitar modo Producción')) {
 	$view->developerOn();
+	$Test->context('miframe_render()->developerOn();');
 }
 
 // Habilita modo Debug (identifica cada view usado en pantalla)
-$view->debug = $Test->choice('debug', 'Modo Debug ', 'Remover modo Debug');
+if ($Test->choice('debug', 'Modo Debug ', 'Remover modo Debug')) {
+	$view->debug = true;
+	$Test->context('miframe_render()->debug = true;');
+}
 
 // Adiciona filtros para proteger paths.
 // Remueve referencias al DOCUMENT ROOT para no revelar
@@ -88,10 +92,12 @@ echo "<p><b>Vistas:</b> {$views_links}</p>";
 // Usar layout personalizado
 if (!$Test->choice('uselayoutdef', 'Usar Layout por defecto', 'Usar Layout personalizado')) {
 	$view->layout('layout');
+	$Test->context("miframe_render()->layout('layout');");
 }
 // Remueve layout personalizado o por defecto
 if ($Test->choice('nolayout', 'Remover Layout', 'Usar Layout personalizado')) {
 	$view->removeLayout();
+	$Test->context('miframe_render()->removeLayout();');
 }
 
 // Valores a usar en layout
@@ -107,8 +113,9 @@ $dato2 = time();
 if ($post_view !== 'd') {
 	// Visualiza comando
 	$Test->htmlPre(
-		"miframe_render()->globals(['title' => {$views_list[$post_view]}, 'uid' => uniqid()]);" .
+		"miframe_render()->globals(['title' => '{$views_list[$post_view]}', 'uid' => uniqid()]);" .
 		PHP_EOL .
+		$Test->getContext() .
 		"echo miframe_view('{$post_view}', compact('dato1', 'dato2'));");
 
 	// Contenedor
@@ -117,11 +124,14 @@ if ($post_view !== 'd') {
 	echo miframe_view($post_view, compact('dato1', 'dato2'));
 	// Cierra contenedor
 	echo '</div>';
-
 } else {
 
 	// Comando previo
-	$Test->htmlPre("miframe_render()->globals(['uid' => uniqid()]);");
+	$Test->htmlPre(
+		"miframe_render()->globals(['uid' => uniqid()]);" .
+		PHP_EOL .
+		$Test->getContext()
+	);
 	// Multiples views
 	foreach ($views_list as $p => $ptitle) {
 		if ($p == 'd') {
@@ -135,6 +145,8 @@ if ($post_view !== 'd') {
 			PHP_EOL .
 			"echo miframe_view('{$p}', compact('dato1', 'dato2'));"
 		);
+		// Habilita layout (se inhabilita luego de su primer uso)
+		$view->resetLayout();
 		// Contenedor
 		echo '<div class="view-container">';
 		// Para mostrar en pantalla

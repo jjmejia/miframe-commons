@@ -36,7 +36,7 @@ class RenderView extends Singleton
 	/**
 	 * Acciones a ejecutar al crear un objeto para esta clase.
 	 */
-	public function singletonStart()
+	protected function singletonStart()
 	{
 		// Crea objeto para almacenar datos del Layout
 		$this->layout = new class {
@@ -74,6 +74,14 @@ class RenderView extends Singleton
 	public function removeLayout()
 	{
 		$this->layout->filename = '';
+	}
+
+	/**
+	 * Habilita nuevamente el layout actual para su uso.
+	 */
+	public function resetLayout()
+	{
+		$this->layout->isRunning = false;
 	}
 
 	/**
@@ -239,7 +247,7 @@ class RenderView extends Singleton
 			// Libera memoria
 			$this->layout->contentView = '';
 			// Habilita de nuevo la ejecución del Layout
-			$this->layout->isRunning = false;
+			// $this->layout->isRunning = false;
 		}
 
 		return $result;
@@ -295,11 +303,11 @@ class RenderView extends Singleton
 	 * @param string $viewname Nombre/Path de la vista.
 	 * @param array $params Arreglo con valores.
 	 *
-	 * @return string Contenido renderizado.
+	 * @return string Contenido renderizado o FALSE si la vista ya está en ejecución.
 	 */
-	public function view(string $viewname, array $params): string
+	public function view(string $viewname, array $params): false|string
 	{
-		$content = '';
+		$content = false;
 		if ($this->newTemplate($viewname)) {
 			// Valida nombre de la vista y recupera nombre de archivo asociado
 			$filename = $this->checkFile($viewname);
@@ -359,6 +367,9 @@ class RenderView extends Singleton
 
 			// Libera memoria? (No, se requieren porque se registran como referencias)
 			// unset($include_args);
+
+			// Previene se invoque un archivo no valido
+			if ($view_filename == '' || !is_file($view_filename)) { return; }
 
 			include $view_filename;
 		};

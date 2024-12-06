@@ -3,8 +3,12 @@
 	<p>Texto: <span><?= trim($dato1) ?></span></p>
 	<p>Número: <span><?= number_format($dato2) ?></span></p>
 	<p>
-		<i><b>Aviso:</b> El reporte de errores en pantalla puede que esté bloqueado en el servidor.
-		Si no se visualiza mensaje de error en pantalla, prueba a habilitar el "modo Desarrollo".</i>
+		<i>
+			<b>Aviso:</b> El reporte de errores en pantalla se bloquean por defecto al usar vistas.
+			<?php if (!miframe_render()->inDeveloperMode()) { ?>
+			Si no se visualiza mensaje de error en pantalla, prueba a habilitar el "modo Desarrollo".
+			<?php } ?>
+		</i>
 	</p>
-	<p>Valor no asignado: <span><?= trim($dato3) ?></span></p>
+	<p>Valor de variable no declarada ($invalid_var): <span><?= trim($invalid_var) ?></span></p>
 </div>
