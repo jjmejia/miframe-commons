@@ -66,8 +66,11 @@ $views_list = [
 	'b' => 'Vista con errores',
 	'c' => 'Invocando view() dentro de otro view()',
 	'd' => 'Multiples views()',
-	'e' => 'Vista no existente'
 ];
+if (miframe_server()->isLocalhost()) {
+	// En producción no hay cómo prevenir se muestren paths completos
+	$views_list['e'] = 'Vista no existente (opción para Localhost)';
+}
 // Proceso por defecto
 if (!isset($views_list[$post_view])) {
 	$post_view = 'a';
