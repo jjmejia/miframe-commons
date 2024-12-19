@@ -16,25 +16,23 @@ include_once $Test->includePath('/miframe/commons/helpers.php');
 // Apertura de la página demo
 $Test->start(
 	'miframe_render() y miframe_view()',
-	'Demos para ilustrar uso del utilitario <code>miframe_render()</code> y <code>miframe_view()</code> de la librería <code>miFrame\\Commons</code>, para visualización de páginas en pantalla.'
+	'Demos para ilustrar uso del utilitario <code>miframe_render()</code> y <code>miframe_view()</code> de la librería <code>miFrame\\Commons</code>, para visualización de páginas en pantalla.',
+	'.view-container { border:1px dashed #999;padding:10px 20px;margin:10px 0; h1 { margin-top:0; } }'
 );
-
-// Estilo adicional para esta demo
-echo '<style>.view-container { border:1px dashed #999;padding:10px 20px;margin:10px 0; h1 { margin-top:0; } }</style>' . PHP_EOL;
 
 // Asocia clase a una variable para agilizar su uso.
 $view = miframe_render();
 
 // Habilita modo developer (habilita dumps y uso del modo Debug)
 if ($Test->choice('developerMode', 'Modo Desarrollo', 'Habilitar modo Producción')) {
+	$Test->copyNextLines();
 	$view->developerOn();
-	$Test->context('miframe_render()->developerOn();');
 }
 
 // Habilita modo Debug (identifica cada view usado en pantalla)
 if ($Test->choice('debug', 'Modo Debug ', 'Remover modo Debug')) {
+	$Test->copyNextLines();
 	$view->debug = true;
-	$Test->context('miframe_render()->debug = true;');
 }
 
 // Adiciona filtros para proteger paths.
@@ -55,11 +53,6 @@ $view->addLayoutFilter('hideDocumentRoot', function (string $content) {
 // Directorio donde ubicar el layout y las vistas
 $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'demo-view-files');
 
-// Captura vista elegida por el usuario
-$post_view = '';
-if (isset($_GET['view'])) {
-	$post_view = strtolower(trim($_GET['view']));
-}
 // Lista vistas disponibles
 $views_list = [
 	'a' => 'Vista regular',
@@ -67,41 +60,34 @@ $views_list = [
 	'c' => 'Invocando view() dentro de otro view()',
 	'd' => 'Multiples views()',
 ];
+// Adiciona la opción "Vista no existente" solo para Localhost,
+// ya que al remover manejo personalizado de errores no existe
+// forma de prevenir que muestra paths completos en entornos no seguros.
 if (miframe_server()->isLocalhost()) {
-	// En producción no hay cómo prevenir se muestren paths completos
-	$views_list['e'] = 'Vista no existente (opción para Localhost)';
-}
-// Proceso por defecto
-if (!isset($views_list[$post_view])) {
-	$post_view = 'a';
+	$views_list['e'] = 'Vista no existente';
 }
 // Crea enlaces para selección de las vistas
-$views_links = '';
-foreach ($views_list as $k => $view_title) {
-	if ($views_links != '') {
-		$views_links .= ' | ';
-	}
-	if ($post_view == $k) {
-		$views_links .= $view_title;
-	} else {
-		$data =  ['view' => $k] + $_GET;
-		$views_links .= $Test->link($view_title, $data);
-	}
-}
+$views_links = $Test->multipleLinks('view', $views_list);
 
-echo "<p><b>Vistas:</b> {$views_links}</p>";
+// Muestra opciones solamente cuando se tienen múltiples vistas
+if (count($views_list) > 1) {
+	echo "<p><b>Vistas:</b> {$views_links}</p>";
+}
 
 // Opciones para configuración de layout:
 // Usar layout personalizado
 if (!$Test->choice('uselayoutdef', 'Usar Layout por defecto', 'Usar Layout personalizado')) {
+	$Test->copyNextLines();
 	$view->layout('layout');
-	$Test->context("miframe_render()->layout('layout');");
 }
 // Remueve layout personalizado o por defecto
 if ($Test->choice('nolayout', 'Remover Layout', 'Usar Layout personalizado')) {
+	$Test->copyNextLines();
 	$view->removeLayout();
-	$Test->context('miframe_render()->removeLayout();');
 }
+
+// Recupera vista seleccionada
+$post_view = $Test->getParam('view', $views_list);
 
 // Valores a usar en layout
 $view->globals(['title' => $views_list[$post_view], 'uid' => uniqid()]);
@@ -118,7 +104,7 @@ if ($post_view !== 'd') {
 	$Test->htmlPre(
 		"miframe_render()->globals(['title' => '{$views_list[$post_view]}', 'uid' => uniqid()]);" .
 		PHP_EOL .
-		$Test->getContext() .
+		str_replace('$view', 'miframe_render()', $Test->pasteLines()) .
 		"echo miframe_view('{$post_view}', compact('dato1', 'dato2'));");
 
 	// Contenedor
@@ -133,7 +119,7 @@ if ($post_view !== 'd') {
 	$Test->htmlPre(
 		"miframe_render()->globals(['uid' => uniqid()]);" .
 		PHP_EOL .
-		$Test->getContext()
+		str_replace('$view', 'miframe_render()', $Test->pasteLines())
 	);
 	// Multiples views
 	foreach ($views_list as $p => $ptitle) {

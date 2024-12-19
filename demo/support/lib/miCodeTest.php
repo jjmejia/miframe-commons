@@ -9,10 +9,11 @@
 
 class miCodeTest
 {
-
 	private $config = [];
 	private $choices = [];
 	private $codePre = '';
+	private $filename = '';
+	private $content_script = [];
 
 	public function __construct()
 	{
@@ -112,7 +113,7 @@ class miCodeTest
 	/**
 	 * Presenta encabezado para la salida a pantalla.
 	 */
-	public function start(string $title, string $description = '')
+	public function start(string $title, string $description = '', string $styles = '')
 	{
 		$estilos = $this->resourcesPath('/resources/css/tests.css');
 		$title_meta = strip_tags($title);
@@ -132,6 +133,12 @@ class miCodeTest
 			return;
 		}
 
+		// Estilos adicionales en linea
+		$estilos_add = '';
+		if ($styles !== '') {
+			$estilos_add = '<style>' . $styles . '</style>';
+		}
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -147,6 +154,7 @@ class miCodeTest
 	<meta property="og:description" content="<?= $description_meta ?>" />
 	<title><?= htmlentities($title) ?></title>
 	<link rel="stylesheet" href="<?= $estilos ?>">
+	<?= $estilos_add ?>
 </head>
 
 <body>
@@ -226,7 +234,7 @@ class miCodeTest
 
 	public function link(string $name, array $data = [], $raw = false)
 	{
-		$enlace_base = miframe_server()->self();
+		$enlace_base = (!empty($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '');
 		if (count($data) > 0) {
 			$enlace_base .= '?' . http_build_query($data);
 		}
@@ -235,6 +243,41 @@ class miCodeTest
 		}
 
 		return $enlace_base;
+	}
+
+	public function getParam(string $param_name, array $links)
+	{
+		// Captura vista elegida por el usuario
+		$post_view = '';
+		if (isset($_GET[$param_name])) {
+			$post_view = strtolower(trim($_GET[$param_name]));
+		}
+		// Valida que exista
+		if (!isset($links[$post_view])) {
+			$post_view = array_key_first($links);
+		}
+
+		return $post_view;
+	}
+
+	public function multipleLinks(string $param_name, array $links)
+	{
+		$post_view = $this->getParam($param_name, $links);
+		// Crea enlaces para selección de las vistas
+		$views_links = '';
+		foreach ($links as $k => $view_title) {
+			if ($views_links != '') {
+				$views_links .= ' | ';
+			}
+			if ($post_view == $k) {
+				$views_links .= $view_title;
+			} else {
+				$data =  [$param_name => $k] + $_GET;
+				$views_links .= $this->link($view_title, $data);
+			}
+		}
+
+		return $views_links;
 	}
 
 	public function choice(string $option, string $text_nok, string $text_ok)
@@ -282,19 +325,6 @@ class miCodeTest
 		return $text;
 	}
 
-	/**
-	 * Almacena información para mostrar luego.
-	 */
-	public function context(string $info)
-	{
-		$this->codePre .= $info . PHP_EOL;
-	}
-
-	public function getContext() {
-		$text = $this->codePre;
-		$this->codePre = '';
-		return $text;
-	}
 	/**
 	 * Despliega contenido de variable.
 	 */
@@ -404,4 +434,52 @@ class miCodeTest
 			$_SESSION['MICODE_DEMO_VISITS'][$src] = $date;
 		}
 	}
+
+	public function copyNextLines(int $lines = 1)
+	{
+		// Muestra las lineas siguientes a la posición actual
+		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		$content = '';
+		$index = 0;
+		// Para el caso de showNextLines(), el backtrace "0" no apunta
+		// al archivo que invoca la petición sino a este archivo.
+		while (!empty($trace[$index]) && $trace[$index]['file'] == __FILE__) {
+			$index++;
+		}
+		if (!empty($trace[$index])) {
+			if ($this->filename !== $trace[$index]['file']) {
+				$this->filename = $trace[$index]['file'];
+				$this->content_script = file($trace[$index]['file']);
+			}
+			for ($i = $trace[$index]['line']; $i < $trace[$index]['line'] + $lines; $i++) {
+				if (array_key_exists($i, $this->content_script)) {
+					$content .= rtrim(str_replace("\t", '    ', $this->content_script[$i])) . PHP_EOL;
+				}
+			}
+		}
+
+		// Si solamente retorna una linea, elimina espacios al inicio
+		if ($lines == 1) {
+			$content = ltrim($content);
+		}
+
+		$this->codePre .= $content;
+	}
+
+	public function showNextLines(int $lines = 1)
+	{
+		$this->codePre = '';
+		$this->copyNextLines($lines);
+		$content = $this->pasteLines();
+		if ($content != '') {
+			echo $this->htmlPre($content);
+		}
+	}
+
+	public function pasteLines() {
+		$text = $this->codePre;
+		$this->codePre = '';
+		return $text;
+	}
+
 }
