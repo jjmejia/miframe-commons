@@ -46,8 +46,8 @@ class RenderView extends Singleton
 			public array $params = [];
 			// Contenido de vistas previas
 			public string $contentView = '';
-			// TRUE para indicar que el Layout está en ejecución
-			public bool $isRunning = false;
+			// TRUE para indicar que el Layout fue usado
+			public bool $alreadyUsed = false;
 		};
 	}
 
@@ -67,9 +67,7 @@ class RenderView extends Singleton
 	}
 
 	/**
-	 * Remueve layout.
-	 *
-	 * No destruye el elemento, solamente inicializa el archivo asociado.
+	 * Remueve el archivo asociado al layout.
 	 */
 	public function removeLayout()
 	{
@@ -77,11 +75,11 @@ class RenderView extends Singleton
 	}
 
 	/**
-	 * Habilita nuevamente el layout actual para su uso.
+	 * Habilita el layout actual para su uso, incluso después de haber sido usado en la vista actual.
 	 */
 	public function resetLayout()
 	{
-		$this->layout->isRunning = false;
+		$this->layout->alreadyUsed = false;
 	}
 
 	/**
@@ -120,10 +118,12 @@ class RenderView extends Singleton
 	/**
 	 * Valida nombre/path dado a una vista.
 	 *
-	 * Si el nombre dado no corresponde a un archivo físico, se generará un error.
+	 * Si el nombre dado no corresponde a un archivo físico, se genera un error.
 	 *
 	 * @param string $viewname Nombre/Path de la vista.
 	 * @param string $reference Referencia asociada a la vista que usará el archivo.
+	 *
+	 * @return string Path completo asociado al $viewname.
 	 */
 	private function checkFile(string $viewname): string
 	{
@@ -156,7 +156,7 @@ class RenderView extends Singleton
 	 *
 	 * @param array $params Arreglo con valores.
 	 *
-	 * @return
+	 * @return self Este objeto.
 	 */
 	public function globals(array $params): self
 	{
@@ -185,16 +185,6 @@ class RenderView extends Singleton
 			$this->layout->params[$name] :
 			$default
 		);
-	}
-
-	/**
-	 * Limpia arreglo de valoers asociado a una vista.
-	 *
-	 * @param string $reference Referencia asociada a la vista que desea limpiar.
-	 */
-	private function resetParams(string $reference)
-	{
-		$this->views[$reference]['params'] = [];
 	}
 
 	/**
@@ -231,12 +221,12 @@ class RenderView extends Singleton
 	{
 		// Ejecuta layout (si alguno) si no hay vistas pendientes.
 		$result = (
-			!$this->layout->isRunning &&
+			!$this->layout->alreadyUsed &&
 			$this->currentView == ''
 		);
 		if ($result && !empty($this->layout->filename)) {
-			// Protege la ejecución del Layout
-			$this->layout->isRunning = true;
+			// Marca este Layout como "ya usado"
+			$this->layout->alreadyUsed = true;
 			// Preserva el contenido previamente renderizado para su uso en el Layout
 			$this->layout->contentView = $content;
 			// Ejecuta vista
@@ -246,8 +236,6 @@ class RenderView extends Singleton
 			);
 			// Libera memoria
 			$this->layout->contentView = '';
-			// Habilita de nuevo la ejecución del Layout
-			// $this->layout->isRunning = false;
 		}
 
 		return $result;
@@ -323,16 +311,6 @@ class RenderView extends Singleton
 	}
 
 	/**
-	 * Retorna archivo asociado a la vista actual.
-	 *
-	 * @return string Archivo.
-	 */
-	// protected function currentFile()
-	// {
-	// 	return $this->views[$this->currentView]['file'];
-	// }
-
-	/**
 	 * Captura el texto enviado a pantalla (o al navegador) por cada vista.
 	 *
 	 * Realiza la inclusión de los scripts de vistas.
@@ -364,9 +342,6 @@ class RenderView extends Singleton
 				// Se extraen como valores referencia para evitar duplicados.
 				extract($view_args, EXTR_SKIP | EXTR_REFS);
 			}
-
-			// Libera memoria? (No, se requieren porque se registran como referencias)
-			// unset($include_args);
 
 			// Previene se invoque un archivo no valido
 			if ($view_filename == '' || !is_file($view_filename)) { return; }

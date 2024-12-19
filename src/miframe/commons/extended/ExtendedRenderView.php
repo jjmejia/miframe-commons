@@ -3,6 +3,8 @@
 /**
  * Genera páginas web mediante el uso de vistas (views).
  *
+ * Hace uso de miframe_render() en las vistas sugeridas.
+ *
  * @author John Mejía
  * @since Noviemre 2024
  */
@@ -214,7 +216,7 @@ class ExtendedRenderView extends RenderView
 	 */
 	public function dumpViews()
 	{
-		return $this->dump($this->views, 'Views', true);
+		return $this->dump($this->views, 'Views');
 	}
 
 	/**
@@ -233,13 +235,14 @@ class ExtendedRenderView extends RenderView
 	 * @param bool $escape_dump TRUE para mostrar información legible (para humanos) sobre
 	 * 							el contenido de $var. FALSE muestra el contenido tal
 	 * 							cual sin modificar su formato.
+	 * @param bool $ignore_empty TRUE para no generar texto alguno si la variable está vacia.
 	 *
 	 * @return string Texto formateado.
 	 */
-	public function dump(mixed $var, string $title = '', bool $escape_dump = true): string
+	public function dump(mixed $var, string $title = '', bool $escape_dump = true, bool $ignore_empty = false): string
 	{
 		$content = '';
-		if ($this->developerMode) {
+		if ($this->developerMode && (!$ignore_empty || !empty($var))) {
 			if ($escape_dump) {
 				// Convierte en texto protegido
 				$var = htmlspecialchars(print_r($var, true));

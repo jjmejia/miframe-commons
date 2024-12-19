@@ -70,6 +70,6 @@ function miframe_view(string $viewname, array $params = []): string
  *
  * @return string Texto formateado.
  */
-function miframe_dump(mixed $var, string $title = '', bool $escape_dump = true) {
-	return miframe_render()->dump($var, $title, $escape_dump);
+function miframe_dump(mixed $var, string $title = '', bool $escape_dump = true, bool $ignore_empty = false) {
+	return miframe_render()->dump($var, $title, $escape_dump, $ignore_empty);
 }
