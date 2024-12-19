@@ -3,6 +3,8 @@
 /**
  * Librería de soporte para clases usadas para generar texto HTML.
  *
+ * Requiere miframe_server().
+ *
  * @author John Mejia
  * @since Octubre 2024
  */
