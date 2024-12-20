@@ -42,16 +42,13 @@ $errors->sizeErrorLog = 2097152; // 2MB
 if ($Test->choice('userview', 'Usar vista de error personalizada', 'No usar vista personalizada')) {
 	$Test->copyNextLines(2);
 	$render = new ExtendedRenderError();
-	$errors->setRender($render);
+	$errors->setRenderer($render);
 	// Previene terminar al script al ejecutar en modo desarrollo
 	if (!$Test->choice('endscript', 'Terminar script (modo Desarrollo)', 'No terminar script')) {
 		$Test->copyNextLines();
 		$render->inDeveloperModeEndScript = false;
 	}
 }
-
-// $render->errorMessage = 'Ups! Houston, tenemos un problema';
-// $render->warningMessage = 'Ups! Houston, están ahi?';
 
 // Habilita uso del watch()
 if (!$Test->choice('nowatch', 'Deshabilitar captura de errores', 'No watch')) {
@@ -85,7 +82,7 @@ if (count($views_list) > 1) {
 $post_view = $Test->getParam('view', $views_list);
 
 // Adiciona layout a la vista
-$view->layout('layout');
+$view->layout('layout', 'content_view');
 
 // Valores a usar en layout
 $view->globals(['title' => $views_list[$post_view], 'uid' => uniqid()]);
@@ -110,27 +107,29 @@ echo $view->view($post_view, compact('dato1', 'dato2'));
 
 echo '<h2>Otros ejemplos de manejo de errores</h2>';
 
-echo '<p><b>Log de errores:</b> ' . $errors->getErrorLog() . '</p>';
+echo '<ul class="dmeo"><li><b>Log de errores:</b> ' . $errors->getErrorLog() . '</li>';
 
-if (!is_null($render)) {
+if (!empty($render)) {
 	$default = $render->warningMessage;
 	if ($Test->choice('usermsg', 'Cambiar mensaje de Advertencia', 'Restaurar mensaje de Advertencia')) {
 		$render->warningMessage = 'Ups! Houston, tenemos un problema';
 	}
-	echo "<p><b>" . $Test->renderChoices() . "</b> (Mensaje original: <i>{$default}</i>)</p>";
+	echo "<li><b>" . $Test->renderChoices() . "</b> (Mensaje original: <i>{$default}</i>)</li>";
 	// $errors->warningMessage = 'Ups! Houston, tenemos un problema (warning)';
 }
 
-echo "<p>Error generado luego de usado el <i>Layout</i> en la vista previa:</p>";
+echo "<li>Error generado luego de usado el <i>Layout</i> en la vista previa:";
 // Variable no declarada, genera error
 $Test->showNextLines();
 $variable_not_declared++;
+echo "</li>";
 
-echo "<p>Error visualizado manualmente:</p>";
+echo "<li>Error visualizado manualmente:";
 $Test->showNextLines();
 $errors->showError(E_USER_WARNING, 'Error manualmente generado');
+echo "</li>";
 
-echo "<p>Ejemplo del manejo de una <code>Exception</code>:</p>";
+echo "<li>Ejemplo del manejo de una <code>Exception</code>:";
 $Test->showNextLines(6);
 try {
 	// Las excepciones pueden manejar cualquier valor entero para código
@@ -138,6 +137,8 @@ try {
 } catch (\Exception $e) {
 	$errors->showException($e, false);
 }
+
+echo "</li></ul>";
 
 // Cierre de la página
 $Test->end();

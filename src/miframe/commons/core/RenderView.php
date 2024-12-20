@@ -44,10 +44,22 @@ class RenderView extends Singleton
 			public string $filename = '';
 			// Valores a usar en el Layout
 			public array $params = [];
-			// Contenido de vistas previas
-			public string $contentView = '';
+			// Nombre de la variable con el contenido de vistas previas
+			public string $contentViewName = '';
 			// TRUE para indicar que el Layout fue usado
 			public bool $alreadyUsed = false;
+			// Método para actualizar contenido
+			public function saveContentView(string $content) {
+				if ($this->contentViewName != '') {
+					$this->params[$this->contentViewName] = $content;
+				}
+			}
+			// Método para remover contenido (libera memoria)
+			public function removeContentView() {
+				if ($this->contentViewName != '') {
+					unset($this->params[$this->contentViewName]);
+				}
+			}
 		};
 	}
 
@@ -58,10 +70,13 @@ class RenderView extends Singleton
 	 * ejecutadas a través de $this->view().
 	 *
 	 * @param string $viewname Nombre/Path de la vista layout.
+	 * @param string $content_view_name Nombre de la variable que va a contener el
+	 * 									texto previamente renderizado.
 	 */
-	public function layout(string $viewname): self
+	public function layout(string $viewname, string $content_view_name): self
 	{
 		$this->layout->filename = $this->checkFile($viewname);
+		$this->layout->contentViewName = trim($content_view_name);
 		$this->layout->params = [];
 		return $this;
 	}
@@ -228,14 +243,14 @@ class RenderView extends Singleton
 			// Marca este Layout como "ya usado"
 			$this->layout->alreadyUsed = true;
 			// Preserva el contenido previamente renderizado para su uso en el Layout
-			$this->layout->contentView = $content;
+			$this->layout->saveContentView($content);
 			// Ejecuta vista
 			$content = $this->evalTemplate(
 				$this->layout->filename,
 				$this->layout->params
 			);
 			// Libera memoria
-			$this->layout->contentView = '';
+			$this->layout->removeContentView();
 		}
 
 		return $result;
@@ -356,18 +371,5 @@ class RenderView extends Singleton
 		$content = ob_get_clean();
 
 		return $content;
-	}
-
-	/**
-	 * Retorna contenido renderizado en vistas previas.
-	 *
-	 * Este método solamente retorna contenido valido cuando se invoca desde el
-	 * Layout o desde una vista contenida en el Layout.
-	 *
-	 * @return string Contenido renderizado en vistas anteriores.
-	 */
-	public function contentView(): string
-	{
-		return $this->layout->contentView;
 	}
 }

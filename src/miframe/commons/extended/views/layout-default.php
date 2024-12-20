@@ -13,4 +13,4 @@ if (count($view_args) > 0) {
 }
 
 // Muestra contenido de vistas previas
-echo miframe_render()->contentView();
+echo $content;

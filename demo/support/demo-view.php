@@ -77,7 +77,7 @@ if (count($views_list) > 1) {
 // Usar layout personalizado
 if (!$Test->choice('uselayoutdef', 'Usar Layout por defecto', 'Usar Layout personalizado')) {
 	$Test->copyNextLines();
-	$view->layout('layout');
+	$view->layout('layout', 'content_view');
 }
 // Remueve layout personalizado o por defecto
 if ($Test->choice('nolayout', 'Remover Layout', 'Usar Layout personalizado')) {

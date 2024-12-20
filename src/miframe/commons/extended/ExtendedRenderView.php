@@ -44,7 +44,7 @@ class ExtendedRenderView extends RenderView
 	{
 		parent::singletonStart();
 		// Adiciona layout por defecto
-		$this->layout('layout-default');
+		$this->layout('layout-default', 'content');
 		// Deshabilita salida a pantalla de mensajes de error
 		// (se habilita solo para modo Desarrollo)
 		ini_set("display_errors", "off");

@@ -156,7 +156,8 @@ h1.test-encab, .test-content h2 {
 
 	li {
 		/* padding:15px auto !important; */
-		margin:4px auto !important;
+		margin-top:5px !important;
+		margin-bottom:10px !important;
 	}
 
 	li a {
