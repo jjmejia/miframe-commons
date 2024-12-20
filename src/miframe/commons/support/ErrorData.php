@@ -9,30 +9,51 @@
 
 namespace miFrame\Commons\Support;
 
-class DataError {
+class ErrorData {
 
 	/**
-	 * - 'class'  : Nombre de la clase que generó el error.
-	 * - 'type'   : Nivel de error de PHP (E_USER_ERROR, E_ERROR, ...).
-	 * - 'message': Descripción del error.
-	 * - 'file'   : Archivo donde se generó el error.
-	 * - 'line'   : Línea del archivo donde se generó el error.
-	 * - 'trace'  : Información de backtrace.
-	 * - 'type_name': Nombre amigable del nivel de error.
+	 * @var string $class Nombre de la clase que generó el error
 	 */
-
 	private string $class = '';
+
+	/**
+	 * @var mixed $type Nivel de error de PHP (E_USER_ERROR, E_ERROR, ...) o código
+	 * 					de error reportado por una Esception (puede ser numerico u otro tipo).
+	 */
 	private mixed $type = 0;
+
+	/**
+	 * @var string $message Descripción del error
+	 */
 	private string $message = '';
+
+	/**
+	 * @var string $file Archivo donde se generó el error
+	 */
 	private string $file = '';
+
+	/**
+	 * @var int $line Línea del archivo donde se generó el error
+	 */
 	private int $line = 0;
+
+	/**
+	 * @var array $trace Traza del error
+	 */
 	private array $trace = [];
+
+	/**
+	 * @var string $typeName Nombre amigable del nivel de error o código de Exception
+	 */
 	private string $typeName = '';
 
+	/**
+	 * @var bool $endScript TRUE para indicar que debe terminar el script luego de reportar el error
+	 */
 	public bool $endScript = false;
 
 	/**
-	 * Registra mensaje de error.
+	 * Registra datos de un error ocurrido.
 	 *
 	 * Este método procesa un error verificando si el tipo de error se encuentra
 	 * incluido en el nivel de reporte de errores actual. Si se encuentra, construye
@@ -85,7 +106,7 @@ class DataError {
 	}
 
 	/**
-	 * Muestra una excepción en la interfaz de usuario.
+	 * Registra datos de una Exception generada.
 	 *
 	 * Este método se invoca internamente (por PHP) también para manejo de errores?
 	 *
@@ -180,12 +201,19 @@ class DataError {
 			$message = substr($message, 0, -1);
 		}
 
+		$source = '';
+		if ($this->file != '') {
+			$source .= " en \"{$this->file}\"";
+		}
+		if ($this->line > 0) {
+			$source .= " línea {$this->line}";
+		}
 		// Mensaje HTML alternativo (al quitar los tags debe ser legible)
 		return "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\">" .
 			"<h3>{$this->typeName}:</h3> <p>" .
 			nl2br($message) .
-			" en \"{$this->file}\" línea {$this->line}</p>" .
-			"</div>";
+			$source .
+			"</p></div>";
 
 	}
 

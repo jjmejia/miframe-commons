@@ -11,7 +11,7 @@ namespace miFrame\Commons\Core;
 
 use Exception;
 use miFrame\Commons\Interfaces\RenderErrorInterface;
-use miFrame\Commons\Support\DataError;
+use miFrame\Commons\Support\ErrorData;
 
 class ErrorHandler
 {
@@ -70,7 +70,7 @@ class ErrorHandler
 		ini_set('ignore_repeated_errors', '1');
 		// Asocia render si existe
 		if (!empty($render)) {
-			$this->setRender($render);
+			$this->setRenderer($render);
 		}
 	}
 
@@ -79,7 +79,7 @@ class ErrorHandler
 	 *
 	 * @param RenderErrorInterface $render	Objeto usado para generar el mensaje a pantalla.
 	 */
-	public function setRender(RenderErrorInterface $render)
+	public function setRenderer(RenderErrorInterface $render)
 	{
 		$this->render = $render;
 	}
@@ -233,10 +233,10 @@ class ErrorHandler
 	/**
 	 * Valida si el error ya fue reportado.
 	 *
-	 * @param DataError $error Arreglo de datos asociados al error.
+	 * @param ErrorData $error Objeto de datos asociados al error.
 	 * @return bool TRUE si el error es nuevo y no ha sido ya reportado. FALSE en otro caso.
 	 */
-	private function uniqueError(DataError $error): bool
+	private function uniqueError(ErrorData $error): bool
 	{
 		// solamente incluye los valores básicos
 		$key = $error->getKey();
@@ -355,12 +355,11 @@ class ErrorHandler
 	 * - 'trace'  : Información de backtrace.
 	 * - 'typeName': Nombre amigable del nivel de error.
 	 *
-	 * @param DataError $error Un array asociativo que contiene detalles del
-	 *                          error.
+	 * @param ErrorData $error Objeto que contiene detalles del error.
 	 *
 	 * @return bool Retorna FALSE si el error ya ha sido reportado.
 	 */
-	private function viewError(DataError $error)
+	private function viewError(ErrorData $error)
 	{
 		// Valida que este error no haya sido ya atendido
 		if (!$this->uniqueError($error)) {
@@ -430,7 +429,7 @@ class ErrorHandler
 	 */
 	public function showError(int $type, string $message, string $file = '', int $line = 0)
 	{
-		$error = new DataError();
+		$error = new ErrorData();
 		if (!$error->newError($type, $message, $file, $line)) {
 			return false;
 		}
@@ -441,7 +440,8 @@ class ErrorHandler
 	/**
 	 * Muestra una excepción en la interfaz de usuario.
 	 *
-	 * Este método se invoca internamente (por PHP) también para manejo de errores?
+	 * Este método se invoca internamente (por PHP) cuando ocurre un error mientras
+	 * atiende una excepción vía try/catch.
 	 *
 	 * @param \Exception|\Error $e Objeto con los datos de la excepción o error a mostrar.
 	 * @param bool 	$end_script [opcional] TRUE si se debe terminar el
@@ -450,7 +450,7 @@ class ErrorHandler
 	 */
 	public function showException(\Exception|\Error $e, bool $end_script = true)
 	{
-		$error = new DataError();
+		$error = new ErrorData();
 		$error->newException($e);
 		$error->endScript = $end_script;
 

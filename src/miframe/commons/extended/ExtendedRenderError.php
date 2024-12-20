@@ -12,7 +12,7 @@
 namespace miFrame\Commons\Extended;
 
 use miFrame\Commons\Interfaces\RenderErrorInterface;
-use miFrame\Commons\Support\DataError;
+use miFrame\Commons\Support\ErrorData;
 
 class ExtendedRenderError implements RenderErrorInterface
 {
@@ -34,6 +34,9 @@ class ExtendedRenderError implements RenderErrorInterface
 	 */
 	public string $warningMessage = 'Ha ocurrido una incidencia, favor revisar el log de errores.';
 
+	/**
+	 * @var array $previous Registra mensajes de error ya reportados en producción.
+	 */
 	private array $previous = [];
 
 	/**
@@ -47,22 +50,11 @@ class ExtendedRenderError implements RenderErrorInterface
 	 * La función también maneja la visualización del error de manera diferente
 	 * según el modo actual (Desarrollador o Producción).
 	 *
-	 * El arreglo $data_error contiene al menos los siguientes elementos:
-	 *
-	 * - 'class'  : Nombre de la clase que generó el error.
-	 * - 'type'   : Nivel de error de PHP (E_USER_ERROR, E_ERROR, ...).
-	 * - 'message': Descripción del error.
-	 * - 'file'   : Archivo donde se generó el error.
-	 * - 'line'   : Línea del archivo donde se generó el error.
-	 * - 'trace'  : Información de backtrace.
-	 * - 'type_name': Nombre amigable del nivel de error.
-	 *
-	 * @param DataError $error Un array asociativo que contiene detalles del
-	 *                          error.
+	 * @param ErrorData $error Obketo que contiene detalles del error.
 	 *
 	 * @return bool Retorna FALSE si el error ya ha sido reportado.
 	 */
-	public function show(DataError $error): string|false
+	public function show(ErrorData $error): string|false
 	{
 		$content = '';
 
