@@ -18,9 +18,10 @@ $Test->start('miFrame\\Commons', 'Demos para ilustrar uso de la librería <code>
 $base = dirname($_SERVER['SCRIPT_NAME']) . '/';
 
 $links = [
-	'support/demo-server.php' => 'miframe_server() y miframe_autoload()',
-	'support/demo-html.php' => 'miframe_html()',
-	'support/demo-view.php' => 'miframe_render() y miframe_view()'
+	'support/demo-server.php' => 'Uso de miframe_server() y miframe_autoload()',
+	'support/demo-html.php' => 'Gestión de recursos HTML con miframe_html()',
+	'support/demo-view.php' => 'Uso de miframe_render() y miframe_view()',
+	'support/demo-errors.php' => 'Manejo de errores (clase ErrorHandler)',
 ];
 
 echo '<ul>' . PHP_EOL;

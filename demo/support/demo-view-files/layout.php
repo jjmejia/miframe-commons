@@ -1,17 +1,13 @@
 <!--
  Tradicionalmente, el layout contiene la apertura y cierre de la página.
  Para efectos de esta demo no es necesario.
-<html>
-	<head>
-		<title><?= $title ?></title>
-	</head>
-	<body>
 -->
-		<h1><?= $title ?></h1>
-		<?= miframe_render()->contentView() ?>
-		<hr>
-		<p>Pie de página contenido en el Layout (<b>UID</b> <?= $uid ?>).
-<!--
-	</body>
-</html>
--->
+<?php if (miframe_render()->once()) { ?>
+<style>.view-container { border:1px dashed #999;padding:10px 20px;margin:10px 0; h1 { margin-top:0; } }</style>
+<?php } ?>
+<div class="view-container">
+	<h1><?= $title ?></h1>
+	<?= miframe_render()->contentView() ?>
+	<hr>
+	<p>Pie de página contenido en el Layout (<b>UID</b> <?= $uid ?>).
+</div>
