@@ -630,32 +630,6 @@ class ServerData extends Singleton
 	}
 
 	/**
-	 * Valida que el archivo/directorio indicado sea subdirectorio del directorio temporal.
-	 *
-	 * @param string $filename	Path del archivo o directorio a evaluar.
-	 * @return string			TRUE si es archivo o subdirectorio del directorio temporal,
-	 * 							FALSE en otro caso.
-	 */
-	/*private function inTempDir(string $filename) : bool {
-
-		return $this->inDirectory($filename, $this->tempDir());
-	}*/
-
-	/**
-	 * Valida que el archivo/directorio indicado sea subdirectorio del directorio actual.
-	 *
-	 * Util para validar cuando se ejecuta por consola desde un directorio diferente al Web.
-	 *
-	 * @param string $filename	Path del archivo o directorio a evaluar.
-	 * @return string			TRUE si es archivo o subdirectorio del directorio actual,
-	 * 							FALSE en otro caso.
-	 */
-	/*private function inScriptDirectory(string $filename) : bool {
-
-		return $this->inDirectory($filename, $this->scriptDirectory());
-	}*/
-
-	/**
 	 * Auxiliar para detectar un directorio o archivo dentro de otro.
 	 *
 	 * @param string $filename	Path del archivo o directorio a evaluar.
@@ -821,9 +795,6 @@ class ServerData extends Singleton
 		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
 			throw new \Exception('No pudo recuperar un directorio temporal valido. Revise la configuración del Sistema.');
 		}
-
-		// Adiciona separador siempre para las opciones 3, 4 y 5
-		// $this->temp_directory .= DIRECTORY_SEPARATOR;
 
 		return $this->temp_directory;
 	}
