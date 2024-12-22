@@ -7,7 +7,7 @@
 
 namespace miFrame\Commons\Traits;
 
-trait removeDocumentRootContent {
+trait RemoveDocumentRootContent {
 
 	/**
 	 * @var bool $hideDocumentRoot Indica si se oculta el DOCUMENT_ROOT en los mensajes de error.

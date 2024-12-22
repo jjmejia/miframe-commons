@@ -12,11 +12,11 @@ namespace miFrame\Commons\Core;
 use Exception;
 use miFrame\Commons\Interfaces\RenderErrorInterface;
 use miFrame\Commons\Support\ErrorData;
-use miFrame\Commons\Traits\removeDocumentRootContent;
+use miFrame\Commons\Traits\RemoveDocumentRootContent;
 
 class ErrorHandler
 {
-	use removeDocumentRootContent;
+	use RemoveDocumentRootContent;
 
 	/**
 	 * @var RenderError $render Objeto usado para generar el mensaje a pantalla.

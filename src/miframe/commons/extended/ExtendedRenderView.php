@@ -12,11 +12,11 @@
 namespace miFrame\Commons\Extended;
 
 use miFrame\Commons\Core\RenderView;
-use miFrame\Commons\Traits\removeDocumentRootContent;
+use miFrame\Commons\Traits\RemoveDocumentRootContent;
 
 class ExtendedRenderView extends RenderView
 {
-	use removeDocumentRootContent;
+	use RemoveDocumentRootContent;
 
 	/**
 	 * @var bool $developerMode TRUE para habilitar el modo Desarrollo. Permite
