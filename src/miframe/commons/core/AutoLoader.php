@@ -40,8 +40,8 @@ class AutoLoader extends Singleton
 		// dirname() con ese separador retorna ".". Por tanto, empleamos
 		// una alternativa diferente, a saber:
 		$class_pattern = 'miFrame\\Commons\\*';
-		$file_path = dirname(__DIR__); // Apunta al directorio "commons"
-		$this->register($class_pattern, $file_path . DIRECTORY_SEPARATOR . '*.php');
+		$dirname = dirname(__DIR__); // Apunta al directorio "commons"
+		$this->register($class_pattern, $dirname . DIRECTORY_SEPARATOR . '*.php');
 	}
 
 	/**
@@ -93,9 +93,9 @@ class AutoLoader extends Singleton
 		$class = strtolower($className);
 		$path = '';
 
-		if (isset($namespaces[$class])) {
+		if (isset($this->namespaces[$class])) {
 			// Valor exacto
-			$path = $namespaces[$class];
+			$path = $this->namespaces[$class];
 		} else {
 			// Busca parciales
 			foreach ($this->namespaces as $nameclass => $pathclass) {
