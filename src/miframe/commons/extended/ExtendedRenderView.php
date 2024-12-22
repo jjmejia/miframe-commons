@@ -94,9 +94,9 @@ class ExtendedRenderView extends RenderView
 	 * Una vez renderizado el layout, aplica los filtros programados al contenido
 	 * generado.
 	 *
-	 * @param string $content Contenido de la vista a renderizar.
+	 * @param string $content Contenido de la vista a renderizar (Valor por referencia).
 	 *
-	 * @return string Contenido renderizado.
+	 * @return bool TRUE si debe incluir layout, FALSE en otro caso.
 	 */
 	protected function includeLayout(string &$content): bool
 	{

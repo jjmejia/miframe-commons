@@ -230,7 +230,7 @@ class RenderView extends Singleton
 	 * La ejecución del layout se hace solo una vez, justo antes de cerrar la vista.
 	 * Las vistas ejecutadas pueden modificar el archivo de layout a usar.
 	 *
-	 * @param string $content Contenido de la vista a renderizar.
+	 * @param string $content Contenido de la vista a renderizar (Valor por referencia).
 	 *
 	 * @return bool TRUE si debe incluir layout, FALSE en otro caso.
 	 */

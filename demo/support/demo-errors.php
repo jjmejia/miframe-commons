@@ -37,7 +37,7 @@ $Test->copyNextLines();
 $errors = new ErrorHandler();
 $errors->sizeErrorLog = 2097152; // 2MB
 
-if ($Test->choice('userview', 'Usar vista de error personalizada', 'No usar vista personalizada')) {
+if (!$Test->choice('userview', 'Remover vista de error personalizada', 'usar vista personalizada')) {
 	$Test->copyNextLines(2);
 	$render = new ExtendedRenderError();
 	$errors->setRenderer($render);
@@ -49,7 +49,7 @@ if ($Test->choice('userview', 'Usar vista de error personalizada', 'No usar vist
 }
 
 // Habilita uso del watch()
-if (!$Test->choice('nowatch', 'Deshabilitar captura de errores', 'No watch')) {
+if (!$Test->choice('nowatch', 'Deshabilitar personalización de errores', 'No watch')) {
 	$Test->copyNextLines();
 	$errors->watch();
 }
