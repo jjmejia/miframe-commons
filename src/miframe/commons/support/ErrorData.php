@@ -10,7 +10,6 @@
 namespace miFrame\Commons\Support;
 
 class ErrorData {
-
 	/**
 	 * @var string $class Nombre de la clase que generó el error
 	 */
@@ -71,12 +70,6 @@ class ErrorData {
 	 */
 	public function newError(int $type, string $message, string $file = '', int $line = 0)
 	{
-		if (!error_reporting() & $type) {
-			// Este código de error no está incluido en error_reporting, así que
-			// se retorna para que sea manejado con el proceso estandar de PHP
-			return false;
-		}
-
 		$this->class = 'Error';
 		$this->type = $type;
 		$this->message = $message;
@@ -84,7 +77,7 @@ class ErrorData {
 		$this->line = $line;
 		// Traza actual
 		$this->trace = $this->getTrace(__FUNCTION__);
-		// Terminar ejecución
+		// Terminar ejecución (puede modificarse posteriormente)
 		$this->endScript = $this->isFatalError();
 		// Nombre legible asociado al tipo de error
 		$this->typeName = $this->errorTypeName();
@@ -136,6 +129,19 @@ class ErrorData {
 		// si es que existe).
 		if (empty($this->trace)) {
 			$this->trace = $this->getTrace(__FUNCTION__);
+		} elseif (
+			$this->trace[0]['file'] !== $this->file &&
+			$this->trace[0]['line'] !== $this->line
+			) {
+			// El primer elemento no es el que genera el error, lo incluye
+			$etrace = [
+				'function' => __FUNCTION__,
+				'class' => __CLASS__,
+				'type' => '->',
+				'file' => $this->file,
+				'line' => $this->line
+			];
+			array_unshift($this->trace, $etrace);
 		}
 	}
 
@@ -155,7 +161,7 @@ class ErrorData {
 		if (!is_array($trace)) {
 			$trace = [];
 		}
-		// Remueve elemento "0" que corresponde a este método
+		// Remueve elementos al inicio que no proveen información útil
 		$i = 0;
 		while (
 			isset($trace[$i]) &&
@@ -182,12 +188,22 @@ class ErrorData {
 		return $this->type & (E_USER_ERROR | E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR);
 	}
 
+	/**
+	 * Llave usada para registrar un evento de error.
+	 *
+	 * Se ignora el mensaje como tal, de forma que se realice control sobre
+	 * el tipo, archivo y línea donde se genera el evento. Así, si se generan
+	 * múltiples eventos en la misma línea, marca solamente uno como valido
+	 * (esto para ayudar a prevenir potenciales ciclos infinitos).
+	 *
+	 * @return string Llave
+	 */
 	public function getKey()
 	{
 		return sha1(serialize([
 			$this->class,
 			$this->type,
-			$this->message,
+			// $this->message,
 			$this->file,
 			$this->line
 		]));
@@ -214,7 +230,6 @@ class ErrorData {
 			nl2br($message) .
 			$source .
 			"</p></div>";
-
 	}
 
 	/**

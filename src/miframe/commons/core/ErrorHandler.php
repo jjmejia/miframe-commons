@@ -12,18 +12,16 @@ namespace miFrame\Commons\Core;
 use Exception;
 use miFrame\Commons\Interfaces\RenderErrorInterface;
 use miFrame\Commons\Support\ErrorData;
+use miFrame\Commons\Traits\removeDocumentRootContent;
 
 class ErrorHandler
 {
+	use removeDocumentRootContent;
+
 	/**
 	 * @var RenderError $render Objeto usado para generar el mensaje a pantalla.
 	 */
 	private ?RenderErrorInterface $render = null;
-
-	/**
-	 * @var bool $shuttingDown TRUE cuando está ejecutando la rutina de shutdown.
-	 */
-	private bool $shuttingDown = false;
 
 	/**
 	 * @var array $errors Lista de errores ya reportados.
@@ -34,11 +32,6 @@ class ErrorHandler
 	 * @var string $firstEntryLog TRUE cuando no ha realizado entrada alguna al log de errores.
 	 */
 	private bool $firstEntryLog = true;
-
-	/**
-	 * @var bool $hideDocumentRoot Indica si se oculta el DOCUMENT_ROOT en los mensajes de error.
-	 */
-	public bool $hideDocumentRoot = true;
 
 	/**
 	 * @var int $sizeErrorLog Tamaño máximo en bytes permitido para el log de errores. En cero (0) no
@@ -53,9 +46,19 @@ class ErrorHandler
 	public string $oldErrorLogSufix = '(old)';
 
 	/**
-	 * @var bool $rotatingLog TRUE cuando está renombrando el log de errores (previene ciclos)
+	 * @var bool $checkLogSize TRUE para validar el log de errores (previene ciclos)
 	 */
-	private bool $rotatingLog = false;
+	private bool $checkLogSize = true;
+
+	/**
+	 * @var int $maxErrors Limite de errores a manejar por ciclo.
+	 */
+	public int $maxErrors = 1000;
+
+	/**
+	 * @var int $countErrors Control de errores ocurridos
+	 */
+	private int $countErrors = 0;
 
 	/**
 	 * Creación del objeto, inicializa atributos.
@@ -99,18 +102,14 @@ class ErrorHandler
 	 */
 	public function setErrorLog(string $filename): bool
 	{
-		$filename = trim($filename);
+		$filename = $this->getRealErrorLogPath($filename);
 		if ($filename !== '') {
-			$dirname = realpath(dirname($filename));
-			if (is_dir($dirname)) {
-				if (ini_set('error_log', $dirname . DIRECTORY_SEPARATOR . basename($filename)) !== false) {
-					// Habilita nuevamente la rotación del log
-					$this->rotatingLog = false;
-					return true;
-				}
+			if (ini_set('error_log', $filename) !== false) {
+				// Habilita nuevamente la rotación del log
+				$this->checkLogSize = true;
+				return true;
 			}
 		}
-
 		return false;
 	}
 
@@ -121,12 +120,28 @@ class ErrorHandler
 	 */
 	public function getErrorLog(): string
 	{
-		$filename = trim(ini_get('error_log'));
-		if ($filename != '') {
-			$filename = realpath($filename);
-		}
+		return $this->getRealErrorLogPath(ini_get('error_log'));
+	}
 
-		return $filename;
+	/**
+	 * Retorna siempre el path completo del archivo log.
+	 *
+	 * @param string $filename Path a evaluar
+	 * @return string Path validado, cadena vacia si no existe el directorio asociado.
+	 */
+	private function getRealErrorLogPath(string $filename): string
+	{
+		$path = '';
+		$filename = trim($filename);
+		if ($filename !== '') {
+			$dirname = @realpath(dirname($filename));
+			$basename = trim(basename($filename));
+			// $dirbase y $basename retornan cadena vacia si no se puede obtener valor
+			if ($dirname && $basename && is_dir($dirname)) {
+				$path = $dirname . DIRECTORY_SEPARATOR . $basename;
+			}
+		}
+		return $path;
 	}
 
 	/**
@@ -135,17 +150,17 @@ class ErrorHandler
 	 * Esta función permite controlar y mostrar los errores y
 	 * excepciones no atendidas, ocurridos durante la ejecución del script.
 	 *
+	 * Para monitorear todos los errores excepto E_NOTICE, se puede invocar
+	 * este método con argumento E_ALL ^ E_NOTICE.
+	 *
 	 * @param int $error_level Nivel de errores a notificar. Por defecto
-	 *                         se notifican todos los errores excepto E_NOTICE.
-	 *                         Ver documentación de error_reporting() para
+	 *                         se notifican todos los errores. Veáse la
+	 * 						   documentación de error_reporting() para
 	 *                         más información.
 	 */
-	public function watch(int $error_level = E_ALL ^ E_NOTICE)
+	public function watch(int $error_level = E_ALL)
 	{
-		// Por defecto notifica todos los errores excepto E_NOTICE
 		error_reporting($error_level);
-		// Registra función a usar al terminar el script
-		register_shutdown_function([$this, 'shutdown']);
 		// Bloquea salidas a pantalla de mensajes de error
 		ini_set("display_errors", "off");
 		// Registra funciones a usar para despliegue de errores
@@ -154,81 +169,6 @@ class ErrorHandler
 		// Excepcion y se pasa al "exception handler"..
 		set_exception_handler([$this, 'showException']);
 	}
-
-	/**
-	 * Método a ejecutar al terminar el script.
-	 *
-	 * Valida si hay algún error no atendido y le da el manejo personalizado.
-	 */
-	public function shutdown()
-	{
-		$this->shuttingDown = true;
-		$last_error = error_get_last();
-		if (!is_null($last_error)) {
-			$this->showError(...$last_error);
-		}
-	}
-
-	// /**
-	//  * Identifica los código de error con nombres amigables.
-	//  *
-	//  * @param int $errno Código de error.
-	//  *
-	//  * @return string Título asociado al código de error.
-	//  */
-	// private function errorTypeName(int $errno)
-	// {
-	// 	// https://www.php.net/manual/en/errorfunc.constants.php#126465
-	// 	$exceptions = [
-	// 		E_ERROR => "Error",
-	// 		E_WARNING => "Advertencia",
-	// 		E_PARSE => "Error de interpretador", // Se incluye pero no puede ser capturado
-	// 		E_NOTICE => "Aviso",
-	// 		E_CORE_ERROR => "Error de arranque",
-	// 		E_CORE_WARNING => "Advertencia de arranque",
-	// 		E_COMPILE_ERROR => "Error durante compilación",
-	// 		E_COMPILE_WARNING => "Advertencia durante compilación",
-	// 		E_USER_ERROR => "Error generado por el Usuario",
-	// 		E_USER_WARNING => "Advertencia generada por el Usuario",
-	// 		E_USER_NOTICE => "Aviso generado por el Usuario",
-	// 		E_STRICT => "Error de compatibilidad",
-	// 		E_RECOVERABLE_ERROR => "Error recuperable",
-	// 		E_DEPRECATED => "Contenido Obsoleto",
-	// 		E_USER_DEPRECATED => "Contenido Obsoleto de Usuario",
-	// 		E_ALL => "(Todos)"
-	// 	];
-
-	// 	$title = "Error Desconocido ($errno)";
-	// 	if (isset($exceptions[$errno])) {
-	// 		$title = $exceptions[$errno];
-	// 	}
-
-	// 	return $title;
-	// }
-
-	// /**
-	//  * Título que identifica una excepción.
-	//  *
-	//  * @param mixed $code Código reportado con la excepción.
-	//  *
-	//  * @return string Título asociado.
-	//  */
-	// private function exceptionName(mixed $code)
-	// {
-	// 	return 'Excepción detectada' . (!empty($code) ? " (código {$code})" : '');
-	// }
-
-	/**
-	 * Determina si el código de error corresponde a un PHP Fatal Error.
-	 *
-	 * @param int $errno Nivel de error de PHP.
-	 *
-	 * @return bool TRUE si el error es fatal, FALSE en otro caso.
-	 */
-	// private function isFatalError(int $errno): bool
-	// {
-	// 	return $errno & (E_USER_ERROR | E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR);
-	// }
 
 	/**
 	 * Valida si el error ya fue reportado.
@@ -241,15 +181,14 @@ class ErrorHandler
 		// solamente incluye los valores básicos
 		$key = $error->getKey();
 
-		if (in_array($key, $this->errors)) {
-			// Ya reportó este mismo error
-			return false;
+		if (!in_array($key, $this->errors)) {
+			// No ha reportado este error
+			// Adiciona a control de repeticiones
+			$this->errors[] = $key;
+			return true;
 		}
 
-		// Adiciona a control de repeticiones
-		$this->errors[] = $key;
-
-		return true;
+		return false;
 	}
 
 	/**
@@ -271,11 +210,18 @@ class ErrorHandler
 		$filename = $this->getErrorLog();
 		if (
 			$filename !== '' &&
-			!$this->rotatingLog &&
+			$this->checkLogSize &&
 			$this->sizeErrorLog > 0 &&
 			filesize($filename) > $this->sizeErrorLog
 			) {
-			$this->rotatingLog = true;
+
+			// A tener en cuenta (Copilot):
+			// The rotateLog method uses filesize which can be slow for large files.
+			// Consider optimizing this check if performance becomes an issue.
+			// @stat($filename)['size'] > $this->sizeErrorLog
+
+			// Actualiza para no checar nuevamente este mismo archivo en este ciclo
+			$this->checkLogSize = false;
 			if ($this->oldErrorLogSufix !== '') {
 				$info = pathinfo($filename);
 				// Renombra y mantiene solamente un histórico (por defecto)
@@ -373,28 +319,30 @@ class ErrorHandler
 		$this->errorLog($html);
 
 		$content = false;
-		if (!is_null($this->render)) {
-			$content = $this->render->show($error);
+		// Ejecuta render registrado (si alguno)
+		if (!empty($this->render)) {
+			$content = trim($this->render->show($error));
 		}
 
 		if ($content === false) {
 			// No pudo ejecutar la vista, muestra vista por defecto.
-			// Valor de cadena vacia no debe interpretarse como FALSE pues
-			// es un valor valido.
+			// Valor de cadena vacia no debe interpretarse como FALSE porque
+			// es un valor aceptable.
 			$content = $html;
 		}
 
-		if ($content !== '') {
-			// Aplica filtros programados
-			$this->filterDocumentRoot($content);
-			// Da salida a pantalla
-			echo PHP_EOL . trim($content) . PHP_EOL;
-		}
+		// Remueve Document Root de la salida a pantalla
+		$this->removeDocumentRoot($content);
 
-		// Aborta script
-		if ($error->endScript && !$this->shuttingDown) {
-			error_clear_last();
-			exit;
+		// Da salida a pantalla
+		echo PHP_EOL . $content . PHP_EOL;
+
+		// Valida cantidad de errores procesados
+		$this->checkCountErrors();
+
+		// Valida si aborta script
+		if ($error->endScript) {
+			$this->abort();
 		}
 
 		// Si detecta error es porque ocurrió durante la ejecución de la vista
@@ -408,6 +356,38 @@ class ErrorHandler
 			error_clear_last();
 			$this->showError(...$last_error);
 		}
+	}
+
+	/**
+	 * Realiza control de la cantidad de errores procesados.
+	 */
+	private function checkCountErrors()
+	{
+		// Decrementa conteo de errores procesados
+		if ($this->maxErrors > 0) {
+			$this->countErrors ++;
+			if ($this->countErrors >= $this->maxErrors) {
+				// Aborta script (ayuda a prevenir ciclos infinitos por errores)
+				$this->abort("Se alcanzó el límite de errores a procesar ({$this->maxErrors})");
+			}
+		}
+	}
+
+	/**
+	 * Aborta ejecución de inmediato.
+	 *
+	 * @param string $message Mensaje a mostrar antes de terminar la ejecución del script.
+	 */
+	public function abort(string $message = '')
+	{
+		if ($message !== '') {
+			$message = "<div style=\"border:1px solid #333;padding:5px 10px;margin-top:5px;background:#ffffcc;\"><b>Script Interrumpido:</b> {$message}</div>";
+			error_log(strip_tags($message));
+			echo $message;
+		}
+		// Limpia errores pendientes
+		error_clear_last();
+		exit;
 	}
 
 	/**
@@ -429,12 +409,15 @@ class ErrorHandler
 	 */
 	public function showError(int $type, string $message, string $file = '', int $line = 0)
 	{
-		$error = new ErrorData();
-		if (!$error->newError($type, $message, $file, $line)) {
-			return false;
+		if (!(error_reporting() & $type)) {
+			// Este código de error no está incluido en error_reporting, así que
+			// se ignora su presentación a pantalla.
+			return;
 		}
 
-		return $this->viewError($error);
+		$error = new ErrorData();
+		$error->newError($type, $message, $file, $line);
+		$this->viewError($error);
 	}
 
 	/**
@@ -453,27 +436,6 @@ class ErrorHandler
 		$error = new ErrorData();
 		$error->newException($e);
 		$error->endScript = $end_script;
-
-		return $this->viewError($error);
+		$this->viewError($error);
 	}
-
-	/**
-	 * Reemplaza referencias al DOCUMENT_ROOT para no revelar su ubicación
-	 * en entornos no seguros.
-	 *
-	 * @param string $content Contenido a filtrar (valor por referencia).
-	 */
-	public function filterDocumentRoot(string &$content)
-	{
-		if (!$this->hideDocumentRoot) {
-			return;
-		}
-
-		$content = str_replace(
-			[$_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR, $_SERVER['DOCUMENT_ROOT']],
-			['', '[..]'],
-			$content
-		);
-	}
-
 }

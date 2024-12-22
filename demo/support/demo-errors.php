@@ -37,8 +37,6 @@ $Test->copyNextLines();
 $errors = new ErrorHandler();
 $errors->sizeErrorLog = 2097152; // 2MB
 
-// ini_set('html_errors', 'off');
-
 if ($Test->choice('userview', 'Usar vista de error personalizada', 'No usar vista personalizada')) {
 	$Test->copyNextLines(2);
 	$render = new ExtendedRenderError();
@@ -62,12 +60,13 @@ $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'demo-view-files');
 // Lista vistas disponibles
 $views_list = [
 	'b' => 'Vista con errores',
+	'e' => 'Otros ejemplos de uso',
 ];
 // Adiciona la opción "Vista no existente" solo para Localhost,
 // ya que al remover manejo personalizado de errores no existe
 // forma de prevenir que muestra paths completos en entornos no seguros.
 if (miframe_server()->isLocalhost()) {
-	$views_list['e'] = 'Vista no existente';
+	$views_list['x'] = 'PHP Fatal Error';
 }
 
 // Crea enlaces para selección de las vistas
@@ -100,45 +99,12 @@ $Test->htmlPre(
 	PHP_EOL .
 	str_replace('$view', 'miframe_render()', $Test->pasteLines()) .
 	// "\$errors->watch();" . PHP_EOL .
-	"echo miframe_view('{$post_view}', compact('dato1', 'dato2'));");
+	"echo miframe_view('{$post_view}', compact('dato1', 'dato2', 'errors', 'Test'));");
+
+// throw new Exception('Exception manualmente generada', 300);
 
 // Para mostrar en pantalla
-echo $view->view($post_view, compact('dato1', 'dato2'));
-
-echo '<h2>Otros ejemplos de manejo de errores</h2>';
-
-echo '<ul class="dmeo"><li><b>Log de errores:</b> ' . $errors->getErrorLog() . '</li>';
-
-if (!empty($render)) {
-	$default = $render->warningMessage;
-	if ($Test->choice('usermsg', 'Cambiar mensaje de Advertencia', 'Restaurar mensaje de Advertencia')) {
-		$render->warningMessage = 'Ups! Houston, tenemos un problema';
-	}
-	echo "<li><b>" . $Test->renderChoices() . "</b> (Mensaje original: <i>{$default}</i>)</li>";
-	// $errors->warningMessage = 'Ups! Houston, tenemos un problema (warning)';
-}
-
-echo "<li>Error generado luego de usado el <i>Layout</i> en la vista previa:";
-// Variable no declarada, genera error
-$Test->showNextLines();
-$variable_not_declared++;
-echo "</li>";
-
-echo "<li>Error visualizado manualmente:";
-$Test->showNextLines();
-$errors->showError(E_USER_WARNING, 'Error manualmente generado');
-echo "</li>";
-
-echo "<li>Ejemplo del manejo de una <code>Exception</code>:";
-$Test->showNextLines(6);
-try {
-	// Las excepciones pueden manejar cualquier valor entero para código
-	throw new Exception('Exception manualmente generada', 30);
-} catch (\Exception $e) {
-	$errors->showException($e, false);
-}
-
-echo "</li></ul>";
+echo $view->view($post_view, compact('dato1', 'dato2', 'errors', 'Test'));
 
 // Cierre de la página
 $Test->end();

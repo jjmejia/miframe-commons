@@ -66,6 +66,7 @@ class ExtendedRenderError implements RenderErrorInterface
 			$error->endScript = true;
 		}
 
+		// Obtiene datos del error
 		$data_error = $error->export();
 
 		// Texto no enviado a pantalla (si alguno)
@@ -76,12 +77,11 @@ class ExtendedRenderError implements RenderErrorInterface
 			// A partir de este punto, puede retornar cadena vacia
 			// (false se interpreta como un error, por eso lo remplaza)
 
-			if ($data_error['end_script']) {
+			if ($error->endScript) {
 				// Error que se muestra en pantalla y termina ejecución
 				$content = trim($this->errorMessage);
 			} elseif (
 				$data_error['class'] !== 'Error' || // Es una excepción
-				// $data_error['type'] === E_USER_WARNING || $data_error['type'] == E_WARNING
 				$data_error['type'] & (E_USER_WARNING | E_WARNING)
 			) {
 				// Error que se muestra en pantalla sin terminar la ejecución
@@ -97,7 +97,9 @@ class ExtendedRenderError implements RenderErrorInterface
 			// Valida si el mensaje ya fue publicado localmente
 			if ($content !== '') {
 				$key = md5($data_error['type']) . '/' . md5($content);
-				if (!$this->uniqueReport($key)) {
+				if (!$this->uniqueKey($key)) {
+					// Ya registrado, remueve contenido
+					// (y por extensión no muestra en pantalla)
 					$content = '';
 				}
 			}
@@ -108,12 +110,11 @@ class ExtendedRenderError implements RenderErrorInterface
 
 		// Muestra en pantalla (si hay algún mensaje reportado)
 		if ($data_error['message'] !== '') {
-			// Actualiza mensaje previo a su salida a pantalla
-			// $data_error['message'] = $content;
 			// Captura textos no envíados a pantalla
-			if ($data_error['end_script']) {
+			if ($error->endScript) {
 				while (ob_get_level()) {
-					$data_error['buffer'] .= ob_get_clean();
+					$data_error['buffer'] .= ob_get_contents();
+					ob_end_clean();
 				}
 			}
 
@@ -125,13 +126,19 @@ class ExtendedRenderError implements RenderErrorInterface
 		return $content;
 	}
 
-	private function uniqueReport(string $key): bool
+	/**
+	 * Valida si una clave dada ya ha sido registrada.
+	 *
+	 * @param string $key La clave a validar.
+	 * @return bool Devuelve TRUE si la clave no ha sido previamente registrada, FALSE en caso contrario.
+	 */
+	private function uniqueKey(string $key): bool
 	{
-		if (in_array($key, $this->previous)) {
-			return false; // Ignora este mensaje a pantalla
+		if (!in_array($key, $this->previous)) {
+			$this->previous[] = $key;
+			return true;
 		}
 
-		$this->previous[] = $key;
-		return true;
+		return false;
 	}
 }
