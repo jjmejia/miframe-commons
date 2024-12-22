@@ -39,6 +39,8 @@ class RenderView extends Singleton
 	protected function singletonStart()
 	{
 		// Crea objeto para almacenar datos del Layout
+		// TODO: Mover a una clase en support LayoutData
+		// y hacer $layout public!
 		$this->layout = new class {
 			// Archivo
 			public string $filename = '';
@@ -49,9 +51,9 @@ class RenderView extends Singleton
 			// TRUE para indicar que el Layout fue usado
 			public bool $alreadyUsed = false;
 			// Método para actualizar contenido
-			public function saveContentView(string $content) {
+			public function saveContentView(string &$content) {
 				if ($this->contentViewName != '') {
-					$this->params[$this->contentViewName] = $content;
+					$this->params[$this->contentViewName] =& $content;
 				}
 			}
 			// Método para remover contenido (libera memoria)
@@ -368,7 +370,12 @@ class RenderView extends Singleton
 		// Ejecuta
 		$fun($filename, $params);
 		// Recupera contenido
-		$content = ob_get_clean();
+		// $content = ob_get_clean();
+		// De Copilot: The use of ob_get_clean() can be replaced with
+		// ob_get_contents() followed by ob_end_clean() for better performance
+		// in some cases.
+		$content = ob_get_contents();
+		ob_end_clean();
 
 		return $content;
 	}

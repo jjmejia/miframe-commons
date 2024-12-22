@@ -12,9 +12,12 @@
 namespace miFrame\Commons\Extended;
 
 use miFrame\Commons\Core\RenderView;
+use miFrame\Commons\Traits\removeDocumentRootContent;
 
 class ExtendedRenderView extends RenderView
 {
+	use removeDocumentRootContent;
+
 	/**
 	 * @var bool $developerMode TRUE para habilitar el modo Desarrollo. Permite
 	 *                          habilitar o bloquear características.
@@ -203,6 +206,9 @@ class ExtendedRenderView extends RenderView
 	 */
 	private function filterContent(string &$content)
 	{
+		// Remueve Document Root de la salida a pantalla
+		$this->removeDocumentRoot($content);
+
 		// Aplica filtros adicionales
 		foreach ($this->filters as $data) {
 			$content = call_user_func($data['fun'], $content);

@@ -34,21 +34,6 @@ if ($Test->choice('debug', 'Modo Debug ', 'Remover modo Debug')) {
 	$view->debug = true;
 }
 
-// Adiciona filtros para proteger paths.
-// Remueve referencias al DOCUMENT ROOT para no revelar
-// su ubicación en entornos no seguros.
-// Para removerlo, usar $view->removeFilter('hideDocumentRoot')
-$view->addLayoutFilter('hideDocumentRoot', function (string $content) {
-	if (!miframe_server()->isLocalhost()) {
-		$content = str_replace(
-			[$_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR, $_SERVER['DOCUMENT_ROOT']],
-			['', '[..]'],
-			$content
-		);
-	}
-	return $content;
-});
-
 // Directorio donde ubicar el layout y las vistas
 $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'demo-view-files');
 
@@ -63,7 +48,7 @@ $views_list = [
 // ya que al remover manejo personalizado de errores no existe
 // forma de prevenir que muestra paths completos en entornos no seguros.
 if (miframe_server()->isLocalhost()) {
-	$views_list['e'] = 'Vista no existente';
+	$views_list['novista'] = 'Vista no existente';
 }
 // Crea enlaces para selección de las vistas
 $views_links = $Test->multipleLinks('view', $views_list);
@@ -118,6 +103,7 @@ if ($post_view !== 'd') {
 		str_replace('$view', 'miframe_render()', $Test->pasteLines())
 	);
 	// Multiples views
+	$dato1_pre = $dato1;
 	foreach ($views_list as $p => $ptitle) {
 		if ($p == 'd') {
 			break;
@@ -133,6 +119,7 @@ if ($post_view !== 'd') {
 		// Habilita layout (se inhabilita luego de su primer uso)
 		$view->resetLayout();
 		// Para mostrar en pantalla
+		$dato1 = $dato1_pre . ' [En Vista ' . strtoupper($p) . ']';
 		echo miframe_view($p, compact('dato1', 'dato2'));
 	}
 }
