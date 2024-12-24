@@ -24,6 +24,11 @@ class RenderView extends Singleton
 	private string $pathFiles = '';
 
 	/**
+	 * @var array $viewCache Path de vistas ya encontradas.
+	 */
+	private array $viewCache = [];
+
+	/**
 	 * @var string $currentView Nombre de la vista actualmente en ejecución.
 	 */
 	protected string $currentView = '';
@@ -52,6 +57,8 @@ class RenderView extends Singleton
 			public bool $alreadyUsed = false;
 			// Método para actualizar contenido
 			public function saveContentView(string &$content) {
+				// Marca este Layout como "ya usado"
+				$this->alreadyUsed = true;
 				if ($this->contentViewName != '') {
 					$this->params[$this->contentViewName] =& $content;
 				}
@@ -99,6 +106,11 @@ class RenderView extends Singleton
 		$this->layout->alreadyUsed = false;
 	}
 
+	public function layoutUsed(): bool
+	{
+		return ($this->layout->alreadyUsed && !empty($this->layout->filename));
+	}
+
 	/**
 	 * Retorna arreglo con opciones de dónde buscar los archivos de vistas.
 	 *
@@ -115,9 +127,10 @@ class RenderView extends Singleton
 	 *
 	 * @return array Opciones de busqueda.
 	 */
-	protected function viewPaths(string $viewname): array
+	private function viewPaths(string $viewname): array
 	{
 		$options = [];
+		// Busca en el directorio de archivos
 		if ($this->pathFiles !== '') {
 			// $filename no contiene path ni extensión (comportamiento por defecto)
 			$options[] = $this->pathFiles . $viewname . '.php';
@@ -133,39 +146,65 @@ class RenderView extends Singleton
 	}
 
 	/**
+	 * Valida existencia del nombre/path dado a una vista.
+	 *
+	 * @param string $viewname Nombre/Path de la vista.
+	 * @param string $filename Path real asociado a la vista. Si se indica este
+	 * 						   valor, lo valida antes de buscar en la lista
+	 * 						   retornada por $this->viewPaths. (opcional)
+	 *
+	 * @return string Path completo asociado al $viewname o cadena vacia si no existe la vista.
+	 */
+	public function findView(string $viewname, string $filename = ''): string
+	{
+		$viewname = trim($viewname);
+		if ($viewname !== '') {
+			$key = strtolower($viewname);
+			if ($filename != '' && is_file($filename)) {
+				$this->viewCache[$key] = realpath($filename);
+			}
+			// Busca en la caché local (agiliza resultado)
+			if (isset($this->viewCache[$key])) {
+				return $this->viewCache[$key];
+			}
+			// Busca en los directorios indicados
+			foreach ($this->viewPaths($viewname) as $filename) {
+				if (!is_file($filename)) {
+					// Intenta el mismo pero todo en minusculas para el nombre base,
+					// en caso que el SO diferencia may/min (Linux)
+					$filename = dirname($filename) . DIRECTORY_SEPARATOR . strtolower(basename($filename));
+				}
+				if (is_file($filename)) {
+					$this->viewCache[$key] = realpath($filename);
+					return $this->viewCache[$key];
+				}
+			}
+		}
+
+		return '';
+	}
+
+	/**
 	 * Valida nombre/path dado a una vista.
 	 *
 	 * Si el nombre dado no corresponde a un archivo físico, se genera un error.
 	 *
 	 * @param string $viewname Nombre/Path de la vista.
-	 * @param string $reference Referencia asociada a la vista que usará el archivo.
 	 *
-	 * @return string Path completo asociado al $viewname.
+	 * @return string Path completo asociado al $viewname o cadena vacia si no existe la vista.
 	 */
 	private function checkFile(string $viewname): string
 	{
-		$viewname = trim($viewname);
-		if ($viewname !== '') {
-			foreach ($this->viewPaths($viewname) as $path) {
-				if (!is_file($path)) {
-					// Intenta el mismo pero todo en minusculas para el nombre base,
-					// en caso que el SO diferencia may/min (Linux)
-					$path = dirname($path) . DIRECTORY_SEPARATOR . strtolower(basename($path));
-				}
-				if (is_file($path)) {
-					return realpath($path);
-				}
-			}
+		$filename = $this->findView($viewname);
+		if ($filename === '') {
+			// Si llega a este punto, dispara un error
+			trigger_error(
+				"Path para vista solicitada no es valido ({$viewname})",
+				E_USER_ERROR
+			);
 		}
-
-		// Si llega a este punto, dispara un error
-		trigger_error(
-			"Path para vista solicitada no es valido ({$viewname})",
-			E_USER_ERROR
-		);
-
 		// Este punto nunca se alcanza por el uso de trigger_error()
-		return '';
+		return $filename;
 	}
 
 	/**
@@ -231,19 +270,14 @@ class RenderView extends Singleton
 	 * Las vistas ejecutadas pueden modificar el archivo de layout a usar.
 	 *
 	 * @param string $content Contenido de la vista a renderizar (Valor por referencia).
-	 *
-	 * @return bool TRUE si debe incluir layout, FALSE en otro caso.
 	 */
-	protected function includeLayout(string &$content): bool
+	private function includeLayout(string &$content)
 	{
 		// Ejecuta layout (si alguno) si no hay vistas pendientes.
-		$result = (
-			!$this->layout->alreadyUsed &&
+		if (
+			!$this->layoutUsed() &&
 			$this->currentView == ''
-		);
-		if ($result && !empty($this->layout->filename)) {
-			// Marca este Layout como "ya usado"
-			$this->layout->alreadyUsed = true;
+			) {
 			// Preserva el contenido previamente renderizado para su uso en el Layout
 			$this->layout->saveContentView($content);
 			// Ejecuta vista
@@ -254,8 +288,6 @@ class RenderView extends Singleton
 			// Libera memoria
 			$this->layout->removeContentView();
 		}
-
-		return $result;
 	}
 
 	/**
@@ -349,7 +381,7 @@ class RenderView extends Singleton
 	 *
 	 * @return string Contenido renderizado.
 	 */
-	protected function evalTemplate(string $filename, array $params): string
+	private function evalTemplate(string $filename, array $params): string
 	{
 		// La define como una función estática para no incluir $this
 		$fun = static function (string $view_filename, array &$view_args) {

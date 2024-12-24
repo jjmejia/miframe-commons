@@ -11,6 +11,7 @@
 
 namespace miFrame\Commons\Extended;
 
+use Exception;
 use miFrame\Commons\Core\RenderView;
 use miFrame\Commons\Traits\RemoveDocumentRootContent;
 
@@ -47,66 +48,22 @@ class ExtendedRenderView extends RenderView
 	{
 		parent::singletonStart();
 		// Adiciona layout por defecto
-		$this->layout('layout-default', 'content');
+		$this->layout($this->localPathFiles('layout-default'), 'content');
 		// Deshabilita salida a pantalla de mensajes de error
 		// (se habilita solo para modo Desarrollo)
 		ini_set("display_errors", "off");
 	}
 
 	/**
-	 * Retorna arreglo con opciones de dónde buscar los archivos de vistas.
-	 *
-	 * Adiciona path para vistas predefinidas.
+	 * Path para buscar vistas predefinidas.
 	 *
 	 * @param string $viewname Nombre/Path de la vista.
 	 *
-	 * @return array Opciones de busqueda.
+	 * @return string Path.
 	 */
-	protected function viewPaths(string $viewname): array
+	private function localPathFiles(string $viewname): string
 	{
-		$options = parent::viewPaths($viewname);
-		// Para views, busca en la librería de soporte local
-		$options[] = __DIR__ . '/views/' . $viewname . '.php';
-
-		return $options;
-	}
-
-	/**
-	 * Captura el texto enviado a pantalla (o al navegador) por cada vista.
-	 *
-	 * Cuando se habilita el "modo Debug", se enmarca la salida capturada para
-	 * facilitar su identificación en pantalla.
-	 *
-	 * @param string $filename Archivo que contiene la vista.
-	 * @param array $params Arreglo con valores.
-	 *
-	 * @return string Contenido renderizado.
-	 */
-	protected function evalTemplate(string $filename, array $params): string
-	{
-		$content = parent::evalTemplate($filename, $params);
-		return $this->frameContentDebug($filename, $content);
-	}
-
-	/**
-	 * Incluye el contenido del layout en la vista.
-	 *
-	 * Una vez renderizado el layout, aplica los filtros programados al contenido
-	 * generado.
-	 *
-	 * @param string $content Contenido de la vista a renderizar (Valor por referencia).
-	 *
-	 * @return bool TRUE si debe incluir layout, FALSE en otro caso.
-	 */
-	protected function includeLayout(string &$content): bool
-	{
-		$result = parent::includeLayout($content);
-		if ($result) {
-			// Aplica filtros
-			$this->filterContent($content);
-		}
-
-		return $result;
+		return __DIR__ . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . $viewname . '.php';
 	}
 
 	/**
@@ -263,6 +220,76 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
+	 * Busca vista predefinida.
+	 *
+	 * Primero busca el archivo en el directorio de vistas asignado en
+	 * $this->pathFiles. Si no lo encuentra, intenta en el directorio
+	 * de vistas predefinidas usadas por esta clase.
+	 *
+	 * @param string $viewname Nombre/Path de la vista.
+	 * @param array $params Arreglo con valores.
+	 *
+	 * @return string Contenido renderizado o FALSE si la vista ya está en ejecución.
+	 */
+	public function view(string $viewname, array $params): false|string
+	{
+		$filename = $this->findView($viewname);
+		if ($filename === '') {
+			// Busca en el directorio actual
+			$filename = $this->findView($viewname, $this->localPathFiles($viewname));
+			if ($filename === '') {
+				// Si llega a este punto, dispara un error?
+				// No, porque si ocurre en una atención a errores, bloquea salida.
+				// En su lugar, produce una salida estándar.
+				// trigger_error($message, E_USER_ERROR);
+				return $this->contentError("Vista predefinida no encontrada ({$viewname})");
+			}
+		}
+
+		$content = parent::view($viewname, $params);
+
+		if ($content !== false) {
+			$content = $this->frameContentDebug($filename, $content);
+			if ($this->layoutUsed()) {
+				// Aplica filtros
+				$this->filterContent($content);
+			}
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Registra error al procesar vistas predefinidas.
+	 *
+	 * Si se encuentra en Producción, enmascara el mensaje pero lo registra
+	 * debidamente en el log de errores.
+	 *
+	 * @param sstring $message Mensaje de error.
+	 *
+	 * @return string Texto renderizado en formato HTML.
+	 */
+	private function contentError(string $message): string
+	{
+		// Recupera línea de dónde se solicita la vista
+		// $message = "Vista predefinida no encontrada ({$viewname})";
+		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		// Si se invoca directo, usaría [0]. Validar caso si ocurre.
+		if (isset($trace[1])) {
+			$message .= " en \"{$trace[1]['file']}\" línea {$trace[1]['line']}";
+		}
+		// Registra mensaje en el log de errores
+		error_log('VIEW/ERROR: ' . $message);
+		// Si no está en desarrollo, enmascara mensaje
+		if (!$this->developerMode) {
+			// Redefine mensaje para ambientes de producción
+			$message = 'No pudo mostrar contenido, favor revisar el log de errores';
+		}
+
+		return "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\"><b>Error:</b> {$message}</div>";
+	}
+
+	/**
 	 * Control para permitir una única ejecución de contenidos.
 	 *
 	 * @return bool TRUE para cuando se invoca la primera vez. FALSE en otro caso.
@@ -302,7 +329,7 @@ class ExtendedRenderView extends RenderView
 	 *
 	 * @return string Contenido renderizado.
 	 */
-	private function frameContentDebug(string $filename, string $content)
+	private function frameContentDebug(string $filename, string $content): string
 	{
 		if ($content != '' && $this->developerMode && $this->debug) {
 			$target = $this->currentView;

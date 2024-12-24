@@ -381,7 +381,7 @@ class ErrorHandler
 	public function abort(string $message = '')
 	{
 		if ($message !== '') {
-			$message = "<div style=\"border:1px solid #333;padding:5px 10px;margin-top:5px;background:#ffffcc;\"><b>Script Interrumpido:</b> {$message}</div>";
+			$message = "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\"><b>Script Interrumpido:</b> {$message}</div>";
 			error_log(strip_tags($message));
 			echo $message;
 		}
