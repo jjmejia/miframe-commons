@@ -244,8 +244,11 @@ class ErrorHandler
 					return true;
 				}
 
-				// Genera error
-				trigger_error('No pudo rotar el log de errores (nombre sugerido: ' . $new_name . ')');
+				// Genera error enmascarable (E_USER_NOTICE)
+				trigger_error(
+					"Rotación fallida del log de errores: el archivo \"{$filename}\" no pudo ser renombrado a \"{$new_name}\"",
+					E_USER_NOTICE
+				);
 			}
 		}
 
