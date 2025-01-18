@@ -8,3 +8,4 @@ src/miframe/commons/back
 demo/footer.htm
 demo/demo-config-dev.php
 src/vendor
+demo/support/.env
