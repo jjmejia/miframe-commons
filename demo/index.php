@@ -22,6 +22,7 @@ $links = [
 	'support/demo-html.php' => 'Gestión de recursos HTML con miframe_html()',
 	'support/demo-view.php' => 'Uso de miframe_render() y miframe_view()',
 	'support/demo-errors.php' => 'Manejo de errores (clase ErrorHandler)',
+	'support/demo-database-pdo.php' => 'Conexión y consulta a base de datos (clase PDOController)',
 ];
 
 echo '<ul>' . PHP_EOL;

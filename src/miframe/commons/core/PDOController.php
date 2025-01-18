@@ -109,6 +109,16 @@ class PDOController
 	}
 
 	/**
+	 * Nombre del driver en uso, asignado al crear el objeto.
+	 *
+	 * @return string Nombre del driver en uso
+	 */
+	public function driver(): string
+	{
+		return $this->driverName;
+	}
+
+	/**
 	 * Activa o desactiva el modo de depuración.
 	 *
 	 * Cuando el modo de depuración está activado, la notificación de errores de PHP se configura
