@@ -83,8 +83,11 @@ class HTMLSupport extends Singleton
 			$this->addResourceCSS($filename, $src);
 		} elseif ($filename !== '') {
 			// No pudo acceder al archivo
-			// Genera mensaje de error
-			trigger_error("Recurso CSS \"{$filename}\" no es un archivo valido", E_USER_WARNING);
+			// Genera mensaje de error enmascarable (warning)
+			trigger_error(
+				"El archivo de recursos CSS \"{$filename}\" no existe",
+				E_USER_WARNING
+			);
 
 			return false;
 		}
