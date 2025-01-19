@@ -6,13 +6,13 @@
  * Hace uso de miframe_render() en las vistas sugeridas.
  *
  * @author John Mejía
- * @since Noviemre 2024
+ * @since Noviembre 2024
  */
 
 namespace miFrame\Commons\Extended;
 
-use Exception;
 use miFrame\Commons\Core\RenderView;
+use miFrame\Commons\Interfaces\FilterContentInterface;
 use miFrame\Commons\Traits\RemoveDocumentRootContent;
 
 class ExtendedRenderView extends RenderView
@@ -37,9 +37,10 @@ class ExtendedRenderView extends RenderView
 	private array $ctlOnce = [];
 
 	/**
-	 * @var array $filters Filtros a aplicar al código luego de incluir el Layout.
+	 * @var FilterContentInterface $filter Filtro para el contenido final (luego de aplicado Layout).
 	 */
-	private array $filters = [];
+	private ?FilterContentInterface $contentFilter = null;
+
 
 	/**
 	 * Acciones a ejecutar al crear un objeto para esta clase.
@@ -48,7 +49,7 @@ class ExtendedRenderView extends RenderView
 	{
 		parent::singletonStart();
 		// Adiciona layout por defecto
-		$this->layout($this->localPathFiles('layout-default'), 'content');
+		$this->layout->config($this->localPathFiles('layout-default'), 'content');
 		// Deshabilita salida a pantalla de mensajes de error
 		// (se habilita solo para modo Desarrollo)
 		ini_set("display_errors", "off");
@@ -113,63 +114,36 @@ class ExtendedRenderView extends RenderView
 	/**
 	 * Adiciona filtro a usar para depurar el contenido renderizado.
 	 *
-	 * La función a usar para realizar el fitrado debe ser del tipo:
+	 * La función a usar para realizar el fitrado se define en un objeto
+	 * creado a partir de una clase que implemente la interfaz FilterContentInterface
+	 * (el filtro de aplica cuando se incluye el Layout al generar la vista).
 	 *
-	 *     function (string $content)
-	 *     {
-	 *         // Procesa contenido y lo retorna en la misma variable
-	 *         // u otra de su preferencia.
-	 *         return $content;
-	 *     }
-	 *
-	 * @param string $name Nombre del filtro.
-	 * @param callable $fun Función a ejecutar.
+	 * @param FilterContentInterface $filter Filtro a aplicar al contenido final.
 	 */
-	public function addLayoutFilter(string $name, callable $fun)
+	public function addLayoutFilter(FilterContentInterface $filter)
 	{
-		$key = $this->generateKey($name);
-		if ($key !== '') {
-			$this->filters[$key] = ['name' => $name, 'fun' => $fun];
-		}
+		$this->contentFilter = $filter;
 	}
 
 	/**
-	 * Remueve filtro previamente asignado.
+	 * Redefine método renderLayout() de la clase RenderView.
 	 *
-	 * @param string $name Nombre del filtro.
+	 * Adiciona filtrado al contenido una vez renderizado el Layout.
 	 */
-	public function removeLayoutFilter(string $name)
+	protected function renderLayout(string &$content): bool
 	{
-		$key = $this->generateKey($name);
-		if ($key !== '' && isset($this->filters[$key])) {
-			unset($this->filters[$key]);
+		$result = parent::renderLayout($content);
+		if ($result) {
+			// Remueve Document Root de la salida a pantalla
+			$this->removeDocumentRoot($content);
+
+			// Aplica filtros adicionales
+			if (!empty($this->filter)) {
+				$this->contentFilter->filter($content);
+			}
 		}
-	}
 
-	/**
-	 * Retorna el listado de filtros configurados.
-	 *
-	 * @return array Listado de filtros.
-	 */
-	public function getFilters()
-	{
-		return $this->filters;
-	}
-
-	/**
-	 * Aplica al contenido los filtros previamente configurados.
-	 *
-	 * @param string $content Contenido renderizado previamente.
-	 */
-	private function filterContent(string &$content)
-	{
-		// Remueve Document Root de la salida a pantalla
-		$this->removeDocumentRoot($content);
-
-		// Aplica filtros adicionales
-		foreach ($this->filters as $data) {
-			$content = call_user_func($data['fun'], $content);
-		}
+		return $result;
 	}
 
 	/**
@@ -220,73 +194,16 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
-	 * Busca vista predefinida.
+	 * Redefine el método viewPaths() de la clase RenderView.
 	 *
-	 * Primero busca el archivo en el directorio de vistas asignado en
-	 * $this->pathFiles. Si no lo encuentra, intenta en el directorio
-	 * de vistas predefinidas usadas por esta clase.
-	 *
-	 * @param string $viewname Nombre/Path de la vista.
-	 * @param array $params Arreglo con valores.
-	 *
-	 * @return string Contenido renderizado o FALSE si la vista ya está en ejecución.
+	 * Adiciona path provisto por el método localPathFiles() para la
+	 * busqueda de vistas predefinidas.
 	 */
-	public function view(string $viewname, array $params): false|string
+	protected function viewPaths(string $viewname): array
 	{
-		$filename = $this->findView($viewname);
-		if ($filename === '') {
-			// Busca en el directorio actual
-			$filename = $this->findView($viewname, $this->localPathFiles($viewname));
-			if ($filename === '') {
-				// Si llega a este punto, dispara un error?
-				// No, porque si ocurre en una atención a errores, bloquea salida.
-				// En su lugar, produce una salida estándar.
-				// trigger_error($message, E_USER_ERROR);
-				return $this->contentError("Vista predefinida no encontrada ({$viewname})");
-			}
-		}
-
-		$content = parent::view($viewname, $params);
-
-		if ($content !== false) {
-			$content = $this->frameContentDebug($filename, $content);
-			if ($this->layoutUsed()) {
-				// Aplica filtros
-				$this->filterContent($content);
-			}
-		}
-
-		return $content;
-	}
-
-	/**
-	 * Registra error al procesar vistas predefinidas.
-	 *
-	 * Si se encuentra en Producción, enmascara el mensaje pero lo registra
-	 * debidamente en el log de errores.
-	 *
-	 * @param sstring $message Mensaje de error.
-	 *
-	 * @return string Texto renderizado en formato HTML.
-	 */
-	private function contentError(string $message): string
-	{
-		// Recupera línea de dónde se solicita la vista
-		// $message = "Vista predefinida no encontrada ({$viewname})";
-		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-		// Si se invoca directo, usaría [0]. Validar caso si ocurre.
-		if (isset($trace[1])) {
-			$message .= " en \"{$trace[1]['file']}\" línea {$trace[1]['line']}";
-		}
-		// Registra mensaje en el log de errores
-		error_log('VIEW/ERROR: ' . $message);
-		// Si no está en desarrollo, enmascara mensaje
-		if (!$this->developerMode) {
-			// Redefine mensaje para ambientes de producción
-			$message = 'No pudo mostrar contenido, favor revisar el log de errores';
-		}
-
-		return "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\"><b>Error:</b> {$message}</div>";
+		$options = parent::viewPaths($viewname);
+		$options[] = $this->localPathFiles($viewname);
+		return $options;
 	}
 
 	/**
@@ -311,33 +228,24 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
-	 * Valida si una vista se encuentra en ejecución.
+	 * Redefine método renderLayout() de la clase RenderView.
+	 *
+	 * Adiciona modificaciones al contenido en modo Debug una vez renderizada la vista.
 	 */
-	public function isRendering(string $viewname)
+	protected function renderView(string $filename, array $params): string
 	{
-		return (!$this->newTemplate($viewname, true));
-	}
-
-	/**
-	 * Enmarca el contenido renderizado para facilitar su identificación en pantalla.
-	 *
-	 * Requiere que se encuentre activo tanto el "modo Debug" ($this->debug = true)
-	 * como el "modo Desarrollo" ($this->developerMode = true).
-	 *
-	 * @param string $filename Archivo que contiene la vista.
-	 * @param string $content Contenido previamente renderizado.
-	 *
-	 * @return string Contenido renderizado.
-	 */
-	private function frameContentDebug(string $filename, string $content): string
-	{
+		$content = parent::renderView($filename, $params);
 		if ($content != '' && $this->developerMode && $this->debug) {
-			$target = $this->currentView;
+			$target = '';
+			if ($this->currentView != '') {
+				$target = $this->views[$this->currentView]['name'];
+			}
 			$new_content = $this->view(
 				'show-frame-content-debug',
 				compact('filename', 'target', 'content')
 			);
 			if ($new_content !== false) {
+				// Nueva vista correctamente generada, actualiza contenido.
 				return $new_content;
 			}
 		}
