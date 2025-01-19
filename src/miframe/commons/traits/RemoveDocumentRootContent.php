@@ -22,7 +22,11 @@ trait RemoveDocumentRootContent {
 	 */
 	public function removeDocumentRoot(string &$content)
 	{
-		if ($this->hideDocumentRoot && $content !== '') {
+		if (
+			$this->hideDocumentRoot &&
+			$content !== '' &&
+			!empty($_SERVER['DOCUMENT_ROOT'])
+			) {
 			$content = str_replace(
 				[$_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR, $_SERVER['DOCUMENT_ROOT']],
 				['', '[..]'],

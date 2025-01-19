@@ -2,6 +2,9 @@
 
 /**
  * Interface para manejo de errores.
+ *
+ * @author John Mejía
+ * @since Diciembre 2024
  */
 
 namespace miFrame\Commons\Interfaces;
