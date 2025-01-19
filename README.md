@@ -59,8 +59,8 @@ require_once 'miframe/commons/helpers.php';
 echo miframe_render()->view($viewname, $params);
 // Forma alternativa de visualizar la misma vista
 echo miframe_view($viewname, $params);
-// Muestra contenido de la variable $_REQUEST
-echo miframe_dump($_REQUEST);
+// Muestra en pantalla contenido de la variable $_REQUEST
+miframe_dump($_REQUEST);
 ````
 
 

@@ -9,7 +9,7 @@
 
 // Para desarrollo, visualiza valores recibidos
 if (count($view_args) > 0) {
-	echo miframe_dump($view_args, 'Valores globales recibidos (LAYOUT-DEFAULT)');
+	miframe_dump($view_args, 'Valores globales recibidos (LAYOUT-DEFAULT)');
 }
 
 // Muestra contenido de vistas previas
