@@ -46,47 +46,47 @@ class PDOController
 	public string $charset = '';
 
 	/**
-	 * @property string $driverName Nombre del driver de la base de datos, compatible con PDO (mysql, pgsql, sqlite, etc.).
+	 * @var string $driverName Nombre del driver de la base de datos, compatible con PDO (mysql, pgsql, sqlite, etc.).
 	 */
 	private string $driverName = '';
 
 	/**
-	 * @property string $lastQuery Última consulta ejecutada.
+	 * @var string $lastQuery Última consulta ejecutada.
 	 */
 	private string $lastQuery = '';
 
 	/**
-	 * @property string $lastError Último error ocurrido.
+	 * @var string $lastError Último error ocurrido.
 	 */
 	private string $lastError = '';
 
 	/**
-	 * @property bool $debug Modo de depuración.
+	 * @var bool $debug Modo de depuración.
 	 */
 	private bool $debug = false;
 
 	/**
-	 * @property float $timeQuery Tiempo de inicio de la consulta.
+	 * @var float $timeQuery Tiempo de inicio de la consulta.
 	 */
 	private float $timeQuery = 0;
 
 	/**
-	 * @property float $durationExec Duración de la ejecución de la consulta SQL.
+	 * @var float $durationExec Duración de la ejecución de la consulta SQL.
 	 */
 	private float $durationExec = 0;
 
 	/**
-	 * @property float $durationFetch Duración de la recuperación de filas.
+	 * @var float $durationFetch Duración de la recuperación de filas.
 	 */
 	private float $durationFetch = 0;
 
 	/**
-	 * @property int $rowsFetched Número de filas recuperadas.
+	 * @var int $rowsFetched Número de filas recuperadas.
 	 */
 	private int $rowsFetched = 0;
 
 	/**
-	 * @property PDO|null $pdo Instancia de PDO.
+	 * @var PDO|null $pdo Instancia de PDO.
 	 */
 	private ?PDO $pdo = null;
 
