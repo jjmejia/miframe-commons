@@ -81,10 +81,10 @@ if (count($views_list) > 1) {
 $post_view = $Test->getParam('view', $views_list);
 
 // Adiciona layout a la vista
-$view->layout('layout', 'content_view');
+$view->layout->config('layout', 'content_view');
 
 // Valores a usar en layout
-$view->globals(['title' => $views_list[$post_view], 'uid' => uniqid()]);
+$view->layout->values(['title' => $views_list[$post_view], 'uid' => uniqid()]);
 
 // Visualiza opciones
 echo '<p><b>Opciones:</b> ' . $Test->renderChoices('', true) . '</p>';
@@ -95,7 +95,7 @@ $dato2 = time();
 
 // Visualiza comando
 $Test->htmlPre(
-	"miframe_render()->globals(['title' => '{$views_list[$post_view]}', 'uid' => uniqid()]);" .
+	"miframe_render()->layout->values(['title' => '{$views_list[$post_view]}', 'uid' => uniqid()]);" .
 	PHP_EOL .
 	str_replace('$view', 'miframe_render()', $Test->pasteLines()) .
 	// "\$errors->watch();" . PHP_EOL .
