@@ -46,5 +46,23 @@ miframe_html()->cssLocal($filename_css);
 echo miframe_html()->cssExport();
 ````
 
+## miframe_render() y miframe_view()
+
+Provee métodos para el uso organizado de vistas en aplicaciones PHP.
+
+Entiéndase como "vista" el script usado como frontend o interfaz gráfica de usuario (GUI) para una aplicación o página Web. Este es uno de los pilares de los modelos MVC (Modelo-Vista-Controlador).
+
+Ejemplo de uso:
+````
+require_once 'miframe/commons/helpers.php';
+// Muestra vista $viewname
+echo miframe_render()->view($viewname, $params);
+// Forma alternativa de visualizar la misma vista
+echo miframe_view($viewname, $params);
+// Muestra contenido de la variable $_REQUEST
+echo miframe_dump($_REQUEST);
+````
+
+
 **_Importante:_**
 _Hasta nuevo aviso, esta colección de librerías se encuentra en continuo proceso de Desarrollo._

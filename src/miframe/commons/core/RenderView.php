@@ -3,6 +3,10 @@
 /**
  * Genera páginas web mediante el uso de vistas (views).
  *
+ * Entiéndase como "vista" el script usado como frontend o interfaz
+ * gráfica de usuario (GUI) para una aplicación o página Web. Este
+ * es uno de los pilares de los modelos MVC (Modelo-Vista-Controlador).
+ *
  * @author John Mejía
  * @since Noviembre 2024
  */
