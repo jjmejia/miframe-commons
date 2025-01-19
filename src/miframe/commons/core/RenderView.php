@@ -4,12 +4,13 @@
  * Genera páginas web mediante el uso de vistas (views).
  *
  * @author John Mejía
- * @since Noviemre 2024
+ * @since Noviembre 2024
  */
 
 namespace miFrame\Commons\Core;
 
 use miFrame\Commons\Patterns\Singleton;
+use miFrame\Commons\Support\RenderLayout;
 
 class RenderView extends Singleton
 {
@@ -34,9 +35,9 @@ class RenderView extends Singleton
 	protected string $currentView = '';
 
 	/**
-	 * @var object $layout Datos asociados al layout.
+	 * @var RenderLayout $layout Datos asociados al layout.
 	 */
-	private object $layout;
+	public ?RenderLayout $layout = null;
 
 	/**
 	 * Acciones a ejecutar al crear un objeto para esta clase.
@@ -44,71 +45,7 @@ class RenderView extends Singleton
 	protected function singletonStart()
 	{
 		// Crea objeto para almacenar datos del Layout
-		// TODO: Mover a una clase en support LayoutData
-		// y hacer $layout public!
-		$this->layout = new class {
-			// Archivo
-			public string $filename = '';
-			// Valores a usar en el Layout
-			public array $params = [];
-			// Nombre de la variable con el contenido de vistas previas
-			public string $contentViewName = '';
-			// TRUE para indicar que el Layout fue usado
-			public bool $alreadyUsed = false;
-			// Método para actualizar contenido
-			public function saveContentView(string &$content) {
-				// Marca este Layout como "ya usado"
-				$this->alreadyUsed = true;
-				if ($this->contentViewName != '') {
-					$this->params[$this->contentViewName] =& $content;
-				}
-			}
-			// Método para remover contenido (libera memoria)
-			public function removeContentView() {
-				if ($this->contentViewName != '') {
-					unset($this->params[$this->contentViewName]);
-				}
-			}
-		};
-	}
-
-	/**
-	 * Asigna vista a usar como layout.
-	 *
-	 * El "layout" es la vista que habrá de contener todas las vistas
-	 * ejecutadas a través de $this->view().
-	 *
-	 * @param string $viewname Nombre/Path de la vista layout.
-	 * @param string $content_view_name Nombre de la variable que va a contener el
-	 * 									texto previamente renderizado.
-	 */
-	public function layout(string $viewname, string $content_view_name): self
-	{
-		$this->layout->filename = $this->checkFile($viewname);
-		$this->layout->contentViewName = trim($content_view_name);
-		$this->layout->params = [];
-		return $this;
-	}
-
-	/**
-	 * Remueve el archivo asociado al layout.
-	 */
-	public function removeLayout()
-	{
-		$this->layout->filename = '';
-	}
-
-	/**
-	 * Habilita el layout actual para su uso, incluso después de haber sido usado en la vista actual.
-	 */
-	public function resetLayout()
-	{
-		$this->layout->alreadyUsed = false;
-	}
-
-	public function layoutUsed(): bool
-	{
-		return ($this->layout->alreadyUsed && !empty($this->layout->filename));
+		$this->layout = new RenderLayout();
 	}
 
 	/**
@@ -127,7 +64,7 @@ class RenderView extends Singleton
 	 *
 	 * @return array Opciones de busqueda.
 	 */
-	private function viewPaths(string $viewname): array
+	protected function viewPaths(string $viewname): array
 	{
 		$options = [];
 		// Busca en el directorio de archivos
@@ -149,35 +86,31 @@ class RenderView extends Singleton
 	 * Valida existencia del nombre/path dado a una vista.
 	 *
 	 * @param string $viewname Nombre/Path de la vista.
-	 * @param string $filename Path real asociado a la vista. Si se indica este
-	 * 						   valor, lo valida antes de buscar en la lista
-	 * 						   retornada por $this->viewPaths. (opcional)
 	 *
 	 * @return string Path completo asociado al $viewname o cadena vacia si no existe la vista.
 	 */
-	public function findView(string $viewname, string $filename = ''): string
+	public function findView(string $viewname): string
 	{
 		$viewname = trim($viewname);
 		if ($viewname !== '') {
-			$key = strtolower($viewname);
-			if ($filename != '' && is_file($filename)) {
-				$this->viewCache[$key] = realpath($filename);
-			}
-			// Busca en la caché local (agiliza resultado)
-			if (isset($this->viewCache[$key])) {
+			$key = md5(strtolower($viewname));
+			// Valida si no está registrado en la caché local
+			if (!isset($this->viewCache[$key])) {
+				$options = $this->viewPaths($viewname);
+				// Busca en los directorios indicados
+				foreach ($options as $filename) {
+					if (!is_file($filename)) {
+						// Intenta el mismo pero todo en minusculas para el nombre base,
+						// en caso que el SO diferencia may/min (Linux)
+						$filename = dirname($filename) . DIRECTORY_SEPARATOR . strtolower(basename($filename));
+					}
+					if (is_file($filename)) {
+						$this->viewCache[$key] = realpath($filename);
+						return $this->viewCache[$key];
+					}
+				}
+			} else {
 				return $this->viewCache[$key];
-			}
-			// Busca en los directorios indicados
-			foreach ($this->viewPaths($viewname) as $filename) {
-				if (!is_file($filename)) {
-					// Intenta el mismo pero todo en minusculas para el nombre base,
-					// en caso que el SO diferencia may/min (Linux)
-					$filename = dirname($filename) . DIRECTORY_SEPARATOR . strtolower(basename($filename));
-				}
-				if (is_file($filename)) {
-					$this->viewCache[$key] = realpath($filename);
-					return $this->viewCache[$key];
-				}
 			}
 		}
 
@@ -198,49 +131,10 @@ class RenderView extends Singleton
 		$filename = $this->findView($viewname);
 		if ($filename === '') {
 			// Si llega a este punto, dispara un error
-			trigger_error(
-				"Path para vista solicitada no es valido ({$viewname})",
-				E_USER_ERROR
-			);
+			$this->error("La vista \"{$viewname}\" no pudo ser encontrada");
 		}
-		// Este punto nunca se alcanza por el uso de trigger_error()
+
 		return $filename;
-	}
-
-	/**
-	 * Registra parámetros (valores) a usar para generar el layout.
-	 *
-	 * @param array $params Arreglo con valores.
-	 *
-	 * @return self Este objeto.
-	 */
-	public function globals(array $params): self
-	{
-		// Los nuevos valores remplazan los anteriores
-		$this->layout->params = $params + $this->layout->params;
-		return $this;
-	}
-
-	/**
-	 * Recupera valor de parámetro asignado al layout.
-	 *
-	 * Se provee este método para su uso en vistas. Cuando se genera el
-	 * layout, igual que ocurre con las vistas, el valor de cada parámetro
-	 * se exporta para su uso directo en la vista. No es necesario usar
-	 * este método en el script usado para el layout.
-	 *
-	 * @param string $name Nombre del parámetro a recuperar.
-	 * @param mixed $default Valor a retornar si el parámetro no existe.
-	 *
-	 * @return mixed Valor del parámetro solicitado.
-	 */
-	public function global(string $name, mixed $default = ''): mixed
-	{
-		return (
-			array_key_exists($name, $this->layout->params) ?
-			$this->layout->params[$name] :
-			$default
-		);
 	}
 
 	/**
@@ -253,10 +147,7 @@ class RenderView extends Singleton
 	public function location(string $path)
 	{
 		if ($path == '' || !is_dir($path)) {
-			trigger_error(
-				'El path indicado para buscar las vistas no es valido (' . $path . ')',
-				E_USER_ERROR
-			);
+			$this->error("El path indicado para buscar vistas ({$path}) no es valido");
 		}
 		// Registra valor
 		$this->pathFiles = realpath($path) . DIRECTORY_SEPARATOR;
@@ -271,23 +162,31 @@ class RenderView extends Singleton
 	 *
 	 * @param string $content Contenido de la vista a renderizar (Valor por referencia).
 	 */
-	private function includeLayout(string &$content)
+	protected function renderLayout(string &$content): bool
 	{
 		// Ejecuta layout (si alguno) si no hay vistas pendientes.
 		if (
-			!$this->layoutUsed() &&
+			$this->layout->waitingForDeploy() &&
 			$this->currentView == ''
 			) {
-			// Preserva el contenido previamente renderizado para su uso en el Layout
-			$this->layout->saveContentView($content);
-			// Ejecuta vista
-			$content = $this->evalTemplate(
-				$this->layout->filename,
-				$this->layout->params
-			);
-			// Libera memoria
-			$this->layout->removeContentView();
+			// Recupera path real del layout
+			$filename = $this->checkFile($this->layout->viewName());
+			if ($filename !== '') {
+				// Preserva el contenido previamente renderizado para su uso en el Layout
+				$this->layout->setContentView($content);
+				// Ejecuta vista
+				$content = $this->renderView(
+					$filename,
+					$this->layout->values()
+				);
+				// Libera memoria
+				$this->layout->removeContentView();
+
+				return true;
+			}
 		}
+
+		return false;
 	}
 
 	/**
@@ -301,19 +200,16 @@ class RenderView extends Singleton
 	 * @return bool TRUE si crea el espacio para la nueva vista, FALSE si la referencia
 	 * 				deseada ya existe.
 	 */
-	protected function newTemplate(string $viewname, bool $only_validate = false): bool
+	private function newTemplate(string $viewname): bool
 	{
 		$reference = md5($viewname);
 		if (isset($this->views[$reference])) {
 			return false;
 		}
 
-		if (!$only_validate) {
-			// No solo valida, debe crear la referencia
-			$this->views[$reference] = ['name' => $viewname, 'parent' => $this->currentView];
-			// Actualiza identificador de vista actual
-			$this->currentView = $reference;
-		}
+		$this->views[$reference] = ['name' => $viewname, 'parent' => $this->currentView];
+		// Actualiza identificador de vista actual
+		$this->currentView = $reference;
 
 		return true;
 	}
@@ -349,11 +245,11 @@ class RenderView extends Singleton
 			// Valida nombre de la vista y recupera nombre de archivo asociado
 			$filename = $this->checkFile($viewname);
 			// Ejecuta vista
-			$content = $this->evalTemplate($filename, $params);
+			$content = $this->renderView($filename, $params);
 			// Restablece vista previa
 			$this->removeTemplate();
 			// Valida si se incluye layout en esta vista
-			$this->includeLayout($content);
+			$this->renderLayout($content);
 		}
 
 		return $content;
@@ -381,7 +277,7 @@ class RenderView extends Singleton
 	 *
 	 * @return string Contenido renderizado.
 	 */
-	private function evalTemplate(string $filename, array $params): string
+	protected function renderView(string $filename, array $params): string
 	{
 		// La define como una función estática para no incluir $this
 		$fun = static function (string $view_filename, array &$view_args) {
@@ -410,5 +306,35 @@ class RenderView extends Singleton
 		ob_end_clean();
 
 		return $content;
+	}
+
+	/**
+	 * Genera evento de error y termina la ejecución del script.
+	 *
+	 * Se recomienda usar en remplazo de trigger_error(), para prevenir
+	 * posibles ciclos infinitos si el error ocurre mientras se visualiza
+	 * una personalización de la función que muestra errores en pantalla.
+	 *
+	 * @param string $message Mensaje de error.
+	 */
+	private function error(string $message)
+	{
+		// Recupera línea de dónde se solicita la vista
+		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		// Remueve referencias de error en este mismo archivo
+		// para obtener desde donde se invoca el método que desencadena el error.
+		while(!empty($trace[0]) && $trace[0]['file'] === __FILE__) {
+			array_shift($trace);
+		}
+		if (!empty($Trace[0]['file'])) {
+			$trace = $trace[0];
+			$message .= " en \"{$trace['file']}\" línea {$trace['line']}";
+		}
+		// Registra mensaje en el log de errores
+		error_log('VIEW/ERROR: ' . $message);
+		// Redefine mensaje para ambientes de producción?
+		// $message = 'No pudo mostrar contenido, favor revisar el log de errores';
+		echo "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\"><b>Error:</b> {$message}</div>";
+		exit;
 	}
 }
