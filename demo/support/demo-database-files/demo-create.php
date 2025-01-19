@@ -91,6 +91,8 @@ else {
 	$db->database = $env['database'];
 }
 
+$db->debug(true);
+
 // Archivo con los SQL para crear tablas
 $filename = __DIR__ . DIRECTORY_SEPARATOR . $motor . '-create-tables.sql';
 
@@ -174,13 +176,27 @@ function createTables(PDOController $db, string $filename)
 
 function getTables(PDOController $db): array
 {
-	$query = 'show tables'; // MySQL
+	$data = [];
+	$query = '';
 	if ($db->driver() == 'sqlite') {
 		$query = "SELECT name " .
 			"FROM sqlite_schema " .
 			"WHERE type ='table' AND name NOT LIKE 'sqlite_%'";
+		$data = $db->query($query);
+		if ($db->getLastError() !== '') {
+			// Versiones anteriores a SQLITE3 no usan sqlite_schema
+			$query = 'SELECT name FROM sqlite_master';
+			$data = $db->query($query);
+			// print_r($data); exit;
+		}
 	}
-	$data = $db->query($query);
+	elseif ($db->driver() == 'mysql') {
+		// MySQL
+		$query = 'show tables';
+		$data = $db->query($query);
+	} else {
+		die('Driver no soportado: ' . $db->driver());
+	}
 	// print_r($rows);
 	$tables = [];
 	foreach ($data as $row) {

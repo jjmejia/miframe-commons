@@ -130,8 +130,10 @@ class PDOController
 	{
 		$this->debug = $value;
 		if ($value) {
-			// Habilita reporte de errores
+			// Habilita reporte de todos los errores
 			error_reporting(E_ALL);
+			// Habilita salida a pantalla de mensajes de error
+			ini_set("display_errors", "on");
 		}
 	}
 
