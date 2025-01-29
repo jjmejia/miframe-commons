@@ -12,6 +12,7 @@ namespace miFrame\Commons\Core;
 
 use PDO;
 use PDOException;
+use PDOStatement;
 
 class PDOController
 {
@@ -138,6 +139,14 @@ class PDOController
 	}
 
 	/**
+	 * Indica si está habilitado el modo de depuración (debug).
+	 */
+	public function inDebug(): bool
+	{
+		return $this->debug;
+	}
+
+	/**
 	 * Establece una conexión a la base de datos usando PDO.
 	 *
 	 * Este método intenta crear una nueva instancia de PDO con los parámetros
@@ -198,67 +207,40 @@ class PDOController
 	}
 
 	/**
-	 * Realiza consulta SQL.
-	 */
-	/**
 	 * Ejecuta una consulta SQL y devuelve el resultado como un arreglo.
 	 *
 	 * @param string $query La consulta SQL a ejecutar.
 	 * @param array $values Opcional. Un arreglo de valores para enlazar a la consulta. Por defecto es un array vacío.
-	 * @param int $offset Opcional. El número de filas a omitir antes de comenzar a recuperar el resultado. Por defecto es 0.
 	 * @param int $limit Opcional. El número máximo de filas a recuperar. Por defecto es 0, lo que significa sin límite.
+	 * @param int $offset Opcional. El número de filas a omitir antes de comenzar a recuperar el resultado. Por defecto es 0.
 	 * @return array Arreglo con el resultado de la consulta.
 	 */
-	public function query(string $query, array $values = [], int $offset = 0, int $limit = 0): array
+	public function query(string $query, array $values = [], int $limit = 0, int $offset = 0): array
 	{
 		$data = [];
 
-		// Si no está previamente conectado, levanta la conexión
-		if (empty($this->pdo) && !$this->connect()) {
-			return $data;
-		}
+		$result = $this->execute($query, $values);
 
-		$this->clearErrors();
-		$this->startStats();
-
-		try {
-			$result = false;
-			if ($query !== '') {
-				// Preserva query a ejecutar para debug
-				$this->lastQuery = $query;
-				if (count($values) <= 0 || strpos($query, '?') === false) {
-					// No está formateada para usar prepare()
-					$result = $this->pdo->query($query);
-				} else {
-					// El arreglo de valores no puede tener llaves asociativas
-					$values = array_values($values);
-					$result = $this->pdo->prepare($query);
-					if ($result !== false) {
-						if ($result->execute($values) === false) {
-							$result = false;
-						}
-					}
-				}
-			}
-
-			// Calcula tiempo que tarda en ejecutar la consulta
-			$this->durationExec = microtime(true) - $this->timeQuery;
-
-			if ($result !== false) {
+		if ($result !== false) {
+			try {
 				$time = microtime(true);
-				// Recupera datos
-				if ($offset <= 0 && $limit <= 0) {
+				// Ignora todos los registros antes del $offset indicado.
+				// De esta forma solamente almacena los registros indicados.
+				// Usado para el caso que no se pueda limitar el resultado
+				// directamente en el query.
+				// Recordar que el primer elemento es index=0
+				while ($offset > 0 && $result->fetch()) {
+					$offset --;
+				}
+				// Recupera datos restantes
+				// Tener en cuenta (del manual de PHP):
+				// Usar este método para obtener conjuntos de resultados grandes dará
+				// como resultado una fuerte demanda del sistema y, posiblemente, de
+				// los recursos de red.
+				if ($limit <= 0) {
 					$data = $result->fetchAll();
 				}
 				else {
-					// Ignora todos los registros antes del $offset indicado.
-					// De esta forma solamente almacena los registros indicados.
-					// Usado para el caso que no se pueda limitar el resultado
-					// directamente en el query.
-					// Recordar que el prime elemento es index=0
-					while ($offset > 0 && $result->fetch() !== false) {
-						$offset --;
-					}
 					// Recupera los indicados por $limit o todos si es cero
 					$count = 0;
 					while ($row = $result->fetch()) {
@@ -272,7 +254,54 @@ class PDOController
 				$this->rowsFetched = count($data);
 				// Calcula tiempo que tarda en recuperar los datos
 				$this->durationFetch = microtime(true) - $time;
+			} catch (PDOException $ex) {
+				// Aviso de error capturable
+				$this->lastError = 'No pudo recuperar filas de datos: ' . $ex->getMessage();
+				if ($this->debug) {
+					trigger_error($this->lastError, E_USER_WARNING);
+				}
 			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Ejecuta query y retorna objeto para recuperación manual de las filas.
+	 *
+	 * @param string $query La consulta SQL a ejecutar.
+	 * @param array $values Opcional. Un arreglo de valores para enlazar a la consulta. Por defecto es un array vacío.
+	 * @return mixed Objeto PDOStatement para recuperación de datos o false si ocurre algún error en la consulta.
+	 */
+	public function execute(string $query, array $values = []): PDOStatement|false
+	{
+		$result = false;
+
+		// Si no está previamente conectado, intenta levantar la conexión
+		if ($query === '' || (empty($this->pdo) && !$this->connect())) {
+			return $result;
+		}
+
+		$this->clearErrors();
+		$this->startStats();
+
+		try {
+			// Preserva query a ejecutar para debug
+			$this->lastQuery = $query;
+			if (count($values) <= 0 || strpos($query, '?') === false) {
+				// No está formateada para usar prepare()
+				$result = $this->pdo->query($query);
+			} else {
+				// El arreglo de valores no puede tener llaves asociativas
+				$values = array_values($values);
+				$result = $this->pdo->prepare($query);
+				if ($result !== false && $result->execute($values) === false) {
+					$result = false;
+				}
+			}
+
+			// Calcula tiempo que tarda en ejecutar la consulta
+			$this->durationExec = microtime(true) - $this->timeQuery;
 		} catch (PDOException $ex) {
 			// Aviso de error capturable
 			$this->lastError = 'No pudo realizar la consulta SQL solicitada: ' . $ex->getMessage();
@@ -281,7 +310,7 @@ class PDOController
 			}
 		}
 
-		return $data;
+		return $result;
 	}
 
 	/**
@@ -336,8 +365,8 @@ class PDOController
 			'durationExec' => $this->durationExec,
 			'durationFetch' => $this->durationFetch,
 			'rowsFetched' => $this->rowsFetched,
-			'cmdSuccessful' => ($this->lastError === ''),
-			'lastError' => $this->lastError
+			// 'cmdSuccessful' => ($this->lastError === ''),
+			// 'lastError' => $this->lastError
 		];
 	}
 
