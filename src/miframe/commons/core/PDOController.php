@@ -267,6 +267,14 @@ class PDOController
 	}
 
 	/**
+	 * Reporta si existe una conexión activa.
+	 */
+	public function connected(): bool
+	{
+		return !empty($this->pdo);
+	}
+
+	/**
 	 * Ejecuta query y retorna objeto para recuperación manual de las filas.
 	 *
 	 * @param string $query La consulta SQL a ejecutar.
@@ -278,7 +286,7 @@ class PDOController
 		$result = false;
 
 		// Si no está previamente conectado, intenta levantar la conexión
-		if ($query === '' || (empty($this->pdo) && !$this->connect())) {
+		if ($query === '' || (!$this->connected() && !$this->connect())) {
 			return $result;
 		}
 
