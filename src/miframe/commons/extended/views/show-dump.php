@@ -9,7 +9,8 @@
 
 $text = PHP_EOL;
 
-if (miframe_render()->once()) {
+if (miframe_render()->once())
+{
 	// Estilos a usar, se declaran una única vez
 	$text .= '
 <style>

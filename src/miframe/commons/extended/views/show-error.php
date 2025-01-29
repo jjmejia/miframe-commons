@@ -10,8 +10,13 @@
 
 $styles = PHP_EOL;
 
-if (miframe_render()->once()) {
-  	// Estilos a usar, se declaran una única vez
+// Captura referencia al render
+$render = miframe_render();
+
+if ($render->once()) {
+  	// Estilos a usar, se declaran una única vez.
+	// Sin embargo, deben publicarse SI O SI, aunque exista un
+	// Fatal Error posteriormente.
 	$styles = '
 <style>
 /* showError */
@@ -30,7 +35,7 @@ if (miframe_render()->once()) {
 $info = '';
 
 // Etiquetas especiales
-if ($end_script && miframe_render()->inDeveloperMode()) {
+if ($end_script && $render->inDeveloperMode()) {
 	$label = 'Script interrumpido. Modo Desarrollo activo (developerMode)';
 	$info = '<div class="mvse-label">' . $label . '</div>';
 }
@@ -45,7 +50,7 @@ if ($file != '' && $line > 0) {
 // Da formato a contenido capturado (si alguno)
 if ($buffer != '') {
 	$buffer = htmlspecialchars($buffer);
-	$buffer = miframe_dump($buffer, 'Contenido parcial', false);
+	$buffer = $render->dump($buffer, 'Contenido parcial', false);
 }
 // Backtrace
 $infotrace = '';
@@ -62,17 +67,18 @@ if (is_array($trace)) {
 		}
 	}
 }
+
 if ($infotrace != '') {
 	// Enmarca valores
-	$infotrace = miframe_dump($infotrace, 'Backtrace', false);
+	$infotrace = $render->dump($infotrace, 'Backtrace', false);
 }
 
 // Adiciona valor del $_SERVER (solamente para localhost y al primer error presente)
 if ($end_script && miframe_server()->isLocalhost()) {
-	$infotrace .= miframe_dump($_SERVER, '$_SERVER');
-	$infotrace .= miframe_dump($_REQUEST, '$_REQUEST', ignore_empty: true);
-	$infotrace .= miframe_dump($_FILES, '$_FILES', ignore_empty: true);
-	$infotrace .= miframe_dump($_SESSION, '$_SESSION', ignore_empty: true);
+	$infotrace .= $render->dump($_SERVER, '$_SERVER');
+	$infotrace .= $render->dump($_REQUEST, '$_REQUEST', ignore_empty: true);
+	$infotrace .= $render->dump($_FILES, '$_FILES', ignore_empty: true);
+	$infotrace .= $render->dump($_SESSION, '$_SESSION', ignore_empty: true);
 }
 
 $info = $styles .

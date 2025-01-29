@@ -40,6 +40,11 @@ class ExtendedRenderError implements RenderErrorInterface
 	private array $previous = [];
 
 	/**
+	 * @var array $cacheContent Almacena errores renderizados para forzar su visualización en caso que otro error termine el script.
+	 */
+	private array $cacheContent = [];
+
+	/**
 	 * Muestra mensajes de error.
 	 *
 	 * Esta función procesa los datos de error proporcionados, los forma para
@@ -97,9 +102,10 @@ class ExtendedRenderError implements RenderErrorInterface
 			// Valida si el mensaje ya fue publicado localmente
 			if ($content !== '') {
 				$key = md5($data_error['type']) . '/' . md5($content);
-				if (!$this->uniqueKey($key)) {
+				if (!$this->uniqueKey($key) && !$error->endScript) {
 					// Ya registrado, remueve contenido
-					// (y por extensión no muestra en pantalla)
+					// (y por extensión no lo muestra en pantalla),
+					// a menos que esta versión de por terminado el script.
 					$content = '';
 				}
 			}
@@ -110,17 +116,25 @@ class ExtendedRenderError implements RenderErrorInterface
 
 		// Muestra en pantalla (si hay algún mensaje reportado)
 		if ($data_error['message'] !== '') {
-			// Captura textos no envíados a pantalla
+			// Valida acciones en caso que el script termine
 			if ($error->endScript) {
+				// Captura textos no envíados a pantalla
 				while (ob_get_level()) {
 					$data_error['buffer'] .= ob_get_contents();
 					ob_end_clean();
+				}
+				// Busca errores previos y los remueve del buffer
+				foreach ($this->cacheContent as $previousError) {
+					$data_error['buffer'] = str_replace($previousError, '', $data_error['buffer']);
 				}
 			}
 
 			// Ejecuta vista solo si no está en el bloque de cierre(?)
 			// Retorna FALSE si ocurre algún error.
 			$content = $render->view('show-error', $data_error);
+
+			// Valida errores previamente renderizados
+			$this->evalCachedErrors($content, $error->endScript);
 		}
 
 		return $content;
@@ -140,5 +154,32 @@ class ExtendedRenderError implements RenderErrorInterface
 		}
 
 		return false;
+	}
+
+	/**
+	 * En caso que el error termine el script, adiciona errores previamente renderizados.
+	 *
+	 * De otra forma, estos errores y el css previamente renderizado quedaría en el
+	 * buffer no publicado y no se visualizarían correctamente.
+	 *
+	 * @param string $content Contenido renderizado a modificar.
+	 * @param bool $end_script TRUE solamente si el error termina el script.
+	 */
+	private function evalCachedErrors(string &$content, bool $end_script)
+	{
+		if (!$end_script) {
+			// Guarda mensaje de error para revisar en caso que
+			// se presente posteriormente un error fatal
+			if (trim($content) !== '') {
+				$this->cacheContent[] = $content;
+			}
+		} else {
+			// Adiciona errores previos reportados
+			$content = implode(PHP_EOL, $this->cacheContent) .
+				PHP_EOL .
+				$content;
+			// Libera memoria
+			$this->cacheContent = [];
+		}
 	}
 }
