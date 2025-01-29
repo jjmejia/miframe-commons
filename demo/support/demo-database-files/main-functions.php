@@ -1,7 +1,10 @@
 <?php
 
 /**
- * Funciones de soporta para arranque de las demos de base de datos
+ * Funciones de soporta para arranque de las demos de base de datos.
+ *
+ * @author John Mejía
+ * @since Enero 2025
  */
 
 use miFrame\Commons\Core\PDOController;

@@ -15,6 +15,10 @@ class miCodeTest
 	private $filename = '';
 	private $content_script = [];
 
+	/**
+	 * Constructor de la clase.
+	 * Inicializa la sesión PHP y la configuración.
+	 */
 	public function __construct()
 	{
 		// Inicializa manejo de sesión PHP
@@ -27,7 +31,7 @@ class miCodeTest
 	}
 
 	/**
-	 * Inicializa config
+	 * Inicializa datos de configuración.
 	 */
 	private function initConfig()
 	{
@@ -48,13 +52,15 @@ class miCodeTest
 			'visitor-log' => '',
 			// Temporal
 			'tmp-path' => '', 		// 'MICODE_DEMO_TMP',
-			// Repositorio Githbu
+			// Repositorio Github
 			'github-repo' => ''
 		);
 	}
 
 	/**
-	 * Fija atributos de presentación
+	 * Configura los atributos de presentación.
+	 *
+	 * @param array $data Datos de configuración.
 	 */
 	public function config(array $data)
 	{
@@ -66,14 +72,15 @@ class miCodeTest
 				}
 			}
 		}
-
-		// print_r($this->config); echo "<hr>";
 	}
 
 	/**
-	 * Define el path a usar para buscar los scripts (directorio "src").
+	 * Define el path a usar para buscar los scripts (directorio "src" de miframe-commons).
+	 *
+	 * @param string $path Ruta relativa del directorio de scripts.
+	 * @return string Ruta completa del directorio de scripts.
 	 */
-	public function includePath(string $path)
+	public function includePath(string $path): string
 	{
 		if (empty($this->config['src-path'])) {
 			// Asigna el path usado por el script actual
@@ -84,9 +91,12 @@ class miCodeTest
 	}
 
 	/**
-	 * Retorna directorio temporal a usar.
+	 * Retorna el directorio temporal a usar.
+	 *
+	 * @param string $default Ruta por defecto si no se ha configurado.
+	 * @return string Ruta del directorio temporal.
 	 */
-	public function tmpDir(string $default = '')
+	public function tmpDir(string $default = ''): string
 	{
 		if (!empty($this->config['tmp-path'])) {
 			return $this->config['tmp-path'];
@@ -97,10 +107,14 @@ class miCodeTest
 
 	/**
 	 * Define el path a usar para buscar recursos, relativo a la URL actual.
+	 *
 	 * Puede definirse previamente para acceder a un directorio diferente
 	 * al auto-detectado.
+	 *
+	 * @param string $path Ruta relativa del recurso.
+	 * @return string Ruta completa del recurso.
 	 */
-	public function resourcesPath(string $path)
+	public function resourcesPath(string $path): string
 	{
 		if (empty($this->config['url-resources'])) {
 			// Asigna el path usado por el script actual
@@ -112,6 +126,10 @@ class miCodeTest
 
 	/**
 	 * Presenta encabezado para la salida a pantalla.
+	 *
+	 * @param string $title Título de la página.
+	 * @param string $description Descripción de la página.
+	 * @param string $styles Estilos adicionales en línea.
 	 */
 	public function start(string $title, string $description = '', string $styles = '')
 	{
@@ -170,22 +188,32 @@ class miCodeTest
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
 <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
 </svg> Regresar</a>';
-			}
+	}
 	// Apertura del contenedor de la página demo a mostrar
 
 	?>
 	<div class="test-content">
 		<p class="test-description"><?= $description ?></p>
-	<?php
+		<?php
 
 	}
 
+	/**
+	 * Muestra texto formateado en HTML.
+	 *
+	 * @param string $text Texto a mostrar.
+	 */
 	public function htmlPre(string $text)
 	{
 		echo PHP_EOL . '<pre class="code">' . trim($text) . '</pre>' . PHP_EOL;
 	}
 
-	private function footer()
+	/**
+	 * Genera el pie de página.
+	 *
+	 * @return string Contenido del pie de página.
+	 */
+	private function footer(): string
 	{
 		$contents = '';
 		if (
@@ -207,6 +235,8 @@ class miCodeTest
 
 	/**
 	 * Da cierre a la página demo.
+	 *
+	 * @param bool $show_repo Indica si se muestra el enlace al repositorio.
 	 */
 	public function end(bool $show_repo = true)
 	{
@@ -232,7 +262,15 @@ class miCodeTest
 			'</body></html>';
 	}
 
-	public function link(string $name, array $data = [], $raw = false)
+	/**
+	 * Genera un enlace HTML.
+	 *
+	 * @param string $name Nombre del enlace.
+	 * @param array $data Datos adicionales para el enlace.
+	 * @param bool $raw Indica si se retorna el enlace en formato raw.
+	 * @return string Enlace HTML.
+	 */
+	public function link(string $name, array $data = [], $raw = false): string
 	{
 		$enlace_base = (!empty($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '');
 		if (count($data) > 0) {
@@ -245,7 +283,14 @@ class miCodeTest
 		return $enlace_base;
 	}
 
-	public function getParam(string $param_name, array $links)
+	/**
+	 * Obtiene el parámetro de la URL.
+	 *
+	 * @param string $param_name Nombre del parámetro.
+	 * @param array $links Enlaces disponibles.
+	 * @return string Valor del parámetro.
+	 */
+	public function getParam(string $param_name, array $links): string
 	{
 		// Captura vista elegida por el usuario
 		$post_view = '';
@@ -260,7 +305,14 @@ class miCodeTest
 		return $post_view;
 	}
 
-	public function multipleLinks(string $param_name, array $links)
+	/**
+	 * Genera múltiples enlaces HTML.
+	 *
+	 * @param string $param_name Nombre del parámetro.
+	 * @param array $links Enlaces disponibles.
+	 * @return string Enlaces HTML formateados.
+	 */
+	public function multipleLinks(string $param_name, array $links): string
 	{
 		$post_view = $this->getParam($param_name, $links);
 		// Crea enlaces para selección de las vistas
@@ -280,7 +332,15 @@ class miCodeTest
 		return $views_links;
 	}
 
-	public function choice(string $option, string $text_nok, string $text_ok)
+	/**
+	 * Define una opción de elección por parte del usuario.
+	 *
+	 * @param string $option Nombre de la opción.
+	 * @param string $text_nok Texto cuando no está seleccionada.
+	 * @param string $text_ok Texto cuando está seleccionada.
+	 * @return bool TRUE si la opción está seleccionada.
+	 */
+	public function choice(string $option, string $text_nok, string $text_ok): bool
 	{
 		$retornar = false;
 
@@ -299,7 +359,14 @@ class miCodeTest
 		return $retornar;
 	}
 
-	public function renderChoices($separator = ' | ', $use_checkboxes = false)
+	/**
+	 * Renderiza las opciones de elección.
+	 *
+	 * @param string $separator Separador entre opciones.
+	 * @param bool $use_checkboxes Indica si se usan checkboxes.
+	 * @return string Opciones renderizadas.
+	 */
+	public function renderChoices($separator = ' | ', $use_checkboxes = false): string
 	{
 		$text = '';
 		foreach ($this->choices as $option => $info) {
@@ -314,8 +381,7 @@ class miCodeTest
 				}
 				$enlace = $this->link($info['title'], $info['data'], true);
 				$text .= "<label><input type=\"checkbox\"{$checked} onclick=\"window.location='{$enlace}'\">{$info['def']}</label>";
-			}
-			else {
+			} else {
 				$text .= $this->link($info['title'], $info['data']);
 			}
 			// Remueve opción ya recuperada
@@ -326,7 +392,9 @@ class miCodeTest
 	}
 
 	/**
-	 * Despliega contenido de variable.
+	 * Despliega el contenido de una variable.
+	 *
+	 * @param mixed $data Datos a mostrar.
 	 */
 	public function dump(mixed $data)
 	{
@@ -336,8 +404,7 @@ class miCodeTest
 			foreach ($data as $k => $v) {
 				if (is_bool($v)) {
 					$v = ($v ? 'true' : 'false');
-				}
-				elseif (!is_numeric($v) && !is_float($v)) {
+				} elseif (!is_numeric($v) && !is_float($v)) {
 					// NOTA: var_export() sobre float adiciona muchos decimales (Linux).
 					$v = var_export($v, true);
 				}
@@ -352,11 +419,11 @@ class miCodeTest
 			$info = htmlentities(var_export($data, true));
 		}
 
-		return $this->htmlPre($info);
+		$this->htmlPre($info);
 	}
 
 	/**
-	 * Registra visitas.
+	 * Registra visitas en archivos log.
 	 */
 	private function updateVisitorLog()
 	{
@@ -435,6 +502,11 @@ class miCodeTest
 		}
 	}
 
+	/**
+	 * Copia las siguientes líneas de código para mostrarlas en pantalla.
+	 *
+	 * @param int $lines Número de líneas a copiar.
+	 */
 	public function copyNextLines(int $lines = 1)
 	{
 		// Muestra las lineas siguientes a la posición actual
@@ -466,40 +538,74 @@ class miCodeTest
 		$this->codePre .= $content;
 	}
 
+	/**
+	 * Muestra en pantalla las siguientes líneas de código.
+	 *
+	 * @param int $lines Número de líneas a mostrar.
+	 */
 	public function showNextLines(int $lines = 1)
 	{
 		$this->codePre = '';
 		$this->copyNextLines($lines);
 		$content = $this->pasteLines();
 		if ($content != '') {
-			echo $this->htmlPre($content);
+			$this->htmlPre($content);
 		}
 	}
 
-	public function pasteLines() {
+	/**
+	 * Pega las líneas copiadas.
+	 *
+	 * @return string Líneas copiadas.
+	 */
+	public function pasteLines(): string
+	{
 		$text = $this->codePre;
 		$this->codePre = '';
 		return $text;
 	}
 
-	public function tokenizer(string $name, string $key)
+	/**
+	 * Genera un token de seguridad.
+	 *
+	 * El token es almacenado en la sesión.
+	 *
+	 * @param string $name Nombre del token.
+	 * @param string $key Complemento del token.
+	 * @return string Token generado.
+	 */
+	public function tokenizer(string $name, string $key): string
 	{
 		$token =  bin2hex(random_bytes(32));
 		$_SESSION[$name] = $key . $token;
 		return $token;
 	}
 
+	/**
+	 * Evalúa un token de seguridad.
+	 *
+	 * Si la validación es fallida, aborta la ejecución del script.
+	 *
+	 * @param string $param Nombre del parámetro en $_GET a evaluar.
+	 * @param string $name Nombre del token.
+	 * @param string $key Complemento del token.
+	 */
 	public function evalToken(string $param, string $name, string $key)
 	{
 		if (
 			empty($_SESSION[$name]) ||
 			empty($_GET[$param]) ||
 			!hash_equals($_SESSION[$name], $key . $_GET[$param])
-			) {
+		) {
 			$this->abort('Acceso no autorizado');
 		}
 	}
 
+	/**
+	 * Aborta la ejecución del script con un mensaje de error.
+	 *
+	 * @param string $message Mensaje de error.
+	 */
 	public function abort(string $message)
 	{
 		echo "<p class=\"test-aviso\"><b>Error:</b> {$message}</p>";

@@ -6,6 +6,9 @@
  * Referencias:
  * - https://mariadb.com/resources/blog/developer-quickstart-php-data-objects-and-mariadb/
  * - https://www.sqlitetutorial.net/sqlite-php/connect/
+ *
+ * @author John Mejía
+ * @since Enero 2025
  */
 
 namespace miFrame\Commons\Core;

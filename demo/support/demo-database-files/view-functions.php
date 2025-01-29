@@ -1,20 +1,36 @@
 <?php
 
 /**
- * Funciones de soporte para demo.
+ * Funciones de soporte para demos de base de datos.
+ *
+ * @author John Mejía
+ * @since Enero 2025
  */
 
 use miFrame\Commons\Core\PDOController;
 
+/**
+ * Genera una fila de tabla HTML a partir de un array de datos.
+ *
+ * @param array $data Los datos que se mostrarán en la fila de la tabla.
+ * @param bool $is_title Opcional. Si es true, la fila corresponde a una fila de títulos (cabecera).
+ * @return string La fila de tabla HTML generada.
+ */
 function showRecord(array $data, bool $is_title = false): string
 {
 	$tag = 'td';
 	if ($is_title) {
 		$tag = 'th';
 	}
-	return "<tr><{$tag}>" . implode("</{$tag}><{$tag}>", $data) . "</{$tag}}></tr>" . PHP_EOL;
+	return "<tr><{$tag}>" . implode("</{$tag}><{$tag}>", $data) . "</{$tag}></tr>" . PHP_EOL;
 }
 
+/**
+ * Genera una tabla HTML a partir de un array de datos.
+ *
+ * @param array $values Los datos que se mostrarán en la tabla.
+ * @return string La tabla HTML generada.
+ */
 function showTable(array $values): string
 {
 	$total = count($values);
@@ -45,10 +61,14 @@ function showTable(array $values): string
 	return $salida;
 }
 
+/**
+ * Muestra estadísticas de la base de datos.
+ *
+ * @param PDOController $db El controlador de la base de datos.
+ */
 function showStats(PDOController $db)
 {
 	if ($db->inDebug()) {
-		// $Test->dump($db->stats());
 		miframe_dump($db->stats(), 'Estadísticas de la Consulta');
 	}
 	else {
