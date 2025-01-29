@@ -78,10 +78,13 @@ class RenderView extends Singleton
 			// $filename no contiene path pero si la extensión
 			$options[] = $this->pathFiles . $viewname;
 		}
-		// $filename contiene path pero no la extensión
-		$options[] = $viewname . '.php';
-		// Path completo dado por el usuario
-		$options[] = $viewname;
+		// En caso que el path contenga una ruta completa (o realtivamente completa)
+		if (strpos($viewname, DIRECTORY_SEPARATOR) !== false || strpos($viewname, '/') !== false) {
+			// $filename contiene path pero no la extensión
+			$options[] = $viewname . '.php';
+			// Path completo dado por el usuario
+			$options[] = $viewname;
+		}
 
 		return $options;
 	}
