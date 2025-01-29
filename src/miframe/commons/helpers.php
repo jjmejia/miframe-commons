@@ -9,8 +9,10 @@
  * @since Julio 2024
  */
 
+use miFrame\Commons\Core\ErrorHandler;
 use miFrame\Commons\Core\HTMLSupport;
 use miFrame\Commons\Core\ServerData;
+use miFrame\Commons\Extended\ExtendedRenderError;
 use miFrame\Commons\Extended\ExtendedRenderView;
 
 /**
@@ -72,4 +74,20 @@ function miframe_view(string $viewname, array $params = []): string
 function miframe_dump(mixed $var, string $title = '', bool $escape_dump = true, bool $ignore_empty = false)
 {
 	echo miframe_render()->dump($var, $title, $escape_dump, $ignore_empty);
+}
+
+/**
+ * Habilita manejo de errores personalizados
+ */
+function miframe_errors(bool $use_extended_render = false)
+{
+	$errors = new ErrorHandler();
+	if ($use_extended_render) {
+		// Hablita render predefinido
+		$render = new ExtendedRenderError();
+		$errors->setRenderer($render);
+	}
+	$errors->watch();
+
+	return $errors;
 }
