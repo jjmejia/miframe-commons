@@ -1,6 +1,6 @@
 <?php
 
-include_once __DIR__ . '/support/lib/miCodeTest.php';
+include_once __DIR__ . '/lib/miCodeTest.php';
 
 $Test = new miCodeTest();
 
@@ -9,7 +9,7 @@ $Test->config([
 	// Path con el código fuente
 	'src-path' => __DIR__ . '/../src',
 	// URL para descargar recursos web
-	'url-resources' => '/software/miframe-commons/demo/support',
+	'url-resources' => '/software/miframe-commons/demo/resources',
 	// Registrar página de inicio
 	'home' => '/software/miframe-commons/demo/',
 	// Pie de página adicional (si existe)

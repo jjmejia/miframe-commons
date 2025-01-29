@@ -6,10 +6,30 @@
 
 use miFrame\Commons\Core\PDOController;
 
-include_once __DIR__ . '/../../../src/miframe/commons/autoload.php';
+// Configuración de demo, crea objeto $Test
+include_once __DIR__ . '/../../../demo-config.php';
 
+include_once $Test->includePath('/miframe/commons/autoload.php');
+include_once $Test->includePath('/miframe/commons/helpers.php');
+
+// Recupera driver asociado al mantenimiento
+$motor = 'sqlite';
+if (array_key_exists('driver', $_GET)) {
+	$motor = strtolower(trim($_GET['driver']));
+}
+
+// Apertura de la página demo
+$Test->start(
+	'Mantenimiento / Base de datos para soporte',
+	'Crea y/o reconstruye la base de datos usada para las demos, asociadas al driver <b>' . ucfirst($motor) . '</b>.'
+);
+
+// include_once __DIR__ . '/../../../../src/miframe/commons/autoload.php';
 // Acvtiva carga automática de clases miframe/commons
-miframe_autoload();
+// miframe_autoload();
+
+// Valida permisos de creación
+$Test->evalToken('token', 'create-db-token', $motor);
 
 // Carga datos
 $filename = __DIR__ . DIRECTORY_SEPARATOR . 'personajes-historicos.csv';
@@ -62,27 +82,22 @@ foreach ($lines as $line) {
 
 //**********************************************
 
-echo "<h1>Base de datos para soporte</h1>";
-
-$motor = 'sqlite';
-if (array_key_exists('driver', $_GET)) {
-	$motor = strtolower(trim($_GET['driver']));
-}
-
 // Lee archivo de configuración de bases de datos
 $env = parse_ini_file(__DIR__ . '/../.env', true);
 // echo "<pre>$motor: "; print_r($env); echo "</pre><hr>";
 if (!array_key_exists($motor, $env)) {
-	exit('Error: Soporte no encontrado para bases de datos ' . $motor);
+	$Test->abort('Error: Soporte no encontrado para bases de datos ' . $motor);
 }
 $env = $env[$motor];
 
-echo "<pre>"; print_r($env); echo "</pre><hr>";
+if (miframe_server()->isLocalhost()) {
+	$Test->dump($env);
+}
 
 // Inicia conexión a base de datos
 $db = new PDOController($motor);
 if ($motor === 'sqlite') {
-	$db->filename = __DIR__ . DIRECTORY_SEPARATOR . $env['file'];
+	$db->filename = dirname(__DIR__) . DIRECTORY_SEPARATOR . $env['file'];
 }
 else {
 	$db->host = $env['host'];
@@ -97,7 +112,7 @@ $db->debug(true);
 $filename = __DIR__ . DIRECTORY_SEPARATOR . $motor . '-create-tables.sql';
 
 // Valida si reconstruye tablas
-createTables($db, $filename);
+createTables($Test, $db, $filename);
 
 // Carga valores de referencia
 loadDataRef('gender', $gender, $db);
@@ -124,20 +139,25 @@ if (empty($person_tags)) {
 }
 
 $total = count($person_tags);
-echo "Person_Tags: Encontrados {$total} registros.<hr>";
+echo "<p><b>Person_Tags:</b> Encontrados {$total} registros.</p>";
 
-echo "Base de datos <b>{$motor}</b> actualizada.";
+echo "<hr><p>Base de datos <b>{$motor}</b> actualizada.</p>";
+
+// Libera token
+unset($_SESSION['create-db-token']);
 
 // echo "<pre>"; print_r([$person, $person_tags, $gender, $nationality, $tags]);
 
+$Test->end(false);
+
 //**********************************************
 
-function createTables(PDOController $db, string $filename)
+function createTables(miCodeTest $Test, PDOController $db, string $filename)
 {
 	if (array_key_exists('reset', $_GET) || !evalTables($db)) {
 		echo "Creando tablas... ";
 		if (!file_exists($filename)) {
-			exit('Error: No pudo encontrar archivo ' . basename($filename));
+			$Test->abort('Error: No pudo encontrar archivo ' . basename($filename));
 		}
 		// Elimina todas las tablas contenidas (que no sean propias del motor)
 		$tables = getTables($db);
@@ -156,7 +176,7 @@ function createTables(PDOController $db, string $filename)
 				// Ejecuta query
 				if ($db->query($acum) === false) {
 					$k ++;
-					exit("No pudo ejecutar query en línea {$k}: {$acum}");
+					$Test->abort("No pudo ejecutar query en línea {$k}: {$acum}");
 				}
 				// Limpia variable que acumula comandos
 				$acum = '';
@@ -167,7 +187,7 @@ function createTables(PDOController $db, string $filename)
 		}
 
 		if (!evalTables($db)) {
-			exit('No pudo crear todas las tablas requeridas.');
+			$Test->abort('No pudo crear todas las tablas requeridas.');
 		}
 	}
 }
@@ -225,7 +245,7 @@ function evalTables(PDOController $db): bool
 	}
 
 	$total = count($tables);
-	echo "Tablas encontradas: {$total}<hr>";
+	echo "<p>Tablas encontradas: {$total}</p><hr>";
 
 	return true;
 }
@@ -253,7 +273,7 @@ function loadPerson(array &$person, array $gender, array $nationality, PDOContro
 	}
 
 	$total = count($data);
-	echo "Person: Encontrados {$total} registros.<hr>";
+	echo "<p><b>Person:</b> Encontrados {$total} registros.</p>";
 
 	// Asocia datos en tabla con los id de person
 	foreach ($data as $v) {
@@ -278,15 +298,13 @@ function loadDataRef(string $table_name, array &$ref, PDOController $db)
 	}
 
 	$total = count($data);
-	echo ucfirst($table_name) . ": Encontrados {$total} registros.<hr>";
+	echo '<p><b>' . ucfirst($table_name) . ":</b> Encontrados {$total} registros.</p>";
 
 	// Actualiza tabla de referencia
 	foreach ($data as $v) {
 		$reference = strtolower($v['name']);
 		$ref[$reference]['id'] = $v['id'];
 	}
-
-	// print_r($ref); echo '<hr>';
 
 	return $data;
 }

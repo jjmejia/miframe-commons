@@ -115,7 +115,7 @@ class miCodeTest
 	 */
 	public function start(string $title, string $description = '', string $styles = '')
 	{
-		$estilos = $this->resourcesPath('/resources/css/tests.css');
+		$estilos = $this->resourcesPath('/css/tests.css');
 		$title_meta = strip_tags($title);
 		if ($description == '') {
 			$description = 'miCode-Manager Demos -- ' . $title_meta . '.';
@@ -482,4 +482,28 @@ class miCodeTest
 		return $text;
 	}
 
+	public function tokenizer(string $name, string $key)
+	{
+		$token =  bin2hex(random_bytes(32));
+		$_SESSION[$name] = $key . $token;
+		return $token;
+	}
+
+	public function evalToken(string $param, string $name, string $key)
+	{
+		if (
+			empty($_SESSION[$name]) ||
+			empty($_GET[$param]) ||
+			!hash_equals($_SESSION[$name], $key . $_GET[$param])
+			) {
+			$this->abort('Acceso no autorizado');
+		}
+	}
+
+	public function abort(string $message)
+	{
+		echo "<p class=\"test-aviso\"><b>Error:</b> {$message}</p>";
+		$this->end(false);
+		exit();
+	}
 }
