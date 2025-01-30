@@ -119,7 +119,7 @@ class HTMLSupport extends Singleton
 	 */
 	public function cssInLine(string $styles, string $comment = '')
 	{
-		$styles = $this->cleanCode($styles);
+		$styles = $this->cleanCSSCode($styles);
 		if ($styles !== '') {
 			// Se asegura siempre de registrar correctamente el path fisico
 			$this->addResourceCSS($styles, 'inline', $comment);
@@ -129,24 +129,24 @@ class HTMLSupport extends Singleton
 	/**
 	 * Adiciona recurso CSS
 	 *
-	 * @param string $filename 	Ubicación del archivo de recurso.
+	 * @param string $content 	Ubicación del archivo de recurso o contenido, según sea el caso.
 	 * @param string $prefix 	Prefijo identificador
 	 * @param string $comment 	Comentario asociado al estilo.
 	 */
-	private function addResourceCSS(string $filename, string $prefix, string $comment = '')
+	private function addResourceCSS(string $content, string $prefix, string $comment = '')
 	{
-		$this->addResource($filename, 'css', $prefix, $comment);
+		$this->addResource('css', $content, $prefix, $comment);
 	}
 
 	/**
 	 * Adiciona recurso
 	 *
-	 * @param string $content 	Ubicación del archivo de recurso o contenido, según el caso.
 	 * @param string $resource 	Tipo de recurso (css, script, etc.)
+	 * @param string $content 	Ubicación del archivo de recurso o contenido, según sea el caso.
 	 * @param string $type		Prefijo identificador.
 	 * @param string $comment 	Comentario asociado al estilo (opcional)
 	 */
-	private function addResource(string $content, string $resource, string $type, string $comment = '')
+	private function addResource(string $resource, string $content, string $type, string $comment = '')
 	{
 		$key = $this->keyPath($content);
 		if (!$this->isPublished($key)) {
@@ -188,7 +188,7 @@ class HTMLSupport extends Singleton
 	 *
 	 * @return string Llave.
 	 */
-	public function lastKey()
+	public function lastKey(): string
 	{
 		return $this->last_key;
 	}
@@ -197,7 +197,7 @@ class HTMLSupport extends Singleton
 	 * Genera código con los estilos CSS no publicados, para su uso en páginas web.
 	 *
 	 * @param  bool $debug_comments	Adiciona comentarios para identificar elementos adicionados.
-	 * @return string 				HTML con estilos a usar.
+	 * @return string HTML con estilos a usar.
 	 */
 	public function cssExport(bool $debug_comments = false): string
 	{
@@ -237,7 +237,7 @@ class HTMLSupport extends Singleton
 						$code .= '/* ' . $key . ' (' . basename($infodata['value']) . ')' . $comment . ' */' . PHP_EOL;
 					}
 					$content = @file_get_contents($infodata['value']);
-					$code .= $this->cleanCode($content) . PHP_EOL;
+					$code .= $this->cleanCSSCode($content) . PHP_EOL;
 					break;
 
 				case 'remote': // Remoto siempre
@@ -278,13 +278,13 @@ class HTMLSupport extends Singleton
 	}
 
 	/**
-	 * Listado de recursos CSS no publicados.
+	 * Total de recursos CSS no publicados.
 	 *
-	 * @return array Listado de recursos.
+	 * @return int Total de recursos CSS no publicados.
 	 */
-	public function cssUnpublished(): array
+	public function cssUnpublished(): int
 	{
-		return $this->resources['css'];
+		return count($this->resources['css']);
 	}
 
 	/**
@@ -298,27 +298,39 @@ class HTMLSupport extends Singleton
 	}
 
 	/**
-	 * Limpia código, remueve comentarios y líneas en blanco.
+	 * Limpia código de estilos, remueve comentarios y líneas en blanco.
 	 *
-	 * @param string $content 	Código a depurar.
-	 * @return string 			Código depurado.
+	 * @param string $content Código a depurar.
+	 * @return string Código depurado.
 	 */
-	private function cleanCode(string $content)
+	private function cleanCSSCode(string $content): string
 	{
 		if ($this->minimizeCSS) {
-			// Remueve comentarios /* ... */
-			// Sugerido en https://stackoverflow.com/a/643136
-			$content = preg_replace('!/\*.*?\*/!s', '', $content);
-			// Remueve lineas en blanco
-			$content = preg_replace('/\n\s*\n/', "\n", $content);
-			// Remueve lineas en general para exportar una unica linea
-			$content = str_replace(["\n", "\r", "\t"], ['', '', ' '], $content);
-			// Adiciona espacios antes y después de los parentesis
-			$content = str_replace(['{', '}'], [' { ', ' } '], $content);
-			// Remueve espacios dobles
-			while (strpos($content, '  ') !== false) {
-				$content = str_replace('  ', ' ', $content);
-			}
+			$this->cleanCode($content);
+		}
+		// No edita contenido
+		return $content;
+	}
+
+	/**
+	 * Limpia código de recursos, remueve comentarios y líneas en blanco.
+	 *
+	 * @param string $content Código a depurar.
+	 */
+	private function cleanCode(string &$content): string
+	{
+		// Remueve comentarios /* ... */
+		// Sugerido en https://stackoverflow.com/a/643136
+		$content = preg_replace('!/\*.*?\*/!s', '', $content);
+		// Remueve lineas en blanco
+		$content = preg_replace('/\n\s*\n/', "\n", $content);
+		// Remueve lineas en general para exportar una unica linea
+		$content = str_replace(["\n", "\r", "\t"], ['', '', ' '], $content);
+		// Adiciona espacios antes y después de los parentesis
+		$content = str_replace(['{', '}'], [' { ', ' } '], $content);
+		// Remueve espacios dobles
+		while (strpos($content, '  ') !== false) {
+			$content = str_replace('  ', ' ', $content);
 		}
 
 		return trim($content);

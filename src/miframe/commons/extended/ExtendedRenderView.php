@@ -130,20 +130,44 @@ class ExtendedRenderView extends RenderView
 	 *
 	 * Adiciona filtrado al contenido una vez renderizado el Layout.
 	 */
-	protected function renderLayout(string &$content): bool
+	protected function includeLayout(string &$content)
 	{
-		$result = parent::renderLayout($content);
-		if ($result) {
+		if ($this->includeLayoutNow()) {
+			// Recupera estilos del repositorio de recursos
+			$this->exportStyles($content);
+			// Ejecuta método original
+			parent::includeLayout($content);
 			// Remueve Document Root de la salida a pantalla
 			$this->removeDocumentRoot($content);
-
 			// Aplica filtros adicionales
 			if (!empty($this->filter)) {
 				$this->contentFilter->filter($content);
 			}
 		}
+	}
 
-		return $result;
+	/**
+	 * Adiciona estilos al repositorio de recursos
+	 *
+	 * @param string $styles Estilos a guardar.
+	 * @param string $comment Comentario a incluir en los estilos.
+	 */
+	public function saveStyles(string $styles, string $comment = '')
+	{
+		miframe_html()->cssInLine($styles, $comment);
+	}
+
+	/**
+	 * Recupera estilos del repositorio de recursos y los añade al contenido.
+	 *
+	 * @param string $content Contenido de la vista a renderizar.
+	 */
+	public function exportStyles(string &$content)
+	{
+		$styles = miframe_html()->cssExport(true);
+		if ($styles !== '') {
+			$content = $styles . PHP_EOL . $content;
+		}
 	}
 
 	/**

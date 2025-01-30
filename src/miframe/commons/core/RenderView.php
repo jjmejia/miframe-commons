@@ -161,6 +161,19 @@ class RenderView extends Singleton
 	}
 
 	/**
+	 * Ejecuta layout (si alguno) si no hay vistas pendientes.
+	 *
+	 * @return bool TRUE si incluye el layout, FALSE en otro caso.
+	 */
+	public function includeLayoutNow(): bool
+	{
+		return (
+			$this->layout->waitingForDeploy() &&
+			$this->currentView == ''
+		);
+	}
+
+	/**
 	 * Incluye el contenido del layout en la vista.
 	 *
 	 * Se encarga de ejecutar el layout solo si no hay views pendientes.
@@ -168,32 +181,28 @@ class RenderView extends Singleton
 	 * Las vistas ejecutadas pueden modificar el archivo de layout a usar.
 	 *
 	 * @param string $content Contenido de la vista a renderizar (Valor por referencia).
+	 * @return bool TRUE si se incluye el layout, FALSE en otro caso.
 	 */
-	protected function renderLayout(string &$content): bool
+	protected function includeLayout(string &$content)
 	{
-		// Ejecuta layout (si alguno) si no hay vistas pendientes.
-		if (
-			$this->layout->waitingForDeploy() &&
-			$this->currentView == ''
-			) {
-			// Recupera path real del layout
-			$filename = $this->checkFile($this->layout->viewName());
-			if ($filename !== '') {
-				// Preserva el contenido previamente renderizado para su uso en el Layout
-				$this->layout->setContentView($content);
-				// Ejecuta vista
-				$content = $this->renderView(
-					$filename,
-					$this->layout->values()
-				);
-				// Libera memoria
-				$this->layout->removeContentView();
-
-				return true;
-			}
+		// Si no debe incluir layout, termina
+		if (!$this->includeLayoutNow()) {
+			return;
 		}
 
-		return false;
+		// Recupera path real del layout
+		$filename = $this->checkFile($this->layout->viewName());
+		if ($filename !== '') {
+			// Preserva el contenido previamente renderizado para su uso en el Layout
+			$this->layout->setContentView($content);
+			// Ejecuta vista
+			$content = $this->renderView(
+				$filename,
+				$this->layout->values()
+			);
+			// Libera llave
+			$this->layout->removeContentView();
+		}
 	}
 
 	/**
@@ -256,7 +265,7 @@ class RenderView extends Singleton
 			// Restablece vista previa
 			$this->removeTemplate();
 			// Valida si se incluye layout en esta vista
-			$this->renderLayout($content);
+			$this->includeLayout($content);
 		}
 
 		return $content;

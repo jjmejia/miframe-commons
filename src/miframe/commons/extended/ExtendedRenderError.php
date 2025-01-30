@@ -64,6 +64,9 @@ class ExtendedRenderError implements RenderErrorInterface
 		$content = '';
 
 		// Recupera objeto renderizador
+		/**
+		 * @var ExtendedRenderView $render
+		 */
 		$render = miframe_render();
 
 		if ($render->inDeveloperMode() && $this->inDeveloperModeEndScript) {
@@ -132,9 +135,10 @@ class ExtendedRenderError implements RenderErrorInterface
 			// Ejecuta vista solo si no está en el bloque de cierre(?)
 			// Retorna FALSE si ocurre algún error.
 			$content = $render->view('show-error', $data_error);
-
 			// Valida errores previamente renderizados
 			$this->evalCachedErrors($content, $error->endScript);
+			// Adiciona estilos previamente guardados
+			$render->exportStyles($content);
 		}
 
 		return $content;

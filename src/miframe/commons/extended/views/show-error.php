@@ -11,6 +11,9 @@
 $styles = PHP_EOL;
 
 // Captura referencia al render
+/**
+ * @var miFrame\Commons\Extended\ExtendedRenderView $render
+ */
 $render = miframe_render();
 
 if ($render->once()) {
@@ -18,8 +21,6 @@ if ($render->once()) {
 	// Sin embargo, deben publicarse SI O SI, aunque exista un
 	// Fatal Error posteriormente.
 	$styles = '
-<style>
-/* showError */
 .mvse {
 	background-color:#fadbd8;border:2px solid #e74c3c;margin:4px 1px;padding:10px;font-size:10pt;font-family:Segoe UI,Arial;
 	p { margin:0; margin-bottom:8px; }
@@ -27,7 +28,9 @@ if ($render->once()) {
 	.mvse-pre { background-color:#f4f4f4;color:#333;border:1px dashed #777;border-top:none;margin:0;padding:5px;font-family:Consolas;max-width:100%;overflow:auto; }
 	.mvse-label { background:#e74c3c;color:#fff;font-weight:bold;padding:5px;margin:0;margin-bottom:10px; }
 }
-</style>' . PHP_EOL;
+';
+	// Adiciona al repositorio de estilos
+	$render->saveStyles($styles, 'showError');
 }
 
 // echo "<pre>"; print_r($view_args); echo "</pre><hr>";
@@ -81,7 +84,8 @@ if ($end_script && miframe_server()->isLocalhost()) {
 	$infotrace .= $render->dump($_SESSION, '$_SESSION', ignore_empty: true);
 }
 
-$info = $styles .
+$info =
+	// $styles .
 	'<div class="mvse">' .
 	$info .
 	$buffer .

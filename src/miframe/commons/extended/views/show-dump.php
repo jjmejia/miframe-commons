@@ -12,9 +12,7 @@ $text = PHP_EOL;
 if (miframe_render()->once())
 {
 	// Estilos a usar, se declaran una única vez
-	$text .= '
-<style>
-/* showDump */
+	$styles = '
 .mfsd {
 	padding:0;margin:2px 0;
 	.mfsd-title { padding:0 4px;float:left;border-radius:0 0 4px 0;background-color:#555;color:#fff;font-size:9pt;font-family:Consolas,Arial; }
@@ -23,7 +21,9 @@ if (miframe_render()->once())
 	.mfsd-content pre { font-family:Consolas;font-size:9pt;max-width:100%;max-height:300px;overflow:auto; }
 	p { margin:0; margin-bottom:5px; }
 }
-</style>' . PHP_EOL;
+';
+	// Adiciona al repositorio de estilos
+	miframe_render()->saveStyles($styles, 'showDump');
 }
 
 $text .= "<div class=\"mfsd\">" .

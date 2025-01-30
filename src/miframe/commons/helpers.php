@@ -85,6 +85,9 @@ function miframe_errors(bool $use_extended_render = false)
 	if ($use_extended_render) {
 		// Hablita render predefinido
 		$render = new ExtendedRenderError();
+		// No termina script al ejecutar en modo desarrollo
+		$render->inDeveloperModeEndScript = false;
+		// Registra render
 		$errors->setRenderer($render);
 	}
 	$errors->watch();

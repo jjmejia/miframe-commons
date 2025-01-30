@@ -63,7 +63,7 @@ $Test->dump($html->cssUnpublished());
 
 // Descarga estilos
 $nocomentar = $Test->choice('no-comments', 'Ocultar comentarios', 'Incluir comentarios');
-echo '<p>HTML generado al procesar los ' . count($html->cssUnpublished()) . ' recursos pendientes:</p>';
+echo '<p>HTML generado al procesar los ' . $html->cssUnpublished() . ' recursos pendientes:</p>';
 $code = $html->cssExport(!$nocomentar);
 $Test->htmlPre(
 	htmlentities($code).
