@@ -132,17 +132,15 @@ class ExtendedRenderView extends RenderView
 	 */
 	protected function includeLayout(string &$content)
 	{
-		if ($this->includeLayoutNow()) {
-			// Recupera estilos del repositorio de recursos
-			$this->exportStyles($content);
-			// Ejecuta método original
-			parent::includeLayout($content);
-			// Remueve Document Root de la salida a pantalla
-			$this->removeDocumentRoot($content);
-			// Aplica filtros adicionales
-			if (!empty($this->filter)) {
-				$this->contentFilter->filter($content);
-			}
+		// Recupera estilos del repositorio de recursos
+		$this->exportStyles($content);
+		// Ejecuta método original
+		parent::includeLayout($content);
+		// Remueve Document Root de la salida a pantalla
+		$this->removeDocumentRoot($content);
+		// Aplica filtros adicionales
+		if (!empty($this->filter)) {
+			$this->contentFilter->filter($content);
 		}
 	}
 

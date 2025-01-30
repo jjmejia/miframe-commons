@@ -165,7 +165,7 @@ class RenderView extends Singleton
 	 *
 	 * @return bool TRUE si incluye el layout, FALSE en otro caso.
 	 */
-	public function includeLayoutNow(): bool
+	private function includeLayoutNow(): bool
 	{
 		return (
 			$this->layout->waitingForDeploy() &&
@@ -185,11 +185,6 @@ class RenderView extends Singleton
 	 */
 	protected function includeLayout(string &$content)
 	{
-		// Si no debe incluir layout, termina
-		if (!$this->includeLayoutNow()) {
-			return;
-		}
-
 		// Recupera path real del layout
 		$filename = $this->checkFile($this->layout->viewName());
 		if ($filename !== '') {
@@ -265,7 +260,9 @@ class RenderView extends Singleton
 			// Restablece vista previa
 			$this->removeTemplate();
 			// Valida si se incluye layout en esta vista
-			$this->includeLayout($content);
+			if ($this->includeLayoutNow()) {
+				$this->includeLayout($content);
+			}
 		}
 
 		return $content;
