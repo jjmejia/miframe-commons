@@ -81,7 +81,7 @@ if (!$db->connect()) {
 }
 
 // Valida si ya existe la tabla "person"
-$query = 'select count(id) as TOTAL from personx';
+$query = 'select count(id) as TOTAL from person';
 $rows = @$db->query($query);
 if (miframe_server()->isLocalhost() || empty($rows)) {
 	// Crea enlace para creación de bases de datos
