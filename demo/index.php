@@ -9,11 +9,11 @@
 
 include_once __DIR__ . '/demo-config.php';
 
-// Define home principal y nombde de log de visitas
-$Test->config(['home' => '/', 'visitor-log' => 'demo-index']);
-
 // Cabezote de presentación
-$Test->start('miFrame\\Commons', 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.');
+$Test->start(
+	'miFrame\\Commons',
+	'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.'
+);
 
 $base = dirname($_SERVER['SCRIPT_NAME']) . '/';
 

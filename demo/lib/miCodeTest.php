@@ -9,11 +9,18 @@
 
 class miCodeTest
 {
-	private $config = [];
-	private $choices = [];
-	private $codePre = '';
-	private $filename = '';
-	private $content_script = [];
+	private array $config = [];
+	private array $choices = [];
+	private string $codePre = '';
+	private array $content_script = [];
+
+	// Para visualización de líneas de código
+	private string $filename = '';
+
+	// Dominio web
+	private string $domainName = '';
+	private string $urlDemo = '';
+	private string $pathDemo = '';
 
 	/**
 	 * Constructor de la clase.
@@ -21,10 +28,15 @@ class miCodeTest
 	 */
 	public function __construct()
 	{
-		// Inicializa manejo de sesión PHP
+		// Inicia sesión si no ha sido iniciada previamente
 		if (empty($_SESSION)) {
 			session_start();
 		}
+
+		// Ej: xxxx/demo/support/demo-xxx.php
+		$elements = explode('/demo/', $_SERVER['SCRIPT_NAME']);
+		$this->urlDemo = $elements[0] . '/demo/';
+		$this->pathDemo = basename($elements[1]);
 
 		// Inicializa config
 		$this->initConfig();
@@ -36,22 +48,12 @@ class miCodeTest
 	private function initConfig()
 	{
 		$this->config = array(
-			// Identificador del Dominio principal
-			'domain-name' => '',
-			// Path con el código fuente
-			'src-path' => '', 		// 'MICODE_DEMO_INCLUDE_PATH',
-			// URL para descargar recursos web
-			'url-resources' => '', 	// 'MICODE_DEMO_URL_RESOURCES',
-			// Registrar página de inicio
-			'home' => '', 			// 'MICODE_DEMO_HOME',
+			// Página de inicio principal (si aplica)
+			'root' => '',
 			// Pie de página adicional (si existe)
-			'footer-path' => '', 	// 'MICODE_DEMO_PIE_FILENAME',
-			// Path para log de visitas
-			'logs-path' => '', 		// 'MICODE_DEMO_LOGS',
-			// Nombre del log de visitas
-			'visitor-log' => '',
+			'footer' => '',
 			// Temporal
-			'tmp-path' => '', 		// 'MICODE_DEMO_TMP',
+			'tmp-path' => '',
 			// Repositorio Github
 			'github-repo' => ''
 		);
@@ -67,9 +69,6 @@ class miCodeTest
 		foreach ($data as $k => $v) {
 			if (array_key_exists($k, $this->config)) {
 				$this->config[$k] = $v;
-				if (strpos($k, '-path') !== false) {
-					$this->config[$k] = @realpath($v);
-				}
 			}
 		}
 	}
@@ -82,27 +81,43 @@ class miCodeTest
 	 */
 	public function includePath(string $path): string
 	{
-		if (empty($this->config['src-path'])) {
-			// Asigna el path usado por el script actual
-			$this->config['src-path'] = __DIR__ . DIRECTORY_SEPARATOR;
+		if ($path !== '' && $path[0] !== '/' && $path[0] !== DIRECTORY_SEPARATOR) {
+			$path == '/' . $path;
 		}
-
-		return $this->config['src-path'] . $path;
+		return realpath(__DIR__ . '/../../src' . $path);
 	}
 
 	/**
 	 * Retorna el directorio temporal a usar.
 	 *
-	 * @param string $default Ruta por defecto si no se ha configurado.
 	 * @return string Ruta del directorio temporal.
 	 */
-	public function tmpDir(string $default = ''): string
+	public function tmpDir(): string
 	{
-		if (!empty($this->config['tmp-path'])) {
-			return $this->config['tmp-path'];
+		if (empty($this->config['tmp-path'])) {
+			$this->config['tmp-path'] = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'temp';
 		}
 
-		return $default;
+		$temp_dir = $this->config['tmp-path'];
+		if (!is_dir($temp_dir)) {
+			// Intenta crear directorio si no existe
+			@mkdir($temp_dir);
+		}
+		if (!is_dir($temp_dir)) {
+			// No pudo acceder al directorio, dispara error
+			trigger_error('Error: No pudo acceder al directorio temporal en ' . $temp_dir, E_USER_ERROR);
+		}
+
+		return realpath($temp_dir);
+	}
+
+	private function getHome(): string
+	{
+		if ($this->pathDemo === 'index.php') {
+			// Es el index de las demos, el retorno es a la página ppal
+			return $this->config['root'];
+		}
+		return $this->urlDemo;
 	}
 
 	/**
@@ -114,14 +129,12 @@ class miCodeTest
 	 * @param string $path Ruta relativa del recurso.
 	 * @return string Ruta completa del recurso.
 	 */
-	public function resourcesPath(string $path): string
+	private function resourcesPath(string $path): string
 	{
-		if (empty($this->config['url-resources'])) {
-			// Asigna el path usado por el script actual
-			$this->config['url-resources'] = dirname($_SERVER['SCRIPT_NAME']) . '/';
+		if ($path !== '' && $path[0] !== '/') {
+			$path = '/' . $path;
 		}
-
-		return $this->config['url-resources'] . $path;
+		return $this->urlDemo . 'resources' . $path;
 	}
 
 	/**
@@ -134,6 +147,8 @@ class miCodeTest
 	public function start(string $title, string $description = '', string $styles = '')
 	{
 		$estilos = $this->resourcesPath('/css/tests.css');
+		$favicon = $this->resourcesPath('/img/favicon.png');
+
 		$title_meta = strip_tags($title);
 		if ($description == '') {
 			$description = 'miCode-Manager Demos -- ' . $title_meta . '.';
@@ -141,8 +156,15 @@ class miCodeTest
 		$description_meta = strip_tags($description);
 
 		// Designa dominio por defecto si no ha definido alguno
-		if ($this->config['domain-name'] == '' && !empty($_SERVER['SERVER_NAME'])) {
-			$this->config['domain-name'] = $_SERVER['SERVER_NAME'];
+		if (!empty($_SERVER['SERVER_NAME'])) {
+			$this->domainName = $_SERVER['SERVER_NAME'];
+		}
+		if ($this->domainName == '' || $this->domainName == 'localhost') {
+			// Nombre especial para localhost
+			if (!empty($_SERVER['SCRIPT_NAME'])) {
+				// Los recursos se encuentran asociados al directorio /demo/
+				$this->domainName = 'localhost: ' . substr(dirname($this->urlDemo), 1);
+			}
 		}
 
 		if (empty($_SERVER['REMOTE_ADDR'])) {
@@ -171,6 +193,7 @@ class miCodeTest
 	<meta property="og:type" content="website" />
 	<meta property="og:description" content="<?= $description_meta ?>" />
 	<title><?= htmlentities($title) ?></title>
+	<link rel="icon" type="image/png" href="<?= $favicon ?>" />
 	<link rel="stylesheet" href="<?= $estilos ?>">
 	<?= $estilos_add ?>
 </head>
@@ -178,13 +201,14 @@ class miCodeTest
 <body>
 	<h1 class="test-encab">
 		<?= htmlentities($title) ?>
-		<small><?= $this->config['domain-name'] ?></small>
+		<small><?= $this->domainName ?></small>
 	</h1>
 	<?php
 
+		$home = $this->getHome();
 	// Valida si definió enlace a "home"
-	if (!empty($this->config['home'])) {
-		echo '<a href="' . $this->config['home'] . '" class="test-back-home">
+	if (!empty($home)) {
+		echo '<a href="' . $home . '" class="test-back-home">
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
 <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
 </svg> Regresar</a>';
@@ -216,11 +240,11 @@ class miCodeTest
 	private function footer(): string
 	{
 		$contents = '';
-		if (
-			!empty($this->config['footer-path'])
-			&& file_exists($this->config['footer-path'])
-		) {
-			$contents = trim(file_get_contents($this->config['footer-path']));
+		if (!empty($this->config['footer'])) {
+			$filename = @realpath(__DIR__ . DIRECTORY_SEPARATOR . $this->config['footer']);
+			if (file_exists($filename)) {
+				$contents = trim(file_get_contents($filename));
+			}
 		}
 
 		if ($contents != '') {
@@ -255,7 +279,7 @@ class miCodeTest
 		$this->updateVisitorLog();
 
 		echo '<div class="foot">' .
-			'<b>' . $this->config['domain-name'] . '</b> &copy; ' . date('Y') . '.' .
+			'<b>' . $this->domainName . '</b> &copy; ' . date('Y') . '.' .
 			$this->footer() .
 			'</div>' . PHP_EOL .
 			'</div>' . // Contenedor "test-content" abierto en $this->start()
@@ -427,6 +451,13 @@ class miCodeTest
 	 */
 	private function updateVisitorLog()
 	{
+		if (function_exists('registerVisitor')) {
+			$src = 'miframe-commons-' . str_replace('.php', '', $this->pathDemo);
+			/** @disregard P1010 Funciones del main */
+			registerVisitor($src);
+		}
+
+		/*
 		if (empty($_SERVER['REMOTE_ADDR'])) {
 			// No está ejecutando por web
 			return;
@@ -500,6 +531,7 @@ class miCodeTest
 		if (isset($_SESSION)) {
 			$_SESSION['MICODE_DEMO_VISITS'][$src] = $date;
 		}
+			*/
 	}
 
 	/**

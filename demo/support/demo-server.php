@@ -19,11 +19,11 @@ $Test->start(
 
 // Asocia clase a una variable para agilizar su uso.
 $server = miframe_server();
-$path_dummy = '../path/to/other/script/ignora/..';
+$path_dummy = '../path/to/other/any/ .. /./script/ignora/..';
 $script = $server->script();
 
 // Fija directorio temporal
-$server->tempDir($Test->tmpDir(__DIR__ . '/tmp'));
+$server->tempDir($Test->tmpDir());
 
 $force_no_localhost = false;
 // Retorna TRUE si simula consulta no localhost
