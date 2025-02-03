@@ -229,6 +229,43 @@ class ServerData extends Singleton
 	}
 
 	/**
+	 * Retorna una URL completa, incluido el esquema y dominio.
+	 *
+	 * @param string $path 		Path a completar con el esquema y dominio.
+	 * @param array $args 		Variables a incluir en la URL.
+	 * @param bool $force_https	TRUE ignora el valor actual del scheme y retorna siempre "https" (a usar por Ej. para
+	 * 							redirigir una consulta no segura con "https" a una segura que use "https").
+	 * @return string 			URL.
+	 */
+	public function url(string $path, array $args = [], bool $force_https = false): string
+	{
+		$path = trim($path);
+		// Remueve primer separador en el path
+		if ($path !== '' && $path[0] === '/') {
+			$path = substr($path, 1);
+		}
+		if ($path == '') {
+			// No retorna valor alguno
+			return $path;
+		}
+		// Valida si el path contiene parámetros
+		// (si no  hay valor alguno en $args deja $path sin modificar)
+		if (count($args) > 0) {
+			$pos = strpos($path, '?');
+			if ($pos !== false) {
+				parse_str(substr($path, $pos + 1), $args_local);
+				$path = substr($path, 0, $pos);
+				// Fusiona los valores en $args (da prioridad a los valores en $args)
+				$args = array_merge($args_local, $args);
+			}
+			// Conecta
+			$path .= '?' . http_build_query($args);
+		}
+		// Retorna URL completo
+		return $this->host($force_https) . $path;
+	}
+
+	/**
 	 * Path al script ejecutado en la consulta actual, relativo al directorio Web.
 	 *
 	 * El valor del path es tomado de $_SERVER['SCRIPT_NAME'].
@@ -392,81 +429,77 @@ class ServerData extends Singleton
 	private function purgePath(string $path, string $separator = '', bool $remove_first = false): string
 	{
 		$path = trim($path);
-
-		// Valida que haya algo que realizar
-		if ($path === '') {
-			return $path;
-		}
-
 		// Valida si debe forzar el separador a usar
 		if ($separator == '') {
 			$separator = '/';
 		}
-
+		$len = strlen($separator);
 		// Normaliza separadores para usar "/" durante el proceso
 		// de remplazo.
-		$path = str_replace('\\', '/', $path);
+		$path = str_replace(['\\', '/'], $separator, $path);
+		// Captura el primer elemento si y solo si es un separador.
+		// Esto porque en Linux los path fisicos empiezan con "/"
+		$first = '';
+		if (substr($path, 0, $len) === $separator) {
+			$path = substr($path, $len);
+			$first = $separator;
+		}
+		// Elimina ultimo separador si existe
+		while (substr($path, -1, 1) === $separator) {
+			$path = substr($path, 0, -1);
+		}
+		// Si no hay segmentos a evaluar, retorna de inmediato
+		if (strpos($path, $separator) === false || $path === '') {
+			return $first . $path;
+		}
 
 		// Consulta cache (esto para paths que se invocan muchas veces, por ejemplo
-		// al validar directorios).
-		$key = strtolower($path);
+		// al validar directorios). Usa un unico separador para asegurar
+		// que funcione sea para directorios o urls si coincide el path.
+		$key = str_replace($separator, '/', strtolower($path));
 		if (!isset($this->cache_path[$key])) {
-			// Segmentos ya depurados
-
-			// NOTA: No usa siempre realpath() porque puede reportar erroneamente
-			// un path con una ruta en disco físico para un path de una URL
-			// (indicada por $path).
-
-			// Remueve ".." y "." sobre paths de archivos que no existen
-			$segments = explode('/', $path);
-
-			// Procesa arreglo si encuentra un caracter ".", aunque sea un separador
-			// de extensión, por si ha definido ".." o "." en alguno de los segmentos.
-			if (strpos($path, '.') !== false) {
-				$total_segments = count($segments);
-				for ($i = 0; $i < $total_segments; $i++) {
-					$segments[$i] = trim($segments[$i]);
-					if ($segments[$i] == '..') {
-						// Limpia segmentdo
-						$segments[$i] = '';
-						// Retrocede. Ignora segmentos vacios, del tipo: "xxx//xxx"
-						while ($i > 0 && $segments[$i - 1] == '') {
-							$i--;
+			// Remueve ".." y "."
+			$segments = explode($separator, $path);
+			// Filtra y remueve espacios? No debe, pues el espacio
+			// puede ser parte del nombre del archivo. Solamente aplica
+			// si el elemento es vacio o "." o ".."
+			array_walk($segments, function (&$value) {
+				$cvalue = trim($value);
+				if ($cvalue == '.' || $cvalue == '') { $value = ''; }
+				elseif ($cvalue == '..') { $value = '..'; }
+			});
+			// Elimina ".."
+			if (!in_array('..', $segments)) {
+				// Filtra elementos vacios
+				$segments = array_filter($segments);
+			} else {
+				$new = [];
+				// Recorre listado para generar nuevo path
+				foreach ($segments as $value) {
+					if ($value == '..') {
+						if (count($new) > 1) {
+							array_pop($new);
 						}
-						// Retrocede un segmento
-						if ($i > 0) {
-							$segments[$i - 1] = '';
-						}
-					} elseif ($segments[$i] == '.') {
-						$segments[$i] = '';
+					}
+					elseif ($value !== '') {
+						$new[] = $value;
 					}
 				}
+				$segments = $new;
+				// Libera memoria
+				unset($new);
 			}
-
-			// Remueve elementos en blanco (se asegura de preservar siempre
-			// el primer elemento, ya que en Linux los path fisicos empiezan con "/")
-			$first = array_shift($segments);
-			if (count($segments) > 0) {
-				$segments = array_filter($segments);
-			}
-
-			// Registra cache
-			$this->cache_path[$key] = [$first, ...$segments];
+			$this->cache_path[$key] = $segments;
 		}
 
 		$segments = $this->cache_path[$key];
-
+		// Valida si conscientemente solicita remover el primer separador
+		if ($remove_first) {
+			$first = '';
+		}
 		// Remueve elementos en blanco (se asegura de preservar siempre
 		// el primer elemento, ya que en Linux los path fisicos empiezan con "/")
-		$path = implode($separator, $segments);
-
-		$len = strlen($separator);
-		// Valida si conscientemente solicita remover el primer separador
-		if ($remove_first && substr($path, 0, $len) === $separator) {
-			$path = substr($path, $len);
-		}
-
-		return $path;
+		return $first . implode($separator, $segments);
 	}
 
 	/**
@@ -561,7 +594,7 @@ class ServerData extends Singleton
 			// Si ya contiene el directorio local, ignora.
 			// Para la validación si adiciona el separador "/" a $son, para garantizar
 			// hallazgo del directorio padre.
-			if ($this->inDirectory($son . $separator, $parent)) {
+			if ($this->inDirectory($son, $parent)) {
 				$parent .= substr($son, strlen($parent));
 			}
 			// Si no lo contiene, lo adiciona.
@@ -594,7 +627,7 @@ class ServerData extends Singleton
 		// DOCUMENT_ROOT:
 		// El directorio raíz bajo el que se ejecuta este script, tal como fuera
 		// definido en la configuración del servidor Web.
-		return $this->connect(realpath($this->get('DOCUMENT_ROOT')), $filename, DIRECTORY_SEPARATOR);
+		return $this->connect($this->get('DOCUMENT_ROOT'), $filename, DIRECTORY_SEPARATOR);
 	}
 
 	/**
@@ -639,7 +672,7 @@ class ServerData extends Singleton
 	 */
 	private function inDirectory(string $filename, string $src_dir): bool
 	{
-		$filename = $this->purgeFilename($filename);
+		$filename = $this->purgeFilename($filename) . DIRECTORY_SEPARATOR;
 
 		return ($src_dir !== '' &&
 			strtolower(substr($filename, 0, strlen($src_dir))) === strtolower($src_dir));
@@ -811,7 +844,7 @@ class ServerData extends Singleton
 		$temp = $this->tempDir();
 		$path = $this->connect($temp, $pathname, DIRECTORY_SEPARATOR);
 		if ($temp !== '' && $this->mkdir($path)) {
-			return realpath($path);
+			return realpath($path) . DIRECTORY_SEPARATOR;
 		}
 
 		return false;
