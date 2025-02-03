@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Demo para pruebas de las librerias incluidas en miframe/commons/errors.php
+ * Demo para pruebas de las librerias incluidas en "miframe-commons"
  *
  * @author John Mejía
  * @since Julio 2024

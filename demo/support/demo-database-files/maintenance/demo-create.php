@@ -9,9 +9,6 @@ use miFrame\Commons\Core\PDOController;
 // Configuración de demo, crea objeto $Test
 include_once __DIR__ . '/../../../demo-config.php';
 
-include_once $Test->includePath('/miframe/commons/autoload.php');
-include_once $Test->includePath('/miframe/commons/helpers.php');
-
 // Recupera driver asociado al mantenimiento
 $motor = 'sqlite';
 if (array_key_exists('driver', $_GET)) {
@@ -23,10 +20,6 @@ $Test->start(
 	'Mantenimiento / Base de datos para soporte',
 	'Crea y/o reconstruye la base de datos usada para las demos, asociadas al driver <b>' . ucfirst($motor) . '</b>.'
 );
-
-// include_once __DIR__ . '/../../../../src/miframe/commons/autoload.php';
-// Acvtiva carga automática de clases miframe/commons
-// miframe_autoload();
 
 // Valida permisos de creación
 $Test->evalToken('token', 'create-db-token', $motor);

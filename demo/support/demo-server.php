@@ -9,9 +9,6 @@
 
 require_once __DIR__ . '/../demo-config.php';
 
-require_once $Test->includePath('/miframe/commons/autoload.php');
-require_once $Test->includePath('/miframe/commons/helpers.php');
-
 $Test->start(
 	'miframe_server() y miframe_autoload()',
 	'Demos para ilustrar uso de los utilitarios <code>miframe_server()</code> y <code>miframe_autoload()</code> de la librería <code>miFrame\\Commons</code>'

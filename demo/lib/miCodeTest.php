@@ -74,20 +74,6 @@ class miCodeTest
 	}
 
 	/**
-	 * Define el path a usar para buscar los scripts (directorio "src" de miframe-commons).
-	 *
-	 * @param string $path Ruta relativa del directorio de scripts.
-	 * @return string Ruta completa del directorio de scripts.
-	 */
-	public function includePath(string $path): string
-	{
-		if ($path !== '' && $path[0] !== '/' && $path[0] !== DIRECTORY_SEPARATOR) {
-			$path == '/' . $path;
-		}
-		return realpath(__DIR__ . '/../../src' . $path);
-	}
-
-	/**
 	 * Retorna el directorio temporal a usar.
 	 *
 	 * @return string Ruta del directorio temporal.

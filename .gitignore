@@ -3,7 +3,7 @@ miframe-commons.code-workspace
 demo/logs
 demo/tmp
 docs/*.txt
-src/miframe/commons/back
+src/back
 * copy.*
 demo/footer.htm
 demo/demo-config-dev.php

@@ -10,9 +10,6 @@
 // Configuración de demo, crea objeto $Test
 include_once __DIR__ . '/../demo-config.php';
 
-include_once $Test->includePath('/miframe/commons/autoload.php');
-include_once $Test->includePath('/miframe/commons/helpers.php');
-
 $Test->start(
 	'miframe_html()',
 	'Demos para ilustrar uso del utilitario <code>miframe_html()</code> de la librería <code>miFrame\\Commons</code>, para visualización de mensajes en pantalla.'

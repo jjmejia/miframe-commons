@@ -11,9 +11,6 @@
 // Configuración de demo, crea objeto $Test
 include_once __DIR__ . '/../demo-config.php';
 
-include_once $Test->includePath('/miframe/commons/autoload.php');
-include_once $Test->includePath('/miframe/commons/helpers.php');
-
 // Apertura de la página demo
 $Test->start(
 	'Manejo de errores',
