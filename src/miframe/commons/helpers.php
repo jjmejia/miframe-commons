@@ -9,6 +9,7 @@
  * @since Julio 2024
  */
 
+use miFrame\Commons\Core\EnvData;
 use miFrame\Commons\Core\ErrorHandler;
 use miFrame\Commons\Core\HTMLSupport;
 use miFrame\Commons\Core\ServerData;
@@ -93,4 +94,14 @@ function miframe_errors(bool $use_extended_render = false)
 	$errors->watch();
 
 	return $errors;
+}
+
+/**
+ * Manejo de datos de configuración.
+ *
+ * @return object miFrame\Commons\Core\EnvData
+ */
+function miframe_env(): EnvData
+{
+	return EnvData::getInstance();
 }
