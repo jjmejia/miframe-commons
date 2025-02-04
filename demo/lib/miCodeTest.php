@@ -19,7 +19,7 @@ class miCodeTest
 
 	// Dominio web
 	private string $domainName = '';
-	private string $urlDemo = '';
+	// private string $urlDemo = '';
 	private string $pathDemo = '';
 
 	/**
@@ -33,13 +33,15 @@ class miCodeTest
 			session_start();
 		}
 
-		// Ej: xxxx/demo/support/demo-xxx.php
-		$elements = explode('/demo/', $_SERVER['SCRIPT_NAME']);
-		$this->urlDemo = $elements[0] . '/demo/';
-		$this->pathDemo = basename($elements[1]);
-
 		// Inicializa config
 		$this->initConfig();
+
+		$this->pathDemo = basename(miframe_server()->script());
+	}
+
+	private function urlDemo(): string
+	{
+		return $this->config['repo-path'] . '/demo/';
 	}
 
 	/**
@@ -50,6 +52,8 @@ class miCodeTest
 		$this->config = array(
 			// Página de inicio principal (si aplica)
 			'root' => '',
+			// Enlace al repositorio ppal
+			'repo-path' => '',
 			// Pie de página adicional (si existe)
 			'footer' => '',
 			// Temporal
@@ -100,9 +104,9 @@ class miCodeTest
 	private function getHome(): string
 	{
 		$url = '';
-		if ($this->pathDemo !== 'index.php') {
+		if (strpos($this->pathDemo, 'demo-') !== false) {
 			// No es el index de las demos
-			$url = $this->urlDemo;
+			$url = $this->urlDemo();
 		}
 		return $url;
 	}
@@ -121,7 +125,7 @@ class miCodeTest
 		if ($path !== '' && $path[0] !== '/') {
 			$path = '/' . $path;
 		}
-		return $this->urlDemo . 'resources' . $path;
+		return $this->urlDemo() . 'resources' . $path;
 	}
 
 	/**
@@ -150,7 +154,7 @@ class miCodeTest
 			// Nombre especial para localhost
 			if (!empty($_SERVER['SCRIPT_NAME'])) {
 				// Los recursos se encuentran asociados al directorio /demo/
-				$this->domainName = 'localhost: ' . substr(dirname($this->urlDemo), 1);
+				$this->domainName = 'localhost: ' . substr(dirname($this->urlDemo()), 1);
 			}
 		}
 
@@ -419,9 +423,11 @@ class miCodeTest
 	private function updateVisitorLog()
 	{
 		if (function_exists('registerVisitor')) {
-			$src = 'miframe-commons-' . str_replace('.php', '', $this->pathDemo);
-			/** @disregard P1010 Funciones del main */
-			registerVisitor($src);
+			if ($this->pathDemo !== 'stats.php') {
+				$src = 'miframe-commons-' . str_replace('.php', '', $this->pathDemo);
+				/** @disregard P1010 Funciones del main */
+				registerVisitor($src);
+			}
 			/** @disregard P1010 Funciones del main */
 			echo lekosdev_footer();
 		}

@@ -21,6 +21,8 @@ if (function_exists('miframe_env')) {
 	$Test->config([
 		// Página de inicio principal (si aplica)
 		'root' => $env->get('ROOT'),
+		// Enlace al repositorio ppal
+		'repo-path' => $env->get('MIFRAME-COMMONS'),
 		// Pie de página adicional (si existe)
 		'footer' => $env->get('FOOTER'),
 		// Temporal
