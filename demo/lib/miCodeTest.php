@@ -99,11 +99,12 @@ class miCodeTest
 
 	private function getHome(): string
 	{
-		if ($this->pathDemo === 'index.php') {
-			// Es el index de las demos, el retorno es a la página ppal
-			return $this->config['root'];
+		$url = '';
+		if ($this->pathDemo !== 'index.php') {
+			// No es el index de las demos
+			$url = $this->urlDemo;
 		}
-		return $this->urlDemo;
+		return $url;
 	}
 
 	/**
@@ -219,31 +220,6 @@ class miCodeTest
 	}
 
 	/**
-	 * Genera el pie de página.
-	 *
-	 * @return string Contenido del pie de página.
-	 */
-	private function footer(): string
-	{
-		$contents = '';
-		if (!empty($this->config['footer'])) {
-			$filename = @realpath(__DIR__ . DIRECTORY_SEPARATOR . $this->config['footer']);
-			if (file_exists($filename)) {
-				$contents = trim(file_get_contents($filename));
-			}
-		}
-
-		if ($contents != '') {
-			$contents = PHP_EOL .
-				'<!-- Footer -->' . PHP_EOL .
-				$contents . PHP_EOL .
-				'<!-- Footer ends -->' . PHP_EOL;
-		}
-
-		return $contents;
-	}
-
-	/**
 	 * Da cierre a la página demo.
 	 *
 	 * @param bool $show_repo Indica si se muestra el enlace al repositorio.
@@ -261,15 +237,20 @@ class miCodeTest
 			echo '</div>';
 		}
 
+		// 	Cierra contenedor "test-content" abierto en $this->start()
+		echo '</div>';
+
 		// Registra visita
 		$this->updateVisitorLog();
 
-		echo '<div class="foot">' .
-			'<b>' . $this->domainName . '</b> &copy; ' . date('Y') . '.' .
-			$this->footer() .
-			'</div>' . PHP_EOL .
-			'</div>' . // Contenedor "test-content" abierto en $this->start()
-			'</body></html>';
+		// echo '<div class="foot">' .
+		// 	'<b>' . $this->domainName . '</b> &copy; ' . date('Y') . '.' .
+		// 	$this->footer() .
+		// 	'</div>' . PHP_EOL .
+		// 	'</div>' . // Contenedor "test-content" abierto en $this->start()
+		// 	'</body></html>';
+
+		echo '</body></html>';
 	}
 
 	/**
@@ -441,83 +422,9 @@ class miCodeTest
 			$src = 'miframe-commons-' . str_replace('.php', '', $this->pathDemo);
 			/** @disregard P1010 Funciones del main */
 			registerVisitor($src);
+			/** @disregard P1010 Funciones del main */
+			echo lekosdev_footer();
 		}
-
-		/*
-		if (empty($_SERVER['REMOTE_ADDR'])) {
-			// No está ejecutando por web
-			return;
-		}
-
-		$date = date('Ymd');
-		$src = trim(strtolower($this->config['visitor-log']));
-
-		// Valida si existe directorio asociado
-		if ($src == '' || empty($this->config['logs-path'])) {
-			return;
-		}
-
-		// Valida si ya registró esta visita hoy (requiere sesion activa)
-		// Si ya fue registrada, termina.
-		if (
-			isset($_SESSION) &&
-			!empty($_SESSION['MICODE_DEMO_VISITS'][$src]) &&
-			$_SESSION['MICODE_DEMO_VISITS'][$src] == $date
-		) {
-			return;
-		}
-
-		// Valida directorio destino.
-		$path = $this->config['logs-path'];
-		// Si se indica directorio pero no existe, reporta error.
-		if (!is_dir($path)) {
-			throw new \Exception('Directorio para logs no existe (' . $path . ')');
-		}
-
-		// Recupara referencia
-		$http_referer = '';
-		if (!empty($_SERVER['HTTP_REFERER'])) {
-			$http_referer = trim($_SERVER['HTTP_REFERER']);
-		}
-
-		$filename = realpath($path) . DIRECTORY_SEPARATOR . 'visitas-' . $src . '.csv';
-		$client_ip = '?';
-		if (!empty($_SERVER['REMOTE_ADDR'])) {
-			// REMOTE_ADDR:
-			// La dirección IP desde donde el usuario está viendo la página actual.
-			$client_ip = $_SERVER['REMOTE_ADDR'];
-		}
-
-		// Complementa mensaje.
-		// Ej.
-		// [2024-Aug-21 14:43:27] ***190.27.101.6
-		$message = '"' .
-			implode('";"', [
-				date('Y-m-d H:i:s'),
-				$client_ip,
-				str_replace('"', '""', $_SERVER['HTTP_USER_AGENT']),
-				str_replace('"', '""', $http_referer)
-			]) .
-			'"' . PHP_EOL;
-
-		if (!file_exists($filename)) {
-			// Adiciona encabezado
-			$encab = implode(';', ['Fecha', 'UserIP', 'Browser', 'Referer']) . PHP_EOL;
-			error_log($encab, 3, $filename);
-		}
-
-		// error_log($message, $message_type = 0, $destination = ?,$extra_headers = ?)
-		// $message_type = 3:
-		// message es añadido al final del fichero destination.
-		// No se añade automáticamente una nueva línea al final del string message.
-		// (https://www.php.net/manual/es/function.error-log.php)
-		error_log($message, 3, $filename);
-
-		// Marca como ya visitada
-		if (isset($_SESSION)) {
-			$_SESSION['MICODE_DEMO_VISITS'][$src] = $date;
-		}
-			*/
 	}
 
 	/**
