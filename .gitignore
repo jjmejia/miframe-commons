@@ -5,8 +5,6 @@ demo/tmp
 docs/*.txt
 src/back
 * copy.*
-demo/footer.htm
-demo/demo-config-dev.php
 src/vendor
 *.env
 *.db

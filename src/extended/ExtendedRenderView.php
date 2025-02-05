@@ -49,7 +49,7 @@ class ExtendedRenderView extends RenderView
 	{
 		parent::singletonStart();
 		// Adiciona layout por defecto
-		$this->layout->config($this->localPathFiles('layout-default'), 'content');
+		$this->layout->config('layout-default', 'contentFromViews');
 		// Deshabilita salida a pantalla de mensajes de error
 		// (se habilita solo para modo Desarrollo)
 		ini_set("display_errors", "off");
@@ -128,14 +128,32 @@ class ExtendedRenderView extends RenderView
 	/**
 	 * Redefine método renderLayout() de la clase RenderView.
 	 *
+	 * Si el layout a usar es "layout-default" (configurado como layout por defecto
+	 * en esta clase), busca primero la vista "layout" en el directorio de vistas.
+	 * Si no la encuentra, entonces si usa la vista "layout-default".
+	 *
 	 * Adiciona filtrado al contenido una vez renderizado el Layout.
 	 */
 	protected function includeLayout(string &$content)
 	{
-		// Recupera estilos del repositorio de recursos
-		$this->exportStyles($content);
+		// Si no ha definido archivo de layout diferente al "layout-default",
+		// valida si existe un archivo "layout" y lo usa en remplazo.
+		if ($this->layout->viewName() === 'layout-default')
+		{
+			$defaultViewName = $this->findView('layout');
+			if ($defaultViewName !== '') {
+				$this->layout->config($defaultViewName, 'contentFromViews');
+			}
+		}
+		// Adiciona marca para incluir estilos
+		// (no los adiciona directamente por si se adicionan nuevos
+		// estilos durante la visualización del layout)
+		$unique_mark = uniqid('@styles:', true) . PHP_EOL;
+		$content = $unique_mark . $content;
 		// Ejecuta método original
 		parent::includeLayout($content);
+		// Recupera estilos
+		$this->exportStyles($content, $unique_mark);
 		// Remueve Document Root de la salida a pantalla
 		$this->removeDocumentRoot($content);
 		// Aplica filtros adicionales
@@ -146,6 +164,8 @@ class ExtendedRenderView extends RenderView
 
 	/**
 	 * Adiciona estilos al repositorio de recursos
+	 *
+	 * Si es invocado dentro del Layout, lo exporta de inmediato.
 	 *
 	 * @param string $styles Estilos a guardar.
 	 * @param string $comment Comentario a incluir en los estilos.
@@ -159,11 +179,15 @@ class ExtendedRenderView extends RenderView
 	 * Recupera estilos del repositorio de recursos y los añade al contenido.
 	 *
 	 * @param string $content Contenido de la vista a renderizar.
+	 * @param string $replaceMark Texto a buscar para remplazar con los estilos.
 	 */
-	public function exportStyles(string &$content)
+	public function exportStyles(string &$content, string $replaceMark = '')
 	{
 		$styles = miframe_html()->cssExport(true);
-		if ($styles !== '') {
+		if ($replaceMark !== '') {
+			$content = str_replace($replaceMark, $styles, $content);
+		}
+		elseif ($styles !== '') {
 			$content = $styles . PHP_EOL . $content;
 		}
 	}
