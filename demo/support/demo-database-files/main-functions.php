@@ -32,7 +32,11 @@ if ($Test->choice('debugMode', 'Habilitar modo Debug', 'Ocultar Debug')) {
 }
 
 // Recupera datos de configuración de bases de datos
-$env = parse_ini_file(__DIR__ . DIRECTORY_SEPARATOR . '.env', true);
+$filename = __DIR__ . DIRECTORY_SEPARATOR . 'lekosdev.env';
+if (!file_exists($filename)) {
+	$filename = __DIR__ . DIRECTORY_SEPARATOR . '.env';
+}
+$env = parse_ini_file($filename, true);
 
 // Drivers disponibles
 $drivers_list = [
