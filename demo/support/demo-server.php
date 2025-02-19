@@ -18,6 +18,8 @@ $Test->start(
 $server = miframe_server();
 $path_dummy = '../path/to/other/any/ .. /./script/ignora/..';
 $script = $server->script();
+$url_demo = '/url/demo/';
+$args = ['arg1' => 1, 'arg2' => 2];
 
 // Fija directorio temporal
 $server->tempDir($Test->tmpDir());
@@ -51,11 +53,14 @@ $data = array(
 	'miframe_server()->rawInput()' => $server->rawInput(),
 	// Datos del servidor
 	'miframe_server()->name()' => $server->name(),
+	'miframe_server()->domain()' => $server->domain(),
 	'miframe_server()->ip()' => $server->ip(),
-	'miframe_server()->path()' => $server->path(),
-	'miframe_server()->pathInfo()' => $server->pathInfo(),
 	'miframe_server()->host()' => $server->host(),
 	'miframe_server()->host(true)' => $server->host(true),
+	'miframe_server()->url($url_demo)' => $server->url($url_demo),
+	'miframe_server()->url($url_demo, $args, true)' => $server->url($url_demo, $args, true),
+	'miframe_server()->path()' => $server->path(),
+	'miframe_server()->pathInfo()' => $server->pathInfo(),
 	'miframe_server()->self()' => $server->self(),
 	'miframe_server()->relativePath()' => $server->relativePath(),
 	'miframe_server()->relativePath($path_dummy)' => $server->relativePath($path_dummy),
@@ -80,9 +85,15 @@ $data = array(
 	'miframe_server()->checkPoint() [Fin]' => $server->checkPoint(),
 );
 
-$variables = array('$path_dummy' => $path_dummy, '$script' => $script);
 $matches = miframe_autoload()->matches();
 $namespaces = miframe_autoload()->namespaces();
+
+// Recupera variables a mostrar
+$variables = ['path_dummy', 'script', 'url_demo', 'args'];
+$variables_data = [];
+foreach ($variables as $v) {
+	$variables_data['$' . $v] = $$v;
+}
 
 $aviso_ocultar = '';
 // Por razones de seguridad, se ocultan algunos valores cuando no se ejecuta desde localhost
@@ -108,8 +119,8 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 		$namespaces[$k] = trim(str_replace($que, $con, $v));
 	}
 	// Oculta variables sensibles
-	foreach ($variables as $k => $v) {
-		$variables[$k] = trim(str_replace($que, $con, $v));
+	foreach ($variables_data as $k => $v) {
+		$variables_data[$k] = trim(str_replace($que, $con, $v));
 	}
 	// Mensaje informando de estos valores protegidos
 	$aviso_ocultar = '<p class="test-aviso"><b>Importante:</b> Algunos valores se han ocultado por seguridad.</p>';
@@ -117,11 +128,11 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 
 echo "<p>Variables usadas para crear el arreglo de muestra:</p>" . $aviso_ocultar;
 
-$Test->dump($variables);
+$Test->dump($variables_data, true);
 
 echo "<p>Arreglo de muestra:</p>";
 
-$Test->dump($data);
+$Test->dump($data, true);
 
 echo "<h2>miframe_autoload()</h2>";
 echo "<p>Respecto al uso de la librería <code>autoload.php</code>, " .

@@ -182,6 +182,16 @@ class ServerData extends Singleton
 	}
 
 	/**
+	 * Nombre del servidor (host) dado al invocar esta sesión Web.
+	 *
+	 * @return string Nombre del servidor web.
+	 */
+	public function domain(): string
+	{
+		return $this->get('SERVER_NAME', 'nn');
+	}
+
+	/**
 	 * URL asociada al servidor Web para la consulta actual.
 	 *
 	 * Una URL se compone de los siguientes elementos (los valores entre "[]" son opcionales):
@@ -213,7 +223,7 @@ class ServerData extends Singleton
 
 		// SERVER_NAME:
 		// Nombre del servidor host que está ejecutando este script. Si se ejecuta en un host virtual, este será el valor asignado a ese host virtual.
-		$domain_name = $this->get('SERVER_NAME', 'nn');
+		$domain_name = $this->domain();
 
 		// SERVER_PORT:
 		// Puerto en la maquina del servidor usado por el servidor Web para comunicación. Por defecto será de '80'; Para SSL (HTTPS) cambia a cualquiera sea

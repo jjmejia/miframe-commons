@@ -29,7 +29,7 @@ class miCodeTest
 	public function __construct()
 	{
 		// Inicia sesión si no ha sido iniciada previamente
-		if (empty($_SESSION)) {
+		if (!isset($_SESSION)) {
 			session_start();
 		}
 
@@ -390,8 +390,9 @@ class miCodeTest
 	 * Despliega el contenido de una variable.
 	 *
 	 * @param mixed $data Datos a mostrar.
+	 * @param bool $one_line TRUE remueve saltos de línea en el contenido visible de la variable.
 	 */
-	public function dump(mixed $data)
+	public function dump(mixed $data, bool $one_line = false)
 	{
 		$info = '';
 		if (is_array($data)) {
@@ -403,10 +404,16 @@ class miCodeTest
 					// NOTA: var_export() sobre float adiciona muchos decimales (Linux).
 					$v = var_export($v, true);
 				}
+				$data_visible = htmlentities($v);
+				if ($one_line) {
+					$data_visible = str_replace(["\r", "\n"], '', $data_visible);
+					// Correcciones a arreglos
+					$data_visible = str_replace([' (  ', ',)', '  '], ['(', ')', ' '], $data_visible);
+				}
 				$info .= '<tr>' .
 					'<td valign="top"><b>' . $k . '</b></td>' .
 					'<td valign="top" class="dump-connect">=></td>' .
-					'<td>' . htmlentities($v) . '</td>' .
+					'<td>' . $data_visible . '</td>' .
 					'</tr>';
 			}
 			$info .= '</table>';
