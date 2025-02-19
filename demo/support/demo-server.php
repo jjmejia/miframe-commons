@@ -120,7 +120,9 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 	}
 	// Oculta variables sensibles
 	foreach ($variables_data as $k => $v) {
-		$variables_data[$k] = trim(str_replace($que, $con, $v));
+		if (!is_array($v)) {
+			$variables_data[$k] = trim(str_replace($que, $con, $v));
+		}
 	}
 	// Mensaje informando de estos valores protegidos
 	$aviso_ocultar = '<p class="test-aviso"><b>Importante:</b> Algunos valores se han ocultado por seguridad.</p>';
