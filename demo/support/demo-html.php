@@ -10,30 +10,36 @@
 // Configuración de demo, crea objeto $Test
 include_once __DIR__ . '/../demo-config.php';
 
-$Test->start(
-	'miframe_html()',
-	'Demos para ilustrar uso del utilitario <code>miframe_html()</code> de la librería <code>miFrame\\Commons</code>, para visualización de mensajes en pantalla.'
-);
+$Test->title = 'miframe_html()';
+$Test->description = 'Demos para ilustrar uso del utilitario <code>miframe_html()</code> de la librería <code>miFrame\\Commons</code>, para visualización de mensajes en pantalla.';
+$Test->start();
 
 // Asocia clase a una variable para agilizar su uso.
+$Test->copyNextLines();
 $html = miframe_html();
 
 // Captura opciones
-$nominimizar = $Test->choice('css-nominimize', 'No minimizar estilos en línea', 'Minimizar estilos en línea');
-$html->minimizeCSSCode(!$nominimizar);
+if ($Test->choice('css-nominimize', 'No minimizar estilos en línea', 'Minimizar estilos en línea')) {
+	$Test->copyNextLines();
+	// Por defecto el valor es "true"
+	$html->minimizeCSSCode(false);
+}
 
 // Adiciona un archivo CSS existente en disco
+$Test->copyNextLines();
 $html->cssLocal(__DIR__ . '/demo-html-files/uno.css');
 
 // Adiciona contenido en linea
+$Test->copyNextLines();
 $html->cssLocal(__DIR__ . '/demo-html-files/dos.css', true);
 
 // Adiciona un recurso CSS indicando su URL, se publica
 // apuntando a su ubicación remota.
-$url = miframe_server()->relativePath('demo-html-files/tres.css');
-$html->cssRemote($url);
+$Test->copyNextLines();
+$html->cssRemote(miframe_server()->relativePath('demo-html-files/tres.css'));
 
 // Adiciona un recurso CSS directamente en línea
+$Test->copyNextLines(5);
 $html->cssInLine('
 .miframe-cuatro {
 	background:darkred;
@@ -41,42 +47,44 @@ $html->cssInLine('
 }');
 
 // Otro bloque en linea
+$Test->copyNextLines(4);
 $html->cssInLine(
 	'.demo-div { margin:10px 0; padding:20px; border-radius:4px; }',
 	'Comentario en línea'
 );
 
-// Duplica para validar que no repita
+$Test->copyNextLines(3);
+// Nota: Estos elementos duplicados, serán ignorados
 $html->cssLocal(__DIR__ . '/demo-html-files/uno.css');
 $html->cssLocal(__DIR__ . '/demo-html-files/uno.css', true);
 
-// Recupera de archivo puntual
-$styles = $html->cssExportFrom(__DIR__ . '/demo-html-files/cinco.css', true);
-
-/*
-echo '<p>Listado de estilos pendientes: (' . $Test->renderChoices() . ')</p>';
-$Test->dump($html->cssUnpublished());
-*/
+// Muestra líneas capturadas
+$Test->htmlPasteLines();
 
 // Descarga estilos
+echo '<h3>HTML generado al procesar los ' . $html->cssUnpublished() . ' recursos previamente configurados</h3>';
 $nocomentar = $Test->choice('no-comments', 'Ocultar comentarios', 'Incluir comentarios');
-echo '<p>HTML generado al procesar los ' . $html->cssUnpublished() . ' recursos pendientes:</p>';
+$Test->showNextLines(2, ['!$nocomentar' => ($nocomentar ? 'false' : 'true')]);
 $code = $html->cssExport(!$nocomentar);
+echo $code;
+
 $Test->htmlPre(
 	htmlentities($code).
-	'<div style="margin-top:10px;border-top:1px solid #999;padding-top:10px">' .
-	$Test->renderChoices() .
-	'</div>'
+	'<div class="separator"></div>' .
+	$Test->renderChoices()
+	// '</div>'
 );
 
-echo '<p>Resultado al usar <code>cssExportFrom()</code>:</p>';
+// Recupera de archivo puntual
+echo '<h3>Exportar estilos tomados de un archivo</h3>';
+$Test->showNextLines(2);
+$styles = $html->cssExportFrom(__DIR__ . '/demo-html-files/cinco.css', true);
+echo $styles;
+
 $Test->htmlPre(htmlentities($styles));
 
-echo $code . $styles;
-
 // Ejemplos de estilos
-echo '<p>Ejemplo de los estilos cargados:</p>';
-
+echo '<h3>Ejemplo de los estilos cargados</h3>';
 echo '<div class="demo-div miframe-uno"><b>miframe-uno:</b> Estilos de cssLocal() como URL</div>' . PHP_EOL;
 echo '<div class="demo-div miframe-dos"><b>miframe-dos:</b> Estilos de cssLocal() en línea</div>' . PHP_EOL;
 echo '<div class="demo-div miframe-tres"><b>miframe-tres:</b> Estilos de cssRemoto()</div>' . PHP_EOL;
@@ -86,10 +94,9 @@ echo '<div class="demo-div miframe-cinco"><b>miframe-cinco:</b> Estilos de cssEx
 // Este demo solamente funciona bien para localhost, en remoto pueden estar
 // inactivos los mensajes de error y habilitarlos implica visualizar el path real
 // de los scripts.
-if (miframe_server()->isLocalhost()) {
-	echo '<p>Ejemplo al adicionar un recurso no valido (habilitado sólo para Localhost)</p>';
-	$html->cssLocal(__DIR__ . '/demo-html-files/nn.css');
-}
+echo '<h3>Ejemplo al adicionar un recurso no valido</h3>';
+$Test->showNextLines();
+$html->cssLocal(__DIR__ . '/demo-html-files/nn.css');
 
 // Cierre de la página
 $Test->end();

@@ -25,9 +25,9 @@ if (function_exists('miframe_env')) {
 		'repo-path' => $env->get('MIFRAME-COMMONS'),
 		// Pie de página adicional (si existe)
 		'footer' => $env->get('FOOTER'),
-		// Temporal
-		'tmp-path' => $env->documentRoot('TEMP-PATH'),
 		// Repositorio Github
 		'github-repo' => $env->get('MIFRAME-COMMONS-GITHUB-REPO')
 	]);
+	// Define directorio temporal
+	miframe_server()->tempDir($env->documentRoot('TEMP-PATH', 'tmp'));
 }

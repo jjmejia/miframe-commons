@@ -9,20 +9,17 @@
 
 require_once __DIR__ . '/../demo-config.php';
 
-$Test->start(
-	'miframe_server() y miframe_autoload()',
-	'Demos para ilustrar uso de los utilitarios <code>miframe_server()</code> y <code>miframe_autoload()</code> de la librería <code>miFrame\\Commons</code>'
-);
+$Test->title = 'miframe_server() y miframe_autoload()';
+$Test->description = 'Demos para ilustrar uso de los utilitarios <code>miframe_server()</code> y <code>miframe_autoload()</code> de la librería <code>miFrame\\Commons</code>';
+$Test->start();
 
 // Asocia clase a una variable para agilizar su uso.
 $server = miframe_server();
-$path_dummy = '../path/to/other/any/ .. /./script/ignora/..';
-$script = $server->script();
-$url_demo = '/url/demo/';
-$args = ['arg1' => 1, 'arg2' => 2];
 
-// Fija directorio temporal
-$server->tempDir($Test->tmpDir());
+// Variables para uso en la demo
+$path_dummy = '/../path/to/other/any/ .. /./script/ignora/../';
+$script = $server->script();
+$args = [ 'name1' => 'value1', 'name2' => 'value2'];
 
 $force_no_localhost = false;
 // Retorna TRUE si simula consulta no localhost
@@ -38,27 +35,26 @@ echo "<h2>miframe_server()</h2>";
 $data = array(
 	'miframe_server()->startAt()' => $server->startAt(),
 	'miframe_server()->startAt(\'Y/m/d H:i:s\')' => $server->startAt('Y/m/d H:i:s'),
-	'miframe_server()->checkPoint() [Inicio]' => $server->checkPoint(),
+	'miframe_server()->checkPoint()' => $server->checkPoint(),
 	// Limpieza
 	'miframe_server()->purgeURLPath($path_dummy)' => $server->purgeURLPath($path_dummy),
 	'miframe_server()->purgeFilename($path_dummy)' => $server->purgeFilename($path_dummy),
 	// Consultas
 	'miframe_server()->get(\'REQUEST_METHOD\')' => $server->get('REQUEST_METHOD'),
-	'miframe_server()->client()' => $server->client(),
+	'miframe_server()->ipClient()' => $server->ipClient(),
 	'miframe_server()->isWeb()' => $server->isWeb(),
 	'miframe_server()->useHTTPSecure()' => $server->useHTTPSecure(),
 	'miframe_server()->isLocalhost()' => $server->isLocalhost(),
 	'miframe_server()->software()' => $server->software(),
 	'miframe_server()->browser()' => $server->browser(),
-	'miframe_server()->rawInput()' => $server->rawInput(),
 	// Datos del servidor
 	'miframe_server()->name()' => $server->name(),
 	'miframe_server()->domain()' => $server->domain(),
 	'miframe_server()->ip()' => $server->ip(),
 	'miframe_server()->host()' => $server->host(),
-	'miframe_server()->host(true)' => $server->host(true),
-	'miframe_server()->url($url_demo)' => $server->url($url_demo),
-	'miframe_server()->url($url_demo, $args, true)' => $server->url($url_demo, $args, true),
+	'miframe_server()->host($path_dummy)' => $server->host($path_dummy),
+	'miframe_server()->host($path_dummy, $args)' => $server->host($path_dummy, $args),
+	'miframe_server()->url($path_dummy, $args)' => $server->url($path_dummy, $args),
 	'miframe_server()->path()' => $server->path(),
 	'miframe_server()->pathInfo()' => $server->pathInfo(),
 	'miframe_server()->self()' => $server->self(),
@@ -79,21 +75,15 @@ $data = array(
 	'miframe_server()->hasAccessTo($script)' => $server->hasAccessTo($script),
 	// Acciones sobre el servidor
 	'miframe_server()->mkdir($path_dummy)' => $server->mkdir($path_dummy),
-	'miframe_server()->createTempSubdir($path_dummy)' => $server->createTempSubdir($path_dummy),
-	// punto de chequeo
-	'miframe_server()->executionTime()' => $server->executionTime(),
-	'miframe_server()->checkPoint() [Fin]' => $server->checkPoint(),
+	'miframe_server()->tempSubdir($path_dummy)' => $server->tempSubdir($path_dummy),
 );
 
+// Captura información para mostrar
 $matches = miframe_autoload()->matches();
 $namespaces = miframe_autoload()->namespaces();
 
 // Recupera variables a mostrar
-$variables = ['path_dummy', 'script', 'url_demo', 'args'];
-$variables_data = [];
-foreach ($variables as $v) {
-	$variables_data['$' . $v] = $$v;
-}
+$variables_data = compact('path_dummy', 'script', 'args');
 
 $aviso_ocultar = '';
 // Por razones de seguridad, se ocultan algunos valores cuando no se ejecuta desde localhost
@@ -101,7 +91,7 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 	$ocultar = '[Restringido]';
 	// Información sensible
 	$data['miframe_server()->name()'] = $ocultar;
-	$data['miframe_server()->browser()'] = $ocultar;
+	// $data['miframe_server()->browser()'] = $ocultar;
 	// $data['miframe_server()->ip()'] = $ocultar;
 	$data['miframe_server()->software()'] = $ocultar;
 	// Oculta directorios sensibles
@@ -132,7 +122,12 @@ echo "<p>Variables usadas para crear el arreglo de muestra:</p>" . $aviso_oculta
 
 $Test->dump($variables_data, true);
 
-echo "<p>Arreglo de muestra:</p>";
+echo "<p>Métodos disponibles:</p>";
+
+ksort($data);
+// Adiciona puntos de chequeo
+$data['miframe_server()->executionTime()'] = $server->executionTime();
+// $data['miframe_server()->checkPoint() [Fin]'] = $server->checkPoint();
 
 $Test->dump($data, true);
 

@@ -11,10 +11,9 @@
 include_once __DIR__ . '/../demo-config.php';
 
 // Apertura de la página demo
-$Test->start(
-	'Conexión y consultas a bases de datos',
-	'Esta demo ilustra el uso de la clase <code>PDOController</code> usada para consultas a bases de datos en PHP.'
-);
+$Test->title = 'Conexión y consultas a bases de datos';
+$Test->description = 'Esta demo ilustra el uso de la clase <code>PDOController</code> usada para consultas a bases de datos en PHP.';
+$Test->start();
 
 // Opciones adicionales (por defecto incluye "Habilitar modo Debug")
 // if ($Test->choice(...)) { ... }

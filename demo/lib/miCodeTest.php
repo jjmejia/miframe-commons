@@ -19,8 +19,27 @@ class miCodeTest
 
 	// Dominio web
 	private string $domainName = '';
-	// private string $urlDemo = '';
 	private string $pathDemo = '';
+
+	/**
+	 * @var string $title Título de la página.
+	 */
+	public string $title = '';
+
+	/**
+	 * @var string $description Descripción de la página.
+	 */
+	public string $description = '';
+
+	/**
+	 * @var string $styles Estilos adicionales en línea.
+	 */
+	public string $styles = '';
+
+	/**
+	 * @var bool $useMiFrameErrorHandler TRUE hace uso de miframe_errors() para gestión de errores.
+	 */
+	public bool $useMiFrameErrorHandler = true;
 
 	/**
 	 * Constructor de la clase.
@@ -56,8 +75,6 @@ class miCodeTest
 			'repo-path' => '',
 			// Pie de página adicional (si existe)
 			'footer' => '',
-			// Temporal
-			'tmp-path' => '',
 			// Repositorio Github
 			'github-repo' => ''
 		);
@@ -75,30 +92,6 @@ class miCodeTest
 				$this->config[$k] = $v;
 			}
 		}
-	}
-
-	/**
-	 * Retorna el directorio temporal a usar.
-	 *
-	 * @return string Ruta del directorio temporal.
-	 */
-	public function tmpDir(): string
-	{
-		if (empty($this->config['tmp-path'])) {
-			$this->config['tmp-path'] = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'temp';
-		}
-
-		$temp_dir = $this->config['tmp-path'];
-		if (!is_dir($temp_dir)) {
-			// Intenta crear directorio si no existe
-			@mkdir($temp_dir);
-		}
-		if (!is_dir($temp_dir)) {
-			// No pudo acceder al directorio, dispara error
-			trigger_error('Error: No pudo acceder al directorio temporal en ' . $temp_dir, E_USER_ERROR);
-		}
-
-		return realpath($temp_dir);
 	}
 
 	private function getHome(): string
@@ -130,17 +123,14 @@ class miCodeTest
 
 	/**
 	 * Presenta encabezado para la salida a pantalla.
-	 *
-	 * @param string $title Título de la página.
-	 * @param string $description Descripción de la página.
-	 * @param string $styles Estilos adicionales en línea.
 	 */
-	public function start(string $title, string $description = '', string $styles = '')
+	public function start()
 	{
 		$estilos = $this->resourcesPath('/css/tests.css');
 		$favicon = $this->resourcesPath('/img/favicon.png');
 
-		$title_meta = strip_tags($title);
+		$title_meta = strip_tags($this->title);
+		$description = trim($this->description);
 		if ($description == '') {
 			$description = 'miCode-Manager Demos -- ' . $title_meta . '.';
 		}
@@ -160,15 +150,12 @@ class miCodeTest
 
 		if (empty($_SERVER['REMOTE_ADDR'])) {
 			// Salida por consola
-			echo strip_tags($title . PHP_EOL . $description) . PHP_EOL . PHP_EOL;
+			echo strip_tags($this->title . PHP_EOL . $this->description) . PHP_EOL . PHP_EOL;
 			return;
 		}
 
 		// Estilos adicionales en linea
-		$estilos_add = '';
-		if ($styles !== '') {
-			$estilos_add = '<style>' . $styles . '</style>';
-		}
+		$estilos_add = miframe_html()->cssExport();
 
 ?>
 <!DOCTYPE html>
@@ -183,7 +170,7 @@ class miCodeTest
 	<meta property="og:title" content="<?= $title_meta ?>" />
 	<meta property="og:type" content="website" />
 	<meta property="og:description" content="<?= $description_meta ?>" />
-	<title><?= htmlentities($title) ?></title>
+	<title><?= htmlentities($this->title) ?></title>
 	<link rel="icon" type="image/png" href="<?= $favicon ?>" />
 	<link rel="stylesheet" href="<?= $estilos ?>">
 	<?= $estilos_add ?>
@@ -191,12 +178,12 @@ class miCodeTest
 
 <body>
 	<h1 class="test-encab">
-		<?= htmlentities($title) ?>
+		<?= htmlentities($this->title) ?>
 		<small><?= $this->domainName ?></small>
 	</h1>
 	<?php
 
-		$home = $this->getHome();
+	$home = $this->getHome();
 	// Valida si definió enlace a "home"
 	if (!empty($home)) {
 		echo '<a href="' . $home . '" class="test-back-home">
@@ -211,6 +198,10 @@ class miCodeTest
 		<p class="test-description"><?= $description ?></p>
 		<?php
 
+		// Manejo personalizado de errores
+		if ($this->useMiFrameErrorHandler) {
+			miframe_errors();
+		}
 	}
 
 	/**
@@ -218,9 +209,14 @@ class miCodeTest
 	 *
 	 * @param string $text Texto a mostrar.
 	 */
-	public function htmlPre(string $text)
+	public function htmlCode(string $text)
 	{
 		echo PHP_EOL . '<pre class="code">' . trim($text) . '</pre>' . PHP_EOL;
+	}
+
+	public function htmlPre(string $text)
+	{
+		echo PHP_EOL . '<pre class="code console">' . trim($text) . '</pre>' . PHP_EOL;
 	}
 
 	/**
@@ -386,6 +382,17 @@ class miCodeTest
 		return $text;
 	}
 
+	private function varDump(mixed $v): string
+	{
+		if (is_bool($v)) {
+			$v = ($v ? 'true' : 'false');
+		} elseif (!is_numeric($v) && !is_float($v)) {
+			// NOTA: var_export() sobre float adiciona muchos decimales (Linux).
+			$v = var_export($v, true);
+		}
+		return str_replace('\\\\', '\\', htmlentities($v));
+	}
+
 	/**
 	 * Despliega el contenido de una variable.
 	 *
@@ -398,22 +405,25 @@ class miCodeTest
 		if (is_array($data)) {
 			$info .= '<table cellspacing="0">';
 			foreach ($data as $k => $v) {
-				if (is_bool($v)) {
-					$v = ($v ? 'true' : 'false');
-				} elseif (!is_numeric($v) && !is_float($v)) {
-					// NOTA: var_export() sobre float adiciona muchos decimales (Linux).
-					$v = var_export($v, true);
+				$data_visible = '';
+				if ($one_line && is_array($v)) {
+					// Imprime contenido del arreglo en un solo valor
+					$v = "[" .
+						array_reduce(array_keys($v), function ($acum, $key) use ($v) {
+							if ($acum !== '') {
+								$acum .= ', ';
+							}
+							return $acum . $this->varDump($key) . " => " . $this->varDump($v[$key]);
+						}, '') .
+						']';
+				} else {
+					$v = $this->varDump($v);
 				}
-				$data_visible = htmlentities($v);
-				if ($one_line) {
-					$data_visible = str_replace(["\r", "\n"], '', $data_visible);
-					// Correcciones a arreglos
-					$data_visible = str_replace([' (  ', ',)', '  '], ['(', ')', ' '], $data_visible);
-				}
+
 				$info .= '<tr>' .
 					'<td valign="top"><b>' . $k . '</b></td>' .
 					'<td valign="top" class="dump-connect">=></td>' .
-					'<td>' . $data_visible . '</td>' .
+					'<td>' . $v . '</td>' .
 					'</tr>';
 			}
 			$info .= '</table>';
@@ -481,13 +491,14 @@ class miCodeTest
 	 *
 	 * @param int $lines Número de líneas a mostrar.
 	 */
-	public function showNextLines(int $lines = 1)
+	public function showNextLines(int $lines = 1, array $replace = [])
 	{
 		$this->codePre = '';
 		$this->copyNextLines($lines);
-		$content = $this->pasteLines();
+		$content = $this->pasteLines($replace);
 		if ($content != '') {
-			$this->htmlPre($content);
+			// Salida a pantalla
+			$this->htmlCode($content);
 		}
 	}
 
@@ -496,11 +507,20 @@ class miCodeTest
 	 *
 	 * @return string Líneas copiadas.
 	 */
-	public function pasteLines(): string
+	public function pasteLines(array $replace = []): string
 	{
 		$text = $this->codePre;
 		$this->codePre = '';
+		// Remplaza texto para dar legibilidad
+		if (count($replace) > 0) {
+			return str_replace(array_keys($replace), $replace, $text);
+		}
 		return $text;
+	}
+
+	public function htmlPasteLines(array $replace = [])
+	{
+		$this->htmlCode($this->pasteLines($replace));
 	}
 
 	/**

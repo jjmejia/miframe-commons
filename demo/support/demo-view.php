@@ -11,10 +11,10 @@
 include_once __DIR__ . '/../demo-config.php';
 
 // Apertura de la página demo
-$Test->start(
-	'miframe_render() y miframe_view()',
-	'Demos para ilustrar uso del utilitario <code>miframe_render()</code> y <code>miframe_view()</code> de la librería <code>miFrame\\Commons</code>, para visualización de páginas en pantalla.'
-);
+$Test->title = 'miframe_render() y miframe_view()';
+$Test->description = 'Demos para ilustrar uso del utilitario <code>miframe_render()</code> y <code>miframe_view()</code> de la librería <code>miFrame\\Commons</code>, para visualización de páginas en pantalla.';
+$Test->useMiFrameErrorHandler = false;
+$Test->start();
 
 // Asocia clase a una variable para agilizar su uso.
 $view = miframe_render();
@@ -23,6 +23,8 @@ $view = miframe_render();
 if ($Test->choice('developerMode', 'Modo Desarrollo', 'Habilitar modo Producción')) {
 	$Test->copyNextLines();
 	$view->developerOn();
+	// Habilita errores personalizados
+	miframe_errors();
 }
 
 // Habilita modo Debug (identifica cada view usado en pantalla)
@@ -37,16 +39,12 @@ $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'demo-view-files');
 // Lista vistas disponibles
 $views_list = [
 	'a' => 'Vista regular',
-	'b' => 'Vista con errores',
+	// 'b' => 'Vista con errores',
 	'c' => 'Invocando view() dentro de otro view()',
 	'd' => 'Multiples views()',
+	'novista' => 'Vista no existente'
 ];
-// Adiciona la opción "Vista no existente" solo para Localhost,
-// ya que al remover manejo personalizado de errores no existe
-// forma de prevenir que muestra paths completos en entornos no seguros.
-if (miframe_server()->isLocalhost()) {
-	$views_list['novista'] = 'Vista no existente';
-}
+
 // Crea enlaces para selección de las vistas
 $views_links = $Test->multipleLinks('view', $views_list);
 
@@ -82,42 +80,40 @@ $dato2 = time();
 
 if ($post_view !== 'd') {
 	// Visualiza comando
-	$Test->htmlPre(
+	$Test->htmlCode(
 		"miframe_render()->layout->values(['title' => '{$views_list[$post_view]}', 'uid' => uniqid()]);" .
 		PHP_EOL .
-		str_replace('$view', 'miframe_render()', $Test->pasteLines()) .
+		$Test->pasteLines(['$view' => 'miframe_render()']) .
 		"echo miframe_view('{$post_view}', compact('dato1', 'dato2'));");
 
 	// Para mostrar en pantalla
-	echo miframe_view($post_view, compact('dato1', 'dato2'));
+	echo miframe_view($post_view, compact('dato1', 'dato2', 'Test'));
 
 } else {
 
 	// Comando previo
-	$Test->htmlPre(
+	$Test->htmlCode(
 		"miframe_render()->layout->values(['uid' => uniqid()]);" .
 		PHP_EOL .
-		str_replace('$view', 'miframe_render()', $Test->pasteLines())
+		$Test->pasteLines(['$view' => 'miframe_render()'])
 	);
-	// Multiples views
+	// Multiples views(replica la vista "a" varias veces)
 	$dato1_pre = $dato1;
-	foreach ($views_list as $p => $ptitle) {
-		if ($p == 'd') {
-			break;
-		}
+	for ($p = 1; $p <=3; $p++) {
 		// Redefine valores
+		$ptitle = 'Vista regular #' . $p;
 		$view->layout->values(['title' => $ptitle]);
 		// Visualiza comando
-		$Test->htmlPre(
+		$Test->htmlCode(
 			"miframe_render()->layout->values(['title' => '{$ptitle}']);" .
 			PHP_EOL .
-			"echo miframe_view('{$p}', compact('dato1', 'dato2'));"
+			"echo miframe_view('a', compact('dato1', 'dato2'));"
 		);
 		// Habilita layout (se inhabilita luego de su primer uso)
 		$view->layout->reset();
 		// Para mostrar en pantalla
-		$dato1 = $dato1_pre . ' [En Vista ' . strtoupper($p) . ']';
-		echo miframe_view($p, compact('dato1', 'dato2'));
+		$dato1 = $dato1_pre . ' [En copia #' . strtoupper($p) . ']';
+		echo miframe_view('a', compact('dato1', 'dato2', 'Test'));
 	}
 }
 

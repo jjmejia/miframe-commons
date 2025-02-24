@@ -97,6 +97,20 @@ h1.test-encab, .test-content h2 {
 		font-weight: bold;
 	}
 
+	pre.console {
+		border: 1px solid #333;
+		color: #333;
+		/* background-color: yellow; */
+	}
+
+	pre.console .separator {
+		margin:0;
+		padding: 10px 0 0 0;
+		margin-top:10px;
+		border-top:1px solid #555;
+		/* padding-top:10px" */
+	}
+
 	.foot {
 		font-size: 12px;
 		padding-top: 40px;

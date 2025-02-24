@@ -10,10 +10,9 @@
 include_once __DIR__ . '/demo-config.php';
 
 // Cabezote de presentación
-$Test->start(
-	'miFrame\\Commons',
-	'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.'
-);
+$Test->title = 'miFrame\\Commons';
+$Test->description = 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.';
+$Test->start();
 
 $base = dirname($_SERVER['SCRIPT_NAME']) . '/';
 

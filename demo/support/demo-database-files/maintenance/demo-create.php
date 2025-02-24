@@ -16,10 +16,9 @@ if (array_key_exists('driver', $_GET)) {
 }
 
 // Apertura de la página demo
-$Test->start(
-	'Mantenimiento / Base de datos para soporte',
-	'Crea y/o reconstruye la base de datos usada para las demos, asociadas al driver <b>' . ucfirst($motor) . '</b>.'
-);
+$Test->title = 'Mantenimiento / Base de datos para soporte';
+$Test->description = 'Crea y/o reconstruye la base de datos usada para las demos, asociadas al driver <b>' . ucfirst($motor) . '</b>.';
+$Test->start();
 
 // Valida permisos de creación
 $Test->evalToken('token', 'create-db-token', $motor);

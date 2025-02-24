@@ -23,7 +23,6 @@ A la fecha (agosto/2024) la clase ServerData proporciona los siguientes métodos
 * `browser` -- Provee información relativa al navegador Web (browser) usado por el usuario.
 * `checkPoint` -- Tiempo transcurrido desde la anterior invocación a este método.
 * `client` -- Dirección IP del cliente remoto.
-* `createTempSubdir` -- Crea el subdirectorio indicado dentro del directorio temporal.
 * `documentRoot` -- Ruta física del directorio Web.
 * `documentRootSpace` -- Espacio libre en el disco donde se encuentra el directorio Web.
 * `executionTime` -- Tiempo transcurrido desde el inicio del script (microsegundos).
@@ -49,4 +48,5 @@ A la fecha (agosto/2024) la clase ServerData proporciona los siguientes métodos
 * `startAt` -- Tiempo en que inicia la ejecución del script.
 * `tempDir` -- Asigna o retorna valor del directorio temporal a usar.
 * `tempDirSpace` -- Espacio libre en el disco donde se encuentra el directorio temporal.
+* `tempSubdir` -- Crea el subdirectorio indicado dentro del directorio temporal.
 * `useHTTPSecure` -- Indica si la consulta actual se hizo con protocolo HTTPS.

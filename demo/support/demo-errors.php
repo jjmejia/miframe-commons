@@ -12,10 +12,10 @@
 include_once __DIR__ . '/../demo-config.php';
 
 // Apertura de la página demo
-$Test->start(
-	'Manejo de errores',
-	'Esta demo ilustra el uso de la clase <code>ErrorHandler</code> usada para el manejo de errores en PHP.'
-);
+$Test->title = 'Manejo de errores';
+$Test->description = 'Esta demo ilustra el uso de la clase <code>ErrorHandler</code> usada para el manejo de errores en PHP.';
+$Test->useMiFrameErrorHandler = false;
+$Test->start();
 
 // Asocia clase a una variable para agilizar su uso.
 $view = miframe_render();
@@ -91,14 +91,11 @@ $dato1 = 'Esta es la variable *dato1* de la vista ' . strtoupper($post_view);
 $dato2 = time();
 
 // Visualiza comando
-$Test->htmlPre(
+$Test->htmlCode(
 	"miframe_render()->layout->values(['title' => '{$views_list[$post_view]}', 'uid' => uniqid()]);" .
 	PHP_EOL .
-	str_replace('$view', 'miframe_render()', $Test->pasteLines()) .
-	// "\$errors->watch();" . PHP_EOL .
+	$Test->pasteLines(['$view' => 'miframe_render()', '    ' => '']) .
 	"echo miframe_view('{$post_view}', compact('dato1', 'dato2', 'errors', 'Test'));");
-
-// throw new Exception('Exception manualmente generada', 300);
 
 // Para mostrar en pantalla
 echo $view->view($post_view, compact('dato1', 'dato2', 'errors', 'Test'));

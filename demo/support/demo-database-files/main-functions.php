@@ -21,9 +21,6 @@ $view = miframe_render();
 $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'views');
 $view->layout->config('layout', 'viewContent');
 
-// Hablita personalización de errores
-miframe_errors(true);
-
 $debug = false;
 // Habilita modo developer (habilita dumps y uso del modo Debug)
 if ($Test->choice('debugMode', 'Habilitar modo Debug', 'Ocultar Debug')) {
