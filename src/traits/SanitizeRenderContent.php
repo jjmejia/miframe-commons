@@ -7,7 +7,7 @@
 
 namespace miFrame\Commons\Traits;
 
-trait RemoveDocumentRootContent {
+trait SanitizeRenderContent {
 
 	/**
 	 * @var bool $hideDocumentRoot Indica si se oculta el DOCUMENT_ROOT en los mensajes de error.
@@ -20,14 +20,15 @@ trait RemoveDocumentRootContent {
 	 *
 	 * @param string $content Contenido a filtrar (valor por referencia).
 	 */
-	public function removeDocumentRoot(string &$content)
+	public function sanitizeDocumentRoot(string &$content)
 	{
 		if (
 			$this->hideDocumentRoot &&
 			$content !== '' &&
 			!empty($_SERVER['DOCUMENT_ROOT'])
 			) {
-			$content = str_replace(
+			$content = str_ireplace(
+				// Busca document Root con separador y sin separador (por precaución)
 				[$_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR, $_SERVER['DOCUMENT_ROOT']],
 				['', '[..]'],
 				$content

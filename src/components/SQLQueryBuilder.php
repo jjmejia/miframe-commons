@@ -4,7 +4,7 @@
  * Contruye queries SQL.
  */
 
-namespace miFrame\Commons\Support;
+namespace miFrame\Commons\Components;
 use miFrame\Commons\Interfaces\SQLConsultorInterface;
 
 class SQLQueryBuilder {
@@ -161,7 +161,10 @@ class SQLQueryBuilder {
 	{
 		if (!$this->usingJoin) {
 			// No hay una referencia join previa
-			trigger_error('No se ha especificado ningún JOIN antes de invocar el método on()', E_USER_WARNING);
+			trigger_error(
+				'No se ha especificado ningún JOIN antes de invocar el método on()',
+				E_USER_WARNING
+			);
 		}
 		else {
 			// Para algunos casos, como los inner, valida "on"
@@ -268,7 +271,10 @@ class SQLQueryBuilder {
 
 		// Si llega a este punto es porque no ha encontrado un predecesor
 		// valido (on, where, etc.)
-		trigger_error("No se ha especificado un predecesor valido para el uso del método {$conector}()", E_USER_WARNING);
+		trigger_error(
+			"No se ha especificado un predecesor valido para el uso del método {$conector}()",
+			E_USER_WARNING
+		);
 
 		return $this;
 	}
@@ -281,7 +287,10 @@ class SQLQueryBuilder {
 			if (is_array($name)) {
 				if (!isset($name[0])) {
 					// Ignora?
-					trigger_error('El ordenamiento SQL requiere como mínimo el nombre de columna', E_USER_WARNING);
+					trigger_error(
+						'El ordenamiento SQL requiere como mínimo el nombre de columna',
+						E_USER_WARNING
+					);
 					continue;
 				}
 				if (isset($name[1])) {
@@ -289,7 +298,10 @@ class SQLQueryBuilder {
 					$name[1] = strtolower(trim($name[1]));
 					if ($name[1] !== '' && $name[1] !== 'asc' && $name[1] !== 'desc') {
 						// Ignora
-						trigger_error("El tipo de ordenamiento SQL debe ser \"asc\" o \"desc\", valor \"{$name[1]}\" encontrado", E_USER_WARNING);
+						trigger_error(
+							"El tipo de ordenamiento SQL debe ser \"asc\" o \"desc\", valor \"{$name[1]}\" encontrado",
+							E_USER_WARNING
+						);
 						continue;
 					}
 				}

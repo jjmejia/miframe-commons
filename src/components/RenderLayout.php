@@ -7,7 +7,7 @@
  * @since Enero 2025
  */
 
-namespace miFrame\Commons\Support;
+namespace miFrame\Commons\Components;
 
 class RenderLayout
 {

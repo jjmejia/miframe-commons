@@ -7,7 +7,7 @@
  * @since Diciembre 2024
  */
 
-namespace miFrame\Commons\Support;
+namespace miFrame\Commons\Components;
 
 class ErrorData {
 	/**
@@ -225,11 +225,11 @@ class ErrorData {
 			$source .= " línea {$this->line}";
 		}
 		// Mensaje HTML alternativo (al quitar los tags debe ser legible)
-		return "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\">" .
-			"<h3>{$this->typeName}:</h3> <p>" .
+		return "<div style=\"background: #fadbd8; padding: 30px; margin: 5px 0\">" .
+			"<h3 style=\"margin: 0\">{$this->typeName}:</h3> <div style=\"margin-top: 15px\">" .
 			nl2br($message) .
 			$source .
-			"</p></div>";
+			"</div></div>";
 	}
 
 	/**
