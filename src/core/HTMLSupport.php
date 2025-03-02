@@ -65,7 +65,7 @@ class HTMLSupport extends Singleton
 				$server = miframe_server();
 				$path = $server->removeDocumentRoot($filename);
 				if ($path !== false) {
-					// Pudo obtener la URL
+					// El archivo está dentro del document root, puede accderse por web.
 					// Adiciona a listado de publicados el path real
 					// para prevenir lo duplique si lo invoca como no-inline
 					// o no continuar si ya fue publicado como inline.
@@ -74,7 +74,7 @@ class HTMLSupport extends Singleton
 					if (!$this->isPublished($key)) {
 						$this->published[$key] = true;
 						// Cambia a formato de URL remoto
-						$filename = '/' . $server->purgeURLPath($path);
+						$filename = $server->purgeURLPath($path);
 						// Modifica el calificador
 						$src = 'remote';
 					}
@@ -268,7 +268,7 @@ class HTMLSupport extends Singleton
 			$text = PHP_EOL . $text;
 		}
 		if ($code !== '') {
-			$code = '<style>' . PHP_EOL . $code . '</style>' . PHP_EOL;
+			$code = '<style>' . PHP_EOL . rtrim($code) . PHP_EOL . '</style>' . PHP_EOL;
 			if ($text === '') {
 				$code = PHP_EOL . $code;
 			}
@@ -339,7 +339,7 @@ class HTMLSupport extends Singleton
 	/**
 	 * Genera código con los estilos CSS contenidos en el archivo indicado, si no se ha publicado previamente.
 	 *
-	 * @param string $filename 	Ruta de archivo o URL.
+	 * @param string $filename 	Ruta de archivo.
 	 * @param bool   $inline 	TRUE retorna los estilos, FALSE genera tag link al archivo CSS indicado.
 	 * @return string 			HTML con estilos a usar.
 	 */
