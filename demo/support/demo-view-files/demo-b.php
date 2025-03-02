@@ -1,20 +1,6 @@
 
 <div>
 	<p><b>Fecha:</b> <span><?= date('Y/m/d H:i:s') ?></span></p>
-	<p><b>Variables disponibles:</b></p>
-	<?php
-
-	// Muestra variables recibidas, elimina referencias a $Test
-	$arr = get_defined_vars();
-	unset($arr['Test']);
-	unset($arr['view_args']['Test']);
-	if (isset($arr['errors'])) {
-		unset($arr['errors']);
-		unset($arr['view_args']['errors']);
-	}
-	$Test->dump($arr, true);
-
-	?>
 	<?php
 	if (!miframe_render()->inDeveloperMode()) { ?>
 		<p><i>

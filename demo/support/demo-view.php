@@ -13,7 +13,6 @@ include_once __DIR__ . '/../demo-config.php';
 // Apertura de la página demo
 $Test->title = 'miframe_render() y miframe_view()';
 $Test->description = 'Demos para ilustrar uso del utilitario <code>miframe_render()</code> y <code>miframe_view()</code> de la librería <code>miFrame\\Commons</code>, para visualización de páginas en pantalla.';
-$Test->useMiFrameErrorHandler = false;
 $Test->start();
 
 // Asocia clase a una variable para agilizar su uso.
@@ -23,8 +22,6 @@ $view = miframe_render();
 if ($Test->choice('developerMode', 'Modo Desarrollo', 'Habilitar modo Producción')) {
 	$Test->copyNextLines();
 	$view->developerOn();
-	// Habilita errores personalizados
-	miframe_errors();
 }
 
 // Habilita modo Debug (identifica cada view usado en pantalla)
@@ -34,14 +31,15 @@ if ($Test->choice('debug', 'Modo Debug ', 'Remover modo Debug')) {
 }
 
 // Directorio donde ubicar el layout y las vistas
+$Test->copyNextLines();
 $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'demo-view-files');
 
 // Lista vistas disponibles
 $views_list = [
-	'a' => 'Vista regular',
+	'demo-a' => 'Vista regular',
 	// 'b' => 'Vista con errores',
-	'c' => 'Invocando view() dentro de otro view()',
-	'd' => 'Multiples views()',
+	'demo-c' => 'Invocando view() dentro de otro view()',
+	'multiples' => 'Multiples vistas',
 	'novista' => 'Vista no existente'
 ];
 
@@ -57,7 +55,7 @@ if (count($views_list) > 1) {
 // Usar layout personalizado
 if (!$Test->choice('uselayoutdef', 'Usar Layout por defecto', 'Usar Layout personalizado')) {
 	$Test->copyNextLines();
-	$view->layout->config('layout', 'content_view');
+	$view->layout->set('demo-layout');
 }
 // Remueve layout personalizado o por defecto
 if ($Test->choice('nolayout', 'Remover Layout', 'Usar Layout personalizado')) {
@@ -69,7 +67,11 @@ if ($Test->choice('nolayout', 'Remover Layout', 'Usar Layout personalizado')) {
 $post_view = $Test->getParam('view', $views_list);
 
 // Valores a usar en layout
+$Test->copyNextLines();
 $view->layout->values(['title' => $views_list[$post_view], 'uid' => uniqid()]);
+// Adiciona objeto $Test para manejo en la vista demo (se hace aparte para no visualizarlo en pantalla,
+// para efectos de que la vista no la visualiza)
+$view->layout->values(['Test' => $Test]);
 
 // Visualiza opciones
 echo '<p><b>Opciones:</b> ' . $Test->renderChoices('', true) . '</p>';
@@ -78,43 +80,35 @@ echo '<p><b>Opciones:</b> ' . $Test->renderChoices('', true) . '</p>';
 $dato1 = 'Esta es la variable *dato1* de la vista ' . strtoupper($post_view);
 $dato2 = time();
 
-if ($post_view !== 'd') {
-	// Visualiza comando
-	$Test->htmlCode(
-		"miframe_render()->layout->values(['title' => '{$views_list[$post_view]}', 'uid' => uniqid()]);" .
-		PHP_EOL .
-		$Test->pasteLines(['$view' => 'miframe_render()']) .
-		"echo miframe_view('{$post_view}', compact('dato1', 'dato2'));");
+// Comando previo
+$Test->htmlPasteLines([
+	'$views_list[$post_view]' => "'{$views_list[$post_view]}'",
+	'$view' => 'miframe_render()'
+]);
 
+if ($post_view !== 'multiples') {
 	// Para mostrar en pantalla
-	echo miframe_view($post_view, compact('dato1', 'dato2', 'Test'));
-
+	$Test->showNextLines(1, ['$post_view' => "'{$post_view}'"]);
+	echo miframe_view($post_view, compact('dato1', 'dato2'));
 } else {
-
-	// Comando previo
-	$Test->htmlCode(
-		"miframe_render()->layout->values(['uid' => uniqid()]);" .
-		PHP_EOL .
-		$Test->pasteLines(['$view' => 'miframe_render()'])
-	);
 	// Multiples views(replica la vista "a" varias veces)
-	$dato1_pre = $dato1;
-	for ($p = 1; $p <=3; $p++) {
-		// Redefine valores
-		$ptitle = 'Vista regular #' . $p;
-		$view->layout->values(['title' => $ptitle]);
-		// Visualiza comando
-		$Test->htmlCode(
-			"miframe_render()->layout->values(['title' => '{$ptitle}']);" .
-			PHP_EOL .
-			"echo miframe_view('a', compact('dato1', 'dato2'));"
-		);
-		// Habilita layout (se inhabilita luego de su primer uso)
+	$Test->showNextLines(4);
+	echo miframe_view('demo-m', ['index' => 1]);
+	echo miframe_view('demo-m', ['index' => 2]);
+	$view->layout->reset();
+	echo miframe_view('demo-m', ['index' => 3]);
+
+
+	/*for ($num_view = 1; $num_view <=3; $num_view++) {
+		// Redefine valores para el layout
+		$view->layout->values(['title' => "Vista regular #{$num_view}"]);
+		// Habilita visualización de layout (se inhabilita luego de su primer uso)
 		$view->layout->reset();
-		// Para mostrar en pantalla
-		$dato1 = $dato1_pre . ' [En copia #' . strtoupper($p) . ']';
-		echo miframe_view('a', compact('dato1', 'dato2', 'Test'));
-	}
+		// Actualiza valores para $dato1
+		$dato1 = "Esta es la variable *dato1* de la copia #{$num_view}";
+		// Visualiza cada vista con los nuevos valores
+		echo miframe_view('a', compact('dato1', 'dato2'));
+	}*/
 }
 
 

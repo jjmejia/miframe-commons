@@ -7,7 +7,7 @@
 <?php } ?>
 <div class="view-container">
 	<h1><?= $title ?></h1>
-	<?= $content_view ?>
+	<?= miframe_content_view() ?>
 	<hr>
 	<p>Pie de página contenido en el Layout #<?= $uid ?>
 </div>

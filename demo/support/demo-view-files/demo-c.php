@@ -6,5 +6,5 @@
 </style>
 <div class="local">
 	<p class="hero">Invocando <code>miframe_view('a', ...)</code> para validar comportamiento.</p>
-	<?= miframe_view('a', compact('dato1', 'dato2', 'Test')) ?>
+	<?= miframe_view('demo-a', compact('dato1', 'dato2')) ?>
 </div>

@@ -56,14 +56,14 @@ $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'demo-view-files');
 
 // Lista vistas disponibles
 $views_list = [
-	'b' => 'Vista con errores',
-	'e' => 'Otros ejemplos de uso',
+	'demo-b' => 'Vista con errores',
+	'demo-e' => 'Otros ejemplos de uso',
 ];
 // Adiciona la opción "Vista no existente" solo para Localhost,
 // ya que al remover manejo personalizado de errores no existe
 // forma de prevenir que muestra paths completos en entornos no seguros.
 if (miframe_server()->isLocalhost()) {
-	$views_list['x'] = 'PHP Fatal Error';
+	$views_list['demo-x'] = 'PHP Fatal Error';
 }
 
 // Crea enlaces para selección de las vistas
@@ -78,7 +78,7 @@ if (count($views_list) > 1) {
 $post_view = $Test->getParam('view', $views_list);
 
 // Adiciona layout a la vista
-$view->layout->config('layout', 'content_view');
+$view->layout->set('demo-layout');
 
 // Valores a usar en layout
 $view->layout->values(['title' => $views_list[$post_view], 'uid' => uniqid()]);
