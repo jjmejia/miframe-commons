@@ -22,14 +22,18 @@ trait SanitizeRenderContent {
 	 */
 	public function sanitizeDocumentRoot(string &$content)
 	{
+		// Apache no usa "\" cuando opera en Windows, sino "/" en algunas variables globales
+		// (por ej. $_SERVER['DOCUMENT_ROOT']) por lo que pueden diferir en sintaxis.
+		// Por eso no usa directamente $_SERVER['DOCUMENT_ROOT'] sino el valor arrojado por
+		// miframe_server() que lo estandariza al separador correcto ("\" para Windows).
+		$document_root = miframe_server()->documentRoot();
 		if (
 			$this->hideDocumentRoot &&
-			$content !== '' &&
-			!empty($_SERVER['DOCUMENT_ROOT'])
+			$content !== ''
 			) {
-			$content = str_ireplace(
+			$content = str_replace(
 				// Busca document Root con separador y sin separador (por precaución)
-				[$_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR, $_SERVER['DOCUMENT_ROOT']],
+				[$document_root, substr($document_root, 0, -1)],
 				['', '[..]'],
 				$content
 			);
