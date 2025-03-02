@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Demo para pruebas de la clase xxx.
+ * Demo para pruebas de la clase SQLConsultor.
  *
  * @author John Mejía
  * @since Diciembre 2024

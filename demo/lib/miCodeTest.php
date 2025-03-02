@@ -211,7 +211,51 @@ class miCodeTest
 	 */
 	public function htmlCode(string $text)
 	{
-		echo PHP_EOL . '<pre class="code">' . trim($text) . '</pre>' . PHP_EOL;
+		if (trim($text) == '') {
+			return;
+		}
+
+		// Colores a usar con highlight_string()
+		// https://www.php.net/manual/es/misc.configuration.php#ini.syntax-highlighting
+		// ini_set('highlight.bg', '');
+		ini_set('highlight.comment', '#007400');
+		ini_set('highlight.default', '#242424');
+		// ini_set('highlight.html', '');
+		ini_set('highlight.keyword', '#aa0d91');
+		ini_set('highlight.string', '#c41a16');
+
+		// Estandariza codigo
+		$lines = explode("\n", $text);
+		// Remueve cualqiuer primer linea en blanco
+		while (trim($lines[0]) === '') {
+			array_shift($lines);
+		}
+		// Valida si quedó algo qué validar
+		if (!is_array($lines) || count($lines) <= 0) {
+			return;
+		}
+		// Si la primer linea contiene espacios, los remueve de las siguientes (si aplica)
+		$count_remove = 0;
+		while (trim(substr($lines[0], $count_remove, 1)) === '') {
+			$count_remove ++;
+		}
+		// Limpia cada línea
+		foreach ($lines as &$eachline) {
+			$eachline = rtrim($eachline);
+			if ($count_remove > 0) {
+				if (trim(substr($eachline, 0, $count_remove)) === '') {
+					$eachline = substr($eachline, $count_remove);
+				}
+			}
+		}
+		// Elimina lineas en blanco
+		$lines = array_filter($lines);
+		// Reconstruye y colorea (highlight_string() requiere el tah de inicio PHP)
+		$text = highlight_string('<?php '. implode(PHP_EOL, $lines), true);
+
+		echo PHP_EOL .
+			str_replace(['&lt;?php ', '<pre>'], ['', '<pre class="code">'], $text) .
+			PHP_EOL;
 	}
 
 	public function htmlPre(string $text)
