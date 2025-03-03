@@ -31,6 +31,8 @@ if ($server->isLocalhost()) {
 
 echo "<h2>miframe_server()</h2>";
 
+timecheck('INICIO');
+
 // Arreglo de muestras
 $data = array(
 	'miframe_server()->startAt()' => $server->startAt(),
@@ -140,6 +142,8 @@ $Test->dump($matches, 'miframe_autoload()->matches()');
 echo "<p>Y estos son los <i>namespaces</i> registrados:</p>";
 
 $Test->dump($namespaces, 'miframe_autoload()->namespaces()');
+
+timecheck('FIN');
 
 // Cierre de la página
 $Test->end();

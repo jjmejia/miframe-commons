@@ -49,6 +49,7 @@ if (!$Test->choice('userview', 'Remover vista de error personalizada', 'usar vis
 if (!$Test->choice('nowatch', 'Deshabilitar personalización de errores', 'No watch')) {
 	$Test->copyNextLines();
 	$errors->watch();
+	$view->errorHandler($errors);
 }
 
 // Directorio donde ubicar el layout y las vistas
@@ -58,6 +59,7 @@ $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'demo-view-files');
 $views_list = [
 	'demo-b' => 'Vista con errores',
 	'demo-e' => 'Otros ejemplos de uso',
+	'novista' => 'Vista no existente'
 ];
 // Adiciona la opción "Vista no existente" solo para Localhost,
 // ya que al remover manejo personalizado de errores no existe
@@ -78,10 +80,10 @@ if (count($views_list) > 1) {
 $post_view = $Test->getParam('view', $views_list);
 
 // Adiciona layout a la vista
-$view->layout->set('demo-layout');
+$view->layout('demo-layout');
 
 // Valores a usar en layout
-$view->layout->values(['title' => $views_list[$post_view], 'uid' => uniqid()]);
+$view->globals(['title' => $views_list[$post_view], 'uid' => uniqid(), 'Test' => $Test]);
 
 // Visualiza opciones
 echo '<p><b>Opciones:</b> ' . $Test->renderChoices('', true) . '</p>';
@@ -90,15 +92,9 @@ echo '<p><b>Opciones:</b> ' . $Test->renderChoices('', true) . '</p>';
 $dato1 = 'Esta es la variable *dato1* de la vista ' . strtoupper($post_view);
 $dato2 = time();
 
-// Visualiza comando
-$Test->htmlCode(
-	"miframe_render()->layout->values(['title' => '{$views_list[$post_view]}', 'uid' => uniqid()]);" .
-	PHP_EOL .
-	$Test->pasteLines(['$view' => 'miframe_render()', '    ' => '']) .
-	"echo miframe_view('{$post_view}', compact('dato1', 'dato2', 'errors', 'Test'));");
-
 // Para mostrar en pantalla
-echo $view->view($post_view, compact('dato1', 'dato2', 'errors', 'Test'));
+$Test->showNextLines(1, ['$view' => 'miframe_render()', '$post_view' => "'{$post_view}'"]);
+echo $view->view($post_view, compact('dato1', 'dato2', 'errors'));
 
 // Cierre de la página
 $Test->end();

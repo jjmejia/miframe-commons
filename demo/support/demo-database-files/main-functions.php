@@ -19,7 +19,6 @@ include_once __DIR__ . '/view-functions.php';
  */
 $view = miframe_render();
 $view->location(__DIR__ . DIRECTORY_SEPARATOR . 'views');
-$view->layout->config('layout', 'viewContent');
 
 $debug = false;
 // Habilita modo developer (habilita dumps y uso del modo Debug)

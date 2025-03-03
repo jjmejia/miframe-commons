@@ -15,4 +15,4 @@
 	}
 </style>
 
-<?= $viewContent ?>
+<?= $RenderViewContent ?>

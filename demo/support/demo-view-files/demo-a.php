@@ -1,12 +1,18 @@
 <div>
-	<p><b>Variables disponibles:</b></p>
+	<p>
+		Esta es un script PHP usado para presentación de información al usuario
+		y/o solicitar datos a través de formularios HTML.
+	</p>
+	<p><b>Variables disponibles en este script:</b></p>
 	<?php
 
 	// Muestra variables recibidas, elimina referencias a $Test
 	$arr = get_defined_vars();
-	unset($arr['Test']);
-	unset($arr['layout_args']['Test']);
-	$Test->dump($arr, true);
+	if (isset($arr['Test'])) {
+		unset($arr['Test']);
+		unset($arr['view_args']['Test']);
+		$Test->dump($arr, true);
+	}
 
 	?>
 	<?php if (!miframe_render()->inDeveloperMode()) { ?>
