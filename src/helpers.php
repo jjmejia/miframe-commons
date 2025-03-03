@@ -92,6 +92,8 @@ function miframe_errors(bool $use_extended_render = false)
 		$errors->setRenderer($render);
 	}
 	$errors->watch();
+	// Programa miframe_view() para usar este registro de error
+	miframe_render()->errorHandler($errors);
 
 	return $errors;
 }

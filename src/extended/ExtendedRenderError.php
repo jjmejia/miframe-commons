@@ -12,7 +12,7 @@
 namespace miFrame\Commons\Extended;
 
 use miFrame\Commons\Interfaces\RenderErrorInterface;
-use miFrame\Commons\Support\ErrorData;
+use miFrame\Commons\Components\ErrorData;
 
 class ExtendedRenderError implements RenderErrorInterface
 {
@@ -59,7 +59,7 @@ class ExtendedRenderError implements RenderErrorInterface
 	 *
 	 * @return bool Retorna FALSE si el error ya ha sido reportado.
 	 */
-	public function show(ErrorData $error): string|false
+	public function show(ErrorData $error, string $html_default): string
 	{
 		$content = '';
 
@@ -134,7 +134,7 @@ class ExtendedRenderError implements RenderErrorInterface
 
 			// Ejecuta vista solo si no está en el bloque de cierre(?)
 			// Retorna FALSE si ocurre algún error.
-			$content = $render->view('show-error', $data_error);
+			$content = $render->capture('show-error', $data_error, $html_default);
 			// Valida errores previamente renderizados
 			$this->evalCachedErrors($content, $error->endScript);
 			// Adiciona estilos previamente guardados

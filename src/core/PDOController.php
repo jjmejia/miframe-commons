@@ -13,6 +13,7 @@
 
 namespace miFrame\Commons\Core;
 
+use Exception;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -89,6 +90,9 @@ class PDOController
 	 */
 	private int $rowsFetched = 0;
 
+	private string $traceFile = '';
+	private int $traceLine = 0;
+
 	/**
 	 * @var PDO|null $pdo Instancia de PDO.
 	 */
@@ -105,9 +109,8 @@ class PDOController
 			$this->driverName == '' ||
 			!in_array($this->driverName, PDO::getAvailableDrivers())
 		) {
-			trigger_error(
-				"El driver indicado no es soportado para PDO ({$driver})",
-				E_USER_ERROR
+			throw new Exception(
+				"El driver indicado no es soportado para PDO ({$driver})"
 			);
 		}
 	}
@@ -133,7 +136,7 @@ class PDOController
 	public function debug(bool $value)
 	{
 		$this->debug = $value;
-		if ($value) {
+		if ($this->debug) {
 			// Habilita reporte de todos los errores
 			error_reporting(E_ALL);
 			// Habilita salida a pantalla de mensajes de error
@@ -254,9 +257,11 @@ class PDOController
 						}
 					}
 				}
-				$this->rowsFetched = count($data);
-				// Calcula tiempo que tarda en recuperar los datos
-				$this->durationFetch = microtime(true) - $time;
+				if ($this->debug) {
+					$this->rowsFetched = count($data);
+					// Calcula tiempo que tarda en recuperar los datos
+					$this->durationFetch = microtime(true) - $time;
+				}
 			} catch (PDOException $ex) {
 				// Aviso de error capturable
 				$this->lastError = 'No pudo recuperar filas de datos: ' . $ex->getMessage();
@@ -312,7 +317,9 @@ class PDOController
 			}
 
 			// Calcula tiempo que tarda en ejecutar la consulta
-			$this->durationExec = microtime(true) - $this->timeQuery;
+			if ($this->debug) {
+				$this->durationExec = microtime(true) - $this->timeQuery;
+			}
 		} catch (PDOException $ex) {
 			// Aviso de error capturable
 			$this->lastError = 'No pudo realizar la consulta SQL solicitada: ' . $ex->getMessage();
@@ -339,6 +346,23 @@ class PDOController
 	 */
 	private function startStats()
 	{
+		if (!$this->debug) { return; }
+
+		// Busca archivo y linea desde donde se invoca la acción
+		$this->traceFile = '';
+		$this->traceLine = 0;
+		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		foreach ($trace as $data) {
+			if ($data['file'] === __FILE__) {
+				// Ignora los trace de este mismo archivo
+				continue;
+			}
+			$this->traceFile = $data['file'];
+			$this->traceLine = $data['line'];
+			break;
+		}
+
+		// Inicializa tiempos
 		$this->durationExec = 0;
 		$this->durationFetch = 0;
 		$this->timeQuery = microtime(true);
@@ -369,8 +393,12 @@ class PDOController
 	 */
 	public function stats(): array
 	{
+		if (!$this->debug) { return []; }
+
 		return [
 			// 'query' => $this->lastQuery,
+			'file' => $this->traceFile,
+			'line' => $this->traceLine,
 			'startDate' => date('Y/m/d H:i:s', intval($this->timeQuery)),
 			'start' => $this->timeQuery,
 			'durationExec' => $this->durationExec,

@@ -58,6 +58,9 @@ class ServerData extends Singleton
 	 */
 	private float $check_time = 0;
 
+	/**
+	 * @var float $start_time Hora de arranque del script (real o estimada).
+	 */
 	private float $start_time = 0;
 
 	/**
@@ -70,10 +73,19 @@ class ServerData extends Singleton
 	 */
 	private array $cache_path = [];
 
+	/**
+	 * @var string $current_script Path completo del script en ejecución.
+	 */
 	private string $current_script = '';
 
+	/**
+	 * @var string $document_root Path completo del directorio web por defecto.
+	 */
 	private string $document_root = '';
 
+	/**
+	 * @var bool $forceHttpsForHost Indica si se debe forzar el uso de HTTPS al invocar el método host().
+	 */
 	public bool $forceHttpsForHost = false;
 
 	/**
