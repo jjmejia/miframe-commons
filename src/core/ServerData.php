@@ -15,10 +15,8 @@
 
 namespace miFrame\Commons\Core;
 
-// use Error;
 use \miFrame\Commons\Patterns\Singleton;
 use \miFrame\Commons\Traits\GetLocalData;
-// use \miFrame\Commons\Core\GetLocalData;
 
 class ServerData extends Singleton
 {
@@ -30,13 +28,16 @@ class ServerData extends Singleton
 	 */
 	use GetLocalData;
 
-	private $is_web = false;
+	/**
+	 * @var bool $is_web 	TRUE cuando la aplicación se ejecuta por Web. FALSE se ejecuta por consola (cli).
+	 */
+	private bool $is_web = false;
 
 	/**
-	 * @var string $client_ip	Registra localmente la dirección IP del cliente Web.
+	 * @var string $ip_client	Registra localmente la dirección IP del cliente Web.
 	 * 							Para consultas de Consola registra "cli".
 	 */
-	private string $client_ip = '';
+	private string $ip_client = '';
 
 	/**
 	 * @var string $path_info	Almacena segmento del path tomado de la URL relativo al
@@ -57,6 +58,8 @@ class ServerData extends Singleton
 	 */
 	private float $check_time = 0;
 
+	private float $start_time = 0;
+
 	/**
 	 * @var array $dir_white_list Listado de directorios permitidos para crear directorios.
 	 */
@@ -67,15 +70,32 @@ class ServerData extends Singleton
 	 */
 	private array $cache_path = [];
 
+	private string $current_script = '';
+
+	private string $document_root = '';
+
+	public bool $forceHttpsForHost = false;
+
 	/**
 	 * Inicialización de la clase Singleton.
 	 */
 	protected function singletonStart()
 	{
+		// Hora de apertura inicial
+		// REQUEST_TIME_FLOAT:
+		// El tiempo de inicio de atención a la consulta del usuario, en microsegundos.
+		$this->start_time = $this->get('REQUEST_TIME_FLOAT', microtime(true));
+		$this->check_time = $this->start_time;
 		// REMOTE_ADDR:
 		// La dirección IP desde donde el usuario está viendo la página actual.
 		// Si se consulta desde Consola, no es asignada por el servidor.
 		$this->is_web = !empty($this->get('REMOTE_ADDR', false));
+		// Script en ejecución
+		$this->current_script = realpath($this->get('SCRIPT_FILENAME'));
+		// Directorio document-root
+		$this->document_root = realpath($this->get('DOCUMENT_ROOT'));
+		// Autodetecta directorio temporal
+		$this->autodetectTempDir();
 	}
 
 	/**
@@ -110,12 +130,12 @@ class ServerData extends Singleton
 	 *
 	 * @return string Dirección IP del cliente remoto.
 	 */
-	public function client(): string
+	public function ipClient(): string
 	{
-		if ($this->client_ip === '') {
+		if ($this->ip_client === '') {
 			// Recupera dirección IP
 			if (!$this->isWeb()) {
-				$this->client_ip = 'cli';
+				$this->ip_client = 'cli';
 			} else {
 				// HTTP_X_FORWARDED_FOR:
 				// Usado en vez de REMOTE_ADDR cuando se consulta detrás de un proxy server.
@@ -126,25 +146,25 @@ class ServerData extends Singleton
 				$proxys = $this->get('HTTP_X_FORWARDED_FOR');
 				if (!empty($proxys)) {
 					$proxy_list = explode(",", $proxys);
-					$this->client_ip = trim(end($proxy_list));
+					$this->ip_client = trim(end($proxy_list));
 				} else {
 					// REMOTE_ADDR:
 					// La dirección IP desde donde el usuario está viendo la página actual.
-					$this->client_ip = $this->get('REMOTE_ADDR');
-					if (empty($this->client_ip)) {
+					$this->ip_client = $this->get('REMOTE_ADDR');
+					if (empty($this->ip_client)) {
 						// HTTP_CLIENT_IP:
 						// Opcional para algunos servidores Web en remplazo de REMOTE_ADDR.
-						$this->client_ip = $this->get('HTTP_CLIENT_IP');
+						$this->ip_client = $this->get('HTTP_CLIENT_IP');
 					}
 				}
 
 				// En caso que retorne un nombre (como "localhost") se asegura esté en
 				// minusculas para facilitar comparaciones.
-				$this->client_ip = strtolower($this->client_ip);
+				$this->ip_client = strtolower($this->ip_client);
 			}
 		}
 
-		return $this->client_ip;
+		return $this->ip_client;
 	}
 
 	/**
@@ -154,7 +174,7 @@ class ServerData extends Singleton
 	 */
 	public function isLocalhost(): bool
 	{
-		$client_ip = $this->client();
+		$client_ip = $this->ipClient();
 		return (!$this->isWeb() ||
 			// IPv4, IPv6, Associative name, Consola
 			in_array($client_ip, ['127.0.0.1', '::1', 'localhost', 'cli']) ||
@@ -188,7 +208,7 @@ class ServerData extends Singleton
 	 */
 	public function domain(): string
 	{
-		return $this->get('SERVER_NAME', 'nn');
+		return $this->get('SERVER_NAME', 'unknown');
 	}
 
 	/**
@@ -210,14 +230,14 @@ class ServerData extends Singleton
 	 * - https://stackoverflow.com/questions/7431313/php-getting-full-server-name-including-port-number-and-protocol
 	 * - https://stackoverflow.com/questions/5800927/how-to-identify-server-ip-address-in-php
 	 *
-	 * @param bool $force_https	TRUE ignora el valor actual del scheme y retorna siempre "https" (a usar por Ej. para
-	 * 							redirigir una consulta no segura con "https" a una segura que use "https").
+	 * @param string $path 		Path a completar con el esquema y dominio.
+	 * @param array $args 		Variables a incluir en la URL.
 	 * @return string 			URL.
 	 */
-	public function host(bool $force_https = false): string
+	public function host(string $path = '', array $args = []): string
 	{
 		$scheme = 'http://';
-		if ($force_https || $this->useHTTPSecure()) {
+		if ($this->forceHttpsForHost || $this->useHTTPSecure()) {
 			$scheme = 'https://';
 		}
 
@@ -235,7 +255,7 @@ class ServerData extends Singleton
 			$port = '';
 		}
 
-		return $scheme . $domain_name . $port . '/';
+		return $scheme . $domain_name . $port . $this->url($path, $args);
 	}
 
 	/**
@@ -247,32 +267,27 @@ class ServerData extends Singleton
 	 * 							redirigir una consulta no segura con "https" a una segura que use "https").
 	 * @return string 			URL.
 	 */
-	public function url(string $path, array $args = [], bool $force_https = false): string
+	public function url(string $path, array $args = []): string
 	{
-		$path = trim($path);
-		// Remueve primer separador en el path
-		if ($path !== '' && $path[0] === '/') {
-			$path = substr($path, 1);
-		}
-		if ($path == '') {
-			// No retorna valor alguno
-			return $path;
-		}
+		$params = '';
+		$path = '/' . trim($path);
+
 		// Valida si el path contiene parámetros
+		$params = '';
+		$pos = strpos($path, '?');
+		if ($pos !== false) {
+			parse_str(substr($path, $pos + 1), $args_local);
+			$path = substr($path, 0, $pos);
+			// Fusiona los valores en $args (da prioridad a los valores en $args)
+			$args = array_merge($args_local, $args);
+		}
 		// (si no  hay valor alguno en $args deja $path sin modificar)
 		if (count($args) > 0) {
-			$pos = strpos($path, '?');
-			if ($pos !== false) {
-				parse_str(substr($path, $pos + 1), $args_local);
-				$path = substr($path, 0, $pos);
-				// Fusiona los valores en $args (da prioridad a los valores en $args)
-				$args = array_merge($args_local, $args);
-			}
 			// Conecta
-			$path .= '?' . http_build_query($args);
+			$params = '?' . http_build_query($args);
 		}
 		// Retorna URL completo
-		return $this->host($force_https) . $path;
+		return $this->purgeURLPath($path) . $params;
 	}
 
 	/**
@@ -433,10 +448,9 @@ class ServerData extends Singleton
 	 * 								por defecto se usara "/" (separador URL).
 	 * 								Si encuentra algún separador "\" en $path,
 	 * 								usa este para construir el path depurado.
-	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
 	 * @return string				Path depurado.
 	 */
-	private function purgePath(string $path, string $separator = '', bool $remove_first = false): string
+	private function purgePath(string $path, string $separator = ''): string
 	{
 		$path = trim($path);
 		// Valida si debe forzar el separador a usar
@@ -446,7 +460,7 @@ class ServerData extends Singleton
 		$len = strlen($separator);
 		// Normaliza separadores para usar "/" durante el proceso
 		// de remplazo.
-		$path = str_replace(['\\', '/'], $separator, $path);
+		$path = str_replace(['\\', '/', $separator . $separator], $separator, $path);
 		// Captura el primer elemento si y solo si es un separador.
 		// Esto porque en Linux los path fisicos empiezan con "/"
 		$first = '';
@@ -454,9 +468,9 @@ class ServerData extends Singleton
 			$path = substr($path, $len);
 			$first = $separator;
 		}
-		// Elimina ultimo separador si existe
-		while (substr($path, -1, 1) === $separator) {
-			$path = substr($path, 0, -1);
+		// Elimina ultimo separador si existe (reduce valores a guardar en cache)
+		while (substr($path, -$len, $len) === $separator) {
+			$path = substr($path, 0, -$len);
 		}
 		// Si no hay segmentos a evaluar, retorna de inmediato
 		if (strpos($path, $separator) === false || $path === '') {
@@ -466,50 +480,40 @@ class ServerData extends Singleton
 		// Consulta cache (esto para paths que se invocan muchas veces, por ejemplo
 		// al validar directorios). Usa un unico separador para asegurar
 		// que funcione sea para directorios o urls si coincide el path.
-		$key = str_replace($separator, '/', strtolower($path));
+		$key = md5(str_replace($separator, '/', strtolower($path)));
 		if (!isset($this->cache_path[$key])) {
-			// Remueve ".." y "."
 			$segments = explode($separator, $path);
+
 			// Filtra y remueve espacios? No debe, pues el espacio
 			// puede ser parte del nombre del archivo. Solamente aplica
 			// si el elemento es vacio o "." o ".."
-			array_walk($segments, function (&$value) {
+			array_walk($segments, function (&$value, $key) use (&$segments) {
 				$cvalue = trim($value);
-				if ($cvalue == '.' || $cvalue == '') { $value = ''; }
-				elseif ($cvalue == '..') { $value = '..'; }
-			});
-			// Elimina ".."
-			if (!in_array('..', $segments)) {
-				// Filtra elementos vacios
-				$segments = array_filter($segments);
-			} else {
-				$new = [];
-				// Recorre listado para generar nuevo path
-				foreach ($segments as $value) {
-					if ($value == '..') {
-						if (count($new) > 1) {
-							array_pop($new);
-						}
-					}
-					elseif ($value !== '') {
-						$new[] = $value;
+				if ($cvalue === '.' || $cvalue === '') {
+					$value = '';
+				} elseif ($cvalue === '..') {
+					$value = '';
+					// Retrocede hasta encontrar un no-vacio para removerlo
+					do {
+						$key--;
+					} while ($key >= 0 && $segments[$key] === '');
+					if ($key >= 0) {
+						$segments[$key] = '';
 					}
 				}
-				$segments = $new;
-				// Libera memoria
-				unset($new);
-			}
-			$this->cache_path[$key] = $segments;
+			});
+
+			// Elimina celdas vacias y guarda caché
+			$this->cache_path[$key] = implode('/', array_filter($segments));
+
+			// print_r($this->cache_path); echo "<hr>";
 		}
 
-		$segments = $this->cache_path[$key];
-		// Valida si conscientemente solicita remover el primer separador
-		if ($remove_first) {
-			$first = '';
-		}
+		$path = str_replace('/', $separator, $this->cache_path[$key]);
+
 		// Remueve elementos en blanco (se asegura de preservar siempre
 		// el primer elemento, ya que en Linux los path fisicos empiezan con "/")
-		return $first . implode($separator, $segments);
+		return $first . $path;
 	}
 
 	/**
@@ -519,12 +523,11 @@ class ServerData extends Singleton
 	 * De esta forma previene acceso a rutas restringidas.
 	 *
 	 * @param string $path			Path a depurar.
-	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
 	 * @return string				Path depurado.
 	 */
-	public function purgeURLPath(string $path, bool $remove_first = false): string
+	public function purgeURLPath(string $path): string
 	{
-		return $this->purgePath($path, '/', $remove_first);
+		return $this->purgePath($path, '/');
 	}
 
 	/**
@@ -541,12 +544,11 @@ class ServerData extends Singleton
 	 * separador de directorios usados es el mismo ("/").
 	 *
 	 * @param string $filename		Path del archivo o directorio a depurar.
-	 * @param bool $remove_first	Remueve separador si es el primer elemento del path.
 	 * @return string				Path depurado.
 	 */
-	public function purgeFilename(string $filename, bool $remove_first = false): string
+	public function purgeFilename(string $filename): string
 	{
-		return $this->purgePath($filename, DIRECTORY_SEPARATOR, $remove_first);
+		return $this->purgePath($filename, DIRECTORY_SEPARATOR);
 	}
 
 	/**
@@ -564,7 +566,7 @@ class ServerData extends Singleton
 		// La función realpath() garantiza que se retorne la ruta completa
 		// (para Consolas, puede verse afectado si modifica el directorio por defecto
 		// usando la función chdir()).
-		return realpath($this->get('SCRIPT_FILENAME'));
+		return $this->current_script;
 	}
 
 	/**
@@ -580,7 +582,7 @@ class ServerData extends Singleton
 	 */
 	public function scriptDirectory(string $filename = ''): string
 	{
-		return $this->connect(dirname($this->script()), $filename, DIRECTORY_SEPARATOR);
+		return $this->connect(dirname($this->current_script), $filename, DIRECTORY_SEPARATOR);
 	}
 
 	/**
@@ -596,25 +598,16 @@ class ServerData extends Singleton
 	 */
 	private function connect(string $parent, string $son, string $separator): string
 	{
-		$parent .= $separator;
-		// Da formato de path para archivo fisico, siempre (no lo termina en "/"
-		// porque puede ser un nombre de archivo)
+		$parent = $this->purgePath($parent, $separator) . $separator;
 		$son = $this->purgePath($son, $separator);
 		if ($son !== '') {
 			// Si ya contiene el directorio local, ignora.
-			// Para la validación si adiciona el separador "/" a $son, para garantizar
-			// hallazgo del directorio padre.
-			if ($this->inDirectory($son, $parent)) {
-				$parent .= substr($son, strlen($parent));
-			}
-			// Si no lo contiene, lo adiciona.
-			else {
-				// Valida si debe remover separador al inicio de $son
-				$len = strlen($separator);
-				if (substr($son, 0, $len) === $separator) {
-					$son = substr($son, $len);
-				}
-				$parent .= $son;
+			if (strtolower(substr($son, 0, strlen($parent) + 1)) === strtolower($parent)) {
+				$parent = $son;
+			} else {
+				// Si no lo contiene, lo adiciona.
+				// Purga todo por si $son comienza con $separator
+				$parent = $this->purgePath($parent . $son, $separator);
 			}
 		}
 
@@ -637,7 +630,8 @@ class ServerData extends Singleton
 		// DOCUMENT_ROOT:
 		// El directorio raíz bajo el que se ejecuta este script, tal como fuera
 		// definido en la configuración del servidor Web.
-		return $this->connect($this->get('DOCUMENT_ROOT'), $filename, DIRECTORY_SEPARATOR);
+		// NOTA: En Windows, Apache puede reportar DOCUMENT_ROOT con "/" en lugar de "\"
+		return $this->connect($this->document_root, $filename, DIRECTORY_SEPARATOR);
 	}
 
 	/**
@@ -649,7 +643,7 @@ class ServerData extends Singleton
 	 */
 	private function inDocumentRoot(string $filename): bool
 	{
-		return $this->inDirectory($filename, $this->documentRoot());
+		return $this->inDirectory($filename, $this->document_root);
 	}
 
 	/**
@@ -664,9 +658,8 @@ class ServerData extends Singleton
 		if ($this->inDocumentRoot($filename)) {
 			// Debe purgar el path para asegurar que remueva correctamente si incluye ".."
 			$filename = $this->purgeFilename($filename);
-			$document_root = $this->documentRoot();
-
-			return substr($filename, strlen($document_root));
+			// Remueve el "/" al inicio del path residual (si aplica)
+			return substr($filename, strlen($this->document_root) + 1);
 		}
 
 		return false;
@@ -683,9 +676,9 @@ class ServerData extends Singleton
 	private function inDirectory(string $filename, string $src_dir): bool
 	{
 		$filename = $this->purgeFilename($filename) . DIRECTORY_SEPARATOR;
-
+		$src_dir = @realpath($src_dir);
 		return ($src_dir !== '' &&
-			strtolower(substr($filename, 0, strlen($src_dir))) === strtolower($src_dir));
+			strtolower(substr($filename, 0, strlen($src_dir) + 1)) === strtolower($src_dir) . DIRECTORY_SEPARATOR);
 	}
 
 	/**
@@ -699,8 +692,9 @@ class ServerData extends Singleton
 	public function addAccessDir(string $path)
 	{
 		if (is_dir($path)) {
-			$path = realpath($path) . DIRECTORY_SEPARATOR;
-			$key = strtolower($path);
+			$path = realpath($path);
+			// Usa llave para prevenir se duplique
+			$key = md5(strtolower($path));
 			$this->dir_white_list[$key] = $path;
 		}
 	}
@@ -720,20 +714,15 @@ class ServerData extends Singleton
 		$filename = $this->purgeFilename($filename);
 		if ($filename !== '') {
 			// Valida directorios básicos
-			if ($this->inDocumentRoot($filename)
-				// || $this->inTempDir($filename)
-				// Tradicionalmente scriptDirectory() está en el root,
-				// a menos que sea ejecutado por consola.
-				// || $this->inScriptDirectory($filename)
-			) {
+			if ($this->inDocumentRoot($filename)) {
 				return true;
 			}
-			// Valida lista permitida
-			// $this->dir_white_list['@root'] = $this->documentRoot();
-			$this->dir_white_list['@temp'] = $this->tempDir();
-			$this->dir_white_list['@script'] = $this->scriptDirectory();
+			// Valida lista permitida (complementa directorios manuales)
+			$white_list = $this->dir_white_list;
+			$white_list['@temp'] = $this->tempDir();
+			$white_list['@script'] = $this->scriptDirectory();
 			// Valida en los directorios adicionados manualmente
-			foreach ($this->dir_white_list as $dir) {
+			foreach ($white_list as $dir) {
 				if ($this->inDirectory($filename, $dir)) {
 					return true;
 				}
@@ -796,50 +785,48 @@ class ServerData extends Singleton
 	{
 		// 1. Asigna path dado por el usuario
 		if ($pathname !== '') {
-			$pathname = $this->purgeFilename($pathname);
-			if ($pathname !== '' && !is_dir($pathname)) {
+			$path = $this->purgeFilename($pathname);
+			if ($path !== '' && !is_dir($path)) {
 				// Intenta crear el directorio
 				// (Falla si el directorio no es hijo del actual temporal o
 				// del directorio web. Para fijar un temporal en lugar diferente,
 				// asegurese que el directorio indicado YA exista).
-				$this->mkdir($pathname);
+				$this->mkdir($path);
 			}
-			$path = realpath($pathname);
-			if ($path != '' && is_dir($path)) {
-				$this->temp_directory = $path . DIRECTORY_SEPARATOR;
+			if ($path !== '' && is_dir($path)) {
+				$this->temp_directory = realpath($path) . DIRECTORY_SEPARATOR;
 			} else {
 				// El path indicado por el usuario no es valido
 				throw new \Exception('El directorio temporal indicado no es valido (' . $pathname . ').');
 			}
 		}
-		// 2. Si ya existe, lo retorna
-		if ($this->temp_directory !== '' && is_dir($this->temp_directory)) {
-			return $this->temp_directory;
-		}
-		// 3. Toma el directorio del sistema (o el asignado en PHP.INI)
-		if ($this->temp_directory === '') {
+
+		return $this->temp_directory;
+	}
+
+	/**
+	 * Autodetecta el directorio temporal asignado.
+	 *
+	 * Si no encuentra un directorio valido, genera una Excepción.
+	 */
+	private function autodetectTempDir()
+	{
+		// 1. Toma el directorio del sistema (o el asignado en PHP.INI)
+		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
 			$this->temp_directory = realpath(sys_get_temp_dir());
 		}
-		// 4. Intenta crear/acceder a un directorio "Temp" a crear en el DOCUMENT_ROOT
+		// 2. Intenta acceder a un directorio "Temp" en el DOCUMENT_ROOT
 		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
-			$path = $this->documentRoot('tmp');
-			if ($this->mkdir($path)) {
-				$this->temp_directory = $path;
-			}
+			$this->temp_directory = $this->documentRoot('tmp');
 		}
-		// 5. Intenta crear/acceder a un directorio "Temp" en el directorio local
+		// 3. Intenta acceder a un directorio "Temp" en el directorio local
 		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
-			$path = $this->scriptDirectory('tmp');
-			if ($this->mkdir($path)) {
-				$this->temp_directory = $path;
-			}
+			$this->temp_directory = $this->scriptDirectory('tmp');
 		}
 		// Valida que haya podido recuperarlo o reporta error
 		if ($this->temp_directory === '' || !is_dir($this->temp_directory)) {
 			throw new \Exception('No pudo recuperar un directorio temporal valido. Revise la configuración del Sistema.');
 		}
-
-		return $this->temp_directory;
 	}
 
 	/**
@@ -849,11 +836,10 @@ class ServerData extends Singleton
 	 * @return string 			Path o FALSE si el subdirectorio deseado no existe y tampoco pudo
 	 * 							ser creado.
 	 */
-	public function createTempSubdir(string $pathname): string|false
+	public function tempSubdir(string $pathname): string|false
 	{
-		$temp = $this->tempDir();
-		$path = $this->connect($temp, $pathname, DIRECTORY_SEPARATOR);
-		if ($temp !== '' && $this->mkdir($path)) {
+		$path = $this->connect($this->temp_directory, $pathname, DIRECTORY_SEPARATOR);
+		if ($this->mkdir($path)) {
 			return realpath($path) . DIRECTORY_SEPARATOR;
 		}
 
@@ -913,7 +899,7 @@ class ServerData extends Singleton
 	{
 		// disk_free_space() puede retornar false, por lo que se convierte a
 		// float para prevenir conflictos de type.
-		return floatval(disk_free_space($this->documentRoot()));
+		return floatval(disk_free_space($this->document_root));
 	}
 
 	/**
@@ -940,9 +926,7 @@ class ServerData extends Singleton
 	 */
 	public function startAt(string $format = ''): float|string
 	{
-		// REQUEST_TIME_FLOAT:
-		// El tiempo de inicio de atención a la consulta del usuario, en microsegundos.
-		$time = $this->get('REQUEST_TIME_FLOAT', 0);
+		$time = $this->start_time;
 		if ($format !== '') {
 			$time = date($format, intval($time));
 		}
@@ -951,13 +935,14 @@ class ServerData extends Singleton
 	}
 
 	/**
-	 * Tiempo transcurrido desde el inicio del script (microsegundos).
+	 * Tiempo transcurrido desde el inicio del script.
 	 *
-	 * @return float Tiempo de ejecución en microsegundos.
+	 * @param int $precision (Opcional) Número de decimales a mostrar.
+	 * @return float 			Tiempo transcurrido en segundos.
 	 */
-	public function executionTime(): float
+	public function executionTime(int $precision = 7): float
 	{
-		return microtime(true) - $this->startAt();
+		return $this->timeDiff(microtime(true), $this->start_time, $precision);
 	}
 
 	/**
@@ -966,27 +951,42 @@ class ServerData extends Singleton
 	 * La primera vez que se invoca, retorna el tiempo transcurrido desde el
 	 * inicio del script.
 	 *
-	 * @param int $precision	(Opcional) Indica cuantos decimales mostrar.
-	 * @return float 			Tiempo transcurrido en microsegundos.
+	 * @param int $precision (Opcional) Número de decimales a mostrar.
+	 * @return float 			Tiempo transcurrido en segundos.
 	 */
 	public function checkPoint(int $precision = 7): float
 	{
-		if ($this->check_time <= 0) {
-			$this->check_time = $this->startAt();
-		}
 		// Actualiza tiempos
 		$previous_check = $this->check_time;
 		$this->check_time = microtime(true);
-		$time = $this->check_time - $previous_check;
+		return $this->timeDiff($this->check_time, $previous_check, $precision);
+	}
 
-		// Registra también en el log de eventos
+	/**
+	 * Calcula la diferencia en segundos entre dos momentos de tiempo.
+	 *
+	 * Si $precision es mayor a cero, muestra el resultado con $precision decimales.
+	 *
+	 * @param float $now Tiempo actual.
+	 * @param float $time_since Tiempo desde el cual se calcula la diferencia.
+	 * @param int $precision (Opcional) Número de decimales a mostrar.
+	 * @return float Diferencia en segundos.
+	 */
+	private function timeDiff(float $now, float $time_since, int $precision = 7): float
+	{
+		$time = $now - $time_since;
+
 		// Muestra siempre $precision decimales máximo
 		// (suma 1 por el punto decimal).
 		if ($precision > 0) {
+			$suffix = '';
+			$pos = strpos($time, 'E');
+			if ($pos !== false) {
+				$suffix = substr($time, $pos);
+			}
 			$len = strlen(intval($time)) + $precision + 1;
-			$time = substr($time, 0, $len);
+			$time = 0 + (substr($time, 0, $len) . $suffix);
 		}
-
 		return $time;
 	}
 }
