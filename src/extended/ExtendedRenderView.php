@@ -11,13 +11,14 @@
 
 namespace miFrame\Commons\Extended;
 
+use miFrame\Commons\Core\ErrorHandler;
 use miFrame\Commons\Core\RenderView;
 use miFrame\Commons\Interfaces\FilterContentInterface;
-use miFrame\Commons\Traits\RemoveDocumentRootContent;
+use miFrame\Commons\Traits\SanitizeRenderContent;
 
 class ExtendedRenderView extends RenderView
 {
-	use RemoveDocumentRootContent;
+	use SanitizeRenderContent;
 
 	/**
 	 * @var bool $developerMode TRUE para habilitar el modo Desarrollo. Permite
@@ -39,8 +40,22 @@ class ExtendedRenderView extends RenderView
 	/**
 	 * @var FilterContentInterface $filter Filtro para el contenido final (luego de aplicado Layout).
 	 */
-	private ?FilterContentInterface $contentFilter = null;
+	private FilterContentInterface $contentFilter;
 
+	/**
+	 * @var string $layoutViewname Nombre de la vista a usar como Layout.
+	 */
+	private string $layoutViewname = '';
+
+	/**
+	 * @var string $theMainView Nombre de la vista principal (capturada automáticamente).
+	 */
+	private string $theMainView = '';
+
+	/**
+	 * @var ErrorHandler $errors Manejador de errores.
+	 */
+	private ErrorHandler $errors;
 
 	/**
 	 * Acciones a ejecutar al crear un objeto para esta clase.
@@ -49,7 +64,7 @@ class ExtendedRenderView extends RenderView
 	{
 		parent::singletonStart();
 		// Adiciona layout por defecto
-		$this->layout->config('layout-default', 'contentFromViews');
+		$this->layout('layout');
 		// Deshabilita salida a pantalla de mensajes de error
 		// (se habilita solo para modo Desarrollo)
 		ini_set("display_errors", "off");
@@ -126,39 +141,101 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
-	 * Redefine método renderLayout() de la clase RenderView.
+	 * Captura el texto enviado a pantalla (o al navegador) por cada vista.
 	 *
-	 * Si el layout a usar es "layout-default" (configurado como layout por defecto
-	 * en esta clase), busca primero la vista "layout" en el directorio de vistas.
-	 * Si no la encuentra, entonces si usa la vista "layout-default".
+	 * @param string $filename Archivo que contiene la vista.
+	 * @param array $params Arreglo con valores.
 	 *
-	 * Adiciona filtrado al contenido una vez renderizado el Layout.
+	 * @return string Contenido renderizado.
 	 */
-	protected function includeLayout(string &$content)
+	protected function renderView(string $filename, array $params = []): string
 	{
-		// Si no ha definido archivo de layout diferente al "layout-default",
-		// valida si existe un archivo "layout" y lo usa en remplazo.
-		if ($this->layout->viewName() === 'layout-default')
-		{
-			$defaultViewName = $this->findView('layout');
-			if ($defaultViewName !== '') {
-				$this->layout->config($defaultViewName, 'contentFromViews');
-			}
+		// Registra primera vista como la vista principal
+		// (a menos que se registre como vista sin layout)
+		if ($this->theMainView === '' && $this->layoutExists()) {
+			$this->theMainView = $filename;
 		}
-		// Adiciona marca para incluir estilos
-		// (no los adiciona directamente por si se adicionan nuevos
-		// estilos durante la visualización del layout)
-		$unique_mark = uniqid('@styles:', true) . PHP_EOL;
-		$content = $unique_mark . $content;
-		// Ejecuta método original
-		parent::includeLayout($content);
+
+		// Renderiza vista en la forma tradicional
+		$content = parent::renderView($filename, $params);
+
+		if (!empty($content) && $this->developerMode && $this->debug) {
+			$this->showFrameContentDebug($content, $filename);
+		}
+
+		// Validación posterior (cuando termina la ejecución del vista principal)
+		if ($content !== false && $filename === $this->theMainView) {
+			$this->validateMainContent($content);
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Valida el contenido de la vista principal.
+	 *
+	 * Esta función es llamada justo después de renderizar la vista principal
+	 * (la primera vista renderizada). Su función es:
+	 *
+	 * 1. Incluir el contenido del layout en la vista (si se ha definido
+	 *    un layout).
+	 * 2. Recuperar los estilos definidos en el layout y los incluye en
+	 *    la vista.
+	 * 3. Remueve el Document Root de la salida a pantalla.
+	 * 4. Aplica filtros adicionales definidos en el atributo $filter.
+	 *
+	 * @param string $content Contenido renderizado de la vista principal.
+	 *
+	 * @return string Contenido renderizado de la vista principal.
+	 *                Se actualiza para incluir el contenido del layout.
+	 */
+	private function validateMainContent(string &$content)
+	{
+
+		$unique_mark = '';
+
+		// Incluye layout
+		if ($this->layoutExists()) {
+			// Adiciona marca para incluir estilos
+			// (no los adiciona directamente por si se adicionan nuevos
+			// estilos durante la visualización del layout)
+			// Se marca previamente para garantizar que se incluyan aunque
+			// ocurra algun evento de error durante la inclusión del layout.
+			$unique_mark = uniqid('@styles:', true) . PHP_EOL;
+			$content = $unique_mark . $content;
+			$this->includeLayout($content);
+		}
+
 		// Recupera estilos
 		$this->exportStyles($content, $unique_mark);
 		// Remueve Document Root de la salida a pantalla
-		$this->removeDocumentRoot($content);
+		$this->sanitizeDocumentRoot($content);
 		// Aplica filtros adicionales
 		if (!empty($this->filter)) {
 			$this->contentFilter->filter($content);
+		}
+	}
+
+	/**
+	 * Incluye el contenido del layout en la vista.
+	 *
+	 * @param string $content Contenido renderizado de la vista principal.
+	 *                        Se actualiza para incluir el contenido del layout.
+	 */
+	private function includeLayout(string &$content)
+	{
+		// Recupera path real del layout
+		// Nota: Al recuperarlo justo antes de invocar el layout, permite a la aplicación
+		// poder cambiarlo en algún momento.
+		$filename = $this->checkFile($this->layoutViewname);
+		if ($filename !== '') {
+			// Asigna contenido a una variabe que pueda ser invocada en la vista
+			$params = ['RenderViewContent' => $content];
+			// Ejecuta vista y recupera nuevo contenido
+			$content = $this->renderView(
+				$filename,
+				$params
+			);
 		}
 	}
 
@@ -193,16 +270,6 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
-	 * Retorna a pantalla información de las vistas actuales.
-	 *
-	 * @return string Texto formateado.
-	 */
-	public function dumpViews()
-	{
-		return $this->dump($this->views, 'Views');
-	}
-
-	/**
 	 * Realiza volcado de datos en pantalla.
 	 *
 	 * La información a mostrar se enmarca usando la vista "show-dump". Se usa un
@@ -232,8 +299,8 @@ class ExtendedRenderView extends RenderView
 				// Complementa titulo
 				$title = trim('<b>DUMP</b> ' . $title);
 			}
-
-			$content = $this->view('show-dump', compact('var', 'title'));
+			// Carga vista respectiva
+			$content = $this->capture('show-dump', compact('var', 'title'));
 		}
 
 		return $content;
@@ -266,7 +333,6 @@ class ExtendedRenderView extends RenderView
 		$reference = $this->generateKey($source);
 		if (!isset($this->ctlOnce[$reference])) {
 			$this->ctlOnce[$reference] = $source;
-			// print_r($this->once);
 			return true;
 		}
 
@@ -274,29 +340,131 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
-	 * Redefine método renderLayout() de la clase RenderView.
+	 * Adiciona marcas en pantalla para identificar la vista que lo genera.
 	 *
-	 * Adiciona modificaciones al contenido en modo Debug una vez renderizada la vista.
+	 * Solamente funciona cuando se usa la opció de "modo Debug".
+	 *
+	 * @param string $content Contenido de la vista a renderizar.
+	 * @param string $filename Archivo de la vista a renderizar.
 	 */
-	protected function renderView(string $filename, array $params): string
+	private function showFrameContentDebug(string &$content, string $filename)
 	{
-		$content = parent::renderView($filename, $params);
-		if ($content != '' && $this->developerMode && $this->debug) {
-			$target = '';
-			if ($this->currentView != '') {
-				$target = $this->views[$this->currentView]['name'];
-			}
-			$new_content = $this->view(
-				'show-frame-content-debug',
-				compact('filename', 'target', 'content')
-			);
-			if ($new_content !== false) {
-				// Nueva vista correctamente generada, actualiza contenido.
-				return $new_content;
-			}
+		$target = '';
+		if ($this->currentView != '') {
+			$target = $this->views[$this->currentView]['name'];
 		}
+		$content = $this->capture(
+			'show-frame-content-debug',
+			compact('filename', 'target', 'content'),
+			$content
+		);
+	}
 
+	/**
+	 * Establece o recupera el nombre de la vista a usar como Layout.
+	 *
+	 * El layout es una vista adicional que se invoca automáticamente luego de
+	 * rederizar la vista principal (primer vista invocada).
+	 *
+	 * Si se invoca sin parámetros, retorna el nombre actual.
+	 *
+	 * @param string $viewname [optional] Nombre de la vista a usar como Layout.
+	 * @return string Nombre actual de la vista Layout.
+	 */
+	public function layout(string $viewname = ''): string
+	{
+		$viewname = trim($viewname);
+		if ($viewname !== '') {
+			$this->layoutViewname = $viewname;
+		}
+		return $this->layoutViewname;
+	}
+
+	/**
+	 * Elimina el uso de Layout en la vista actual.
+	 */
+	public function layoutRemove()
+	{
+		$this->layoutViewname = '';
+	}
+
+	/**
+	 * Verifica si se ha definido un nombre para la vista Layout actual.
+	 *
+	 * @return bool TRUE si se ha definido un nombre de vista Layout, FALSE en otro caso.
+	 */
+	private function layoutExists(): bool
+	{
+		return ($this->layoutViewname !== '');
+	}
+
+	/**
+	 * Habilita la captura de una nueva vista principal a usar con Layout.
+	 *
+	 * Reinicia el nombre de la vista principal, permitiendo que una vista
+	 * posterior pueda ser considerada como la vista principal y así renderizarla
+	 * con Layout. El Layout solamente se aplica a la vista principal, tantas
+	 * veces como sea invocada.
+	 */
+	public function layoutReset()
+	{
+		$this->theMainView = '';
+	}
+
+	/**
+	 * Captura contenido de una vista sin aplicar Layout.
+	 *
+	 * La vista a capturar se ejecuta sin considerar el Layout actual. Luego de
+	 * ejecutar la vista, el Layout se restablece a su valor original.
+	 *
+	 * Si la vista a capturar no existe, se devuelve el valor de $default.
+	 *
+	 * @param string $viewname Nombre de la vista a capturar.
+	 * @param array $params Arreglo de parámetros a enviar a la vista.
+	 * @param string $default Valor a devolver si la vista no existe.
+	 *
+	 * @return string Contenido devuelto por la vista o $default si no existe.
+	 */
+	public function capture(string $viewname, array $params = [], string $default = ''): string
+	{
+		// Preserva layout actual y luego lo remueve
+		$layout_back = $this->layout();
+		$this->layoutRemove();
+		// Ejecuta vista sin layout (no marca "mainView" si esta es la primer invocación)
+		$content = $this->view($viewname, $params);
+		// Restablece el layput
+		$this->layout($layout_back);
+		// Valida respuesta
+		if ($content === false) {
+			return $default;
+		}
 		return $content;
 	}
 
+	/**
+	 * Asigna un objeto ErrorHandler para reporte de errores.
+	 *
+	 * @param ErrorHandler $errors Objeto que reportará los errores.
+	 */
+	public function errorHandler(ErrorHandler $errors) {
+		$this->errors = $errors;
+	}
+
+	/**
+	 * Genera evento de error y termina la ejecución del script.
+	 *
+	 * Si se ha asignado un objeto ErrorHandler, se utiliza para reportar el error.
+	 * Si no se ha asignado, se utiliza el método error() de la clase padre.
+	 *
+	 * @param string $message Mensaje de error.
+	 * @param string $file [optional] Archivo en el que se produjo el error.
+	 * @param int $line [optional] Número de línea en el que se produjo el error.
+	 */
+	public function error(string $message, string $file = '', int $line = 0)
+	{
+		if (!empty($this->errors)) {
+			$this->errors->showError(E_USER_ERROR, $message, $file, $line);
+		}
+		parent::error($message, $file, $line);
+	}
 }

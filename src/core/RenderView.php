@@ -14,7 +14,6 @@
 namespace miFrame\Commons\Core;
 
 use miFrame\Commons\Patterns\Singleton;
-use miFrame\Commons\Support\RenderLayout;
 
 class RenderView extends Singleton
 {
@@ -39,17 +38,63 @@ class RenderView extends Singleton
 	protected string $currentView = '';
 
 	/**
-	 * @var RenderLayout $layout Datos asociados al layout.
+	 * @var array $globalParams Valores disponibles para todas las vistas a usar.
 	 */
-	public ?RenderLayout $layout = null;
+	private array $globalParams = [];
 
 	/**
 	 * Acciones a ejecutar al crear un objeto para esta clase.
 	 */
 	protected function singletonStart()
 	{
-		// Crea objeto para almacenar datos del Layout
-		$this->layout = new RenderLayout();
+		// Nada por hacer, se incluye por requerimiento de la clase Singleton
+	}
+
+	/**
+	 * Registra valores globales a usar por todas las vistas a mostrar.
+	 *
+	 * @param array $params Arreglo con valores a adicionar (opcional).
+	 *
+	 * @return array Arreglo con todos los valores registrados.
+	 */
+	public function globals(array $params = []): array
+	{
+		// Los nuevos valores remplazan los anteriores
+		if (count($params) > 0) {
+			$this->globalParams = $params + $this->globalParams;
+		}
+		return $this->globalParams;
+	}
+
+	/**
+	 * Recupera valor de una variable global.
+	 *
+	 * Cuando se usan en las vistas, las variables globales son exportadas
+	 * al contexto de la vista, pero no remplaza el valor con el mismo nombre
+	 * en caso que sea definido uno entre los argumentos pasados a la vista.
+	 * En esta caso, puede usar este método para recuperar el valor real de la
+	 * variable global.
+	 *
+	 * @param string $name Nombre del parámetro a recuperar.
+	 * @param mixed $default Valor a retornar si el parámetro no existe.
+	 *
+	 * @return mixed Valor del parámetro solicitado.
+	 */
+	public function getGlobal(string $name, mixed $default = ''): mixed
+	{
+		return (
+			array_key_exists($name, $this->globalParams) ?
+				$this->globalParams[$name] :
+				$default
+			);
+	}
+
+	/**
+	 * Elimina los valores globales registrados.
+	 */
+	public function removeGlobals()
+	{
+		$this->globalParams = [];
 	}
 
 	/**
@@ -133,14 +178,13 @@ class RenderView extends Singleton
 	 *
 	 * @return string Path completo asociado al $viewname o cadena vacia si no existe la vista.
 	 */
-	private function checkFile(string $viewname): string
+	protected function checkFile(string $viewname): string
 	{
 		$filename = $this->findView($viewname);
 		if ($filename === '') {
 			// Si llega a este punto, dispara un error
-			$this->error("La vista \"{$viewname}\" no pudo ser encontrada");
+			$this->error("La vista \"{$viewname}\" no pudo ser encontrada", __FILE__, __LINE__);
 		}
-
 		return $filename;
 	}
 
@@ -154,57 +198,18 @@ class RenderView extends Singleton
 	public function location(string $path)
 	{
 		if ($path == '' || !is_dir($path)) {
-			$this->error("El path indicado para buscar vistas ({$path}) no es valido");
+			$this->error("El path indicado para buscar vistas ({$path}) no es valido", __FILE__, __LINE__);
 		}
 		// Registra valor
 		$this->pathFiles = realpath($path) . DIRECTORY_SEPARATOR;
 	}
 
 	/**
-	 * Ejecuta layout (si alguno) si no hay vistas pendientes.
-	 *
-	 * @return bool TRUE si incluye el layout, FALSE en otro caso.
-	 */
-	private function includeLayoutNow(): bool
-	{
-		return (
-			$this->layout->waitingForDeploy() &&
-			$this->currentView == ''
-		);
-	}
-
-	/**
-	 * Incluye el contenido del layout en la vista.
-	 *
-	 * Se encarga de ejecutar el layout solo si no hay views pendientes.
-	 * La ejecución del layout se hace solo una vez, justo antes de cerrar la vista.
-	 * Las vistas ejecutadas pueden modificar el archivo de layout a usar.
-	 *
-	 * @param string $content Contenido de la vista a renderizar (Valor por referencia).
-	 * @return bool TRUE si se incluye el layout, FALSE en otro caso.
-	 */
-	protected function includeLayout(string &$content)
-	{
-		// Recupera path real del layout
-		$filename = $this->checkFile($this->layout->viewName());
-		if ($filename !== '') {
-			// Preserva el contenido previamente renderizado para su uso en el Layout
-			$this->layout->setContentView($content);
-			// Ejecuta vista
-			$content = $this->renderView(
-				$filename,
-				$this->layout->values()
-			);
-			// Libera llave
-			$this->layout->removeContentView();
-		}
-	}
-
-	/**
 	 * Crea espacio para una nueva vista a ejecutar.
 	 *
-	 * Si se indica valor de referencia, valida que no exista uno ya asignado
-	 * a ese nombre.
+	 * Se valida que no exista un espacio ya asignado a ese nombre, para
+	 * prevenir referencias ciclicas (por ejemplo, una vista que se invoca a
+	 * si misma crearía un bucle infinito de una misma vista).
 	 *
 	 * @param string $viewname Nombre/Path de la vista.
 	 *
@@ -249,9 +254,8 @@ class RenderView extends Singleton
 	 *
 	 * @return string Contenido renderizado o FALSE si la vista ya está en ejecución.
 	 */
-	public function view(string $viewname, array $params): false|string
+	public function view(string $viewname, array $params = []): false|string
 	{
-		$content = false;
 		if ($this->newTemplate($viewname)) {
 			// Valida nombre de la vista y recupera nombre de archivo asociado
 			$filename = $this->checkFile($viewname);
@@ -259,13 +263,11 @@ class RenderView extends Singleton
 			$content = $this->renderView($filename, $params);
 			// Restablece vista previa
 			$this->removeTemplate();
-			// Valida si se incluye layout en esta vista
-			if ($this->includeLayoutNow()) {
-				$this->includeLayout($content);
-			}
+
+			return $content;
 		}
 
-		return $content;
+		return false;
 	}
 
 	/**
@@ -295,20 +297,23 @@ class RenderView extends Singleton
 		// La define como una función estática para no incluir $this
 		$fun = static function (string $view_filename, array &$view_args) {
 
+			// Previene se invoque un archivo no valido
+			if ($view_filename == '' || !is_file($view_filename)) { return; }
+
 			if (count($view_args) > 0) {
 				// EXTR_SKIP previene use $filename o $args y genere colisión de valores.
 				// Se extraen como valores referencia para evitar duplicados.
 				extract($view_args, EXTR_SKIP | EXTR_REFS);
 			}
 
-			// Previene se invoque un archivo no valido
-			if ($view_filename == '' || !is_file($view_filename)) { return; }
-
 			include $view_filename;
 		};
+
 		// Bloquea salida a pantalla
 		ob_start();
-		// Ejecuta
+		// Adiciona variables globales pero tienen prioridad las locales
+		$params = $params + $this->globalParams;
+		// Ejecuta include
 		$fun($filename, $params);
 		// Recupera contenido
 		// $content = ob_get_clean();
@@ -316,6 +321,7 @@ class RenderView extends Singleton
 		// ob_get_contents() followed by ob_end_clean() for better performance
 		// in some cases.
 		$content = ob_get_contents();
+
 		ob_end_clean();
 
 		return $content;
@@ -324,30 +330,24 @@ class RenderView extends Singleton
 	/**
 	 * Genera evento de error y termina la ejecución del script.
 	 *
-	 * Se recomienda usar en remplazo de trigger_error(), para prevenir
-	 * posibles ciclos infinitos si el error ocurre mientras se visualiza
-	 * una personalización de la función que muestra errores en pantalla.
+	 * Se recomienda usar en remplazo de trigger_error() o Exception, para prevenir
+	 * posibles ciclos infinitos si el error ocurre mientras se visualiza una
+	 * personalización de la función que muestra errores en pantalla.
 	 *
 	 * @param string $message Mensaje de error.
+	 * @param string $file [optional] Archivo en el que se produjo el error.
+	 * @param int $line [optional] Número de línea en el que se produjo el error.
 	 */
-	private function error(string $message)
+	public function error(string $message, string $file = '', int $line = 0)
 	{
-		// Recupera línea de dónde se solicita la vista
-		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-		// Remueve referencias de error en este mismo archivo
-		// para obtener desde donde se invoca el método que desencadena el error.
-		while(!empty($trace[0]) && $trace[0]['file'] === __FILE__) {
-			array_shift($trace);
+		if ($file !== '' && $line > 0) {
+			$message .= " en \"{$file}\" línea {$line}";
 		}
-		if (!empty($Trace[0]['file'])) {
-			$trace = $trace[0];
-			$message .= " en \"{$trace['file']}\" línea {$trace['line']}";
-		}
-		// Registra mensaje en el log de errores
-		error_log('VIEW/ERROR: ' . $message);
 		// Redefine mensaje para ambientes de producción?
-		// $message = 'No pudo mostrar contenido, favor revisar el log de errores';
-		echo "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\"><b>Error:</b> {$message}</div>";
+		echo "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\">" .
+			"<b>Error:</b> {$message}" .
+			"</div>";
+
 		exit;
 	}
 }
