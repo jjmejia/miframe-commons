@@ -243,17 +243,17 @@ class ErrorData {
 	{
 		// https://www.php.net/manual/en/errorfunc.constants.php#126465
 		$exceptions = [
-			E_ERROR => "Error",
-			E_WARNING => "Advertencia",
+			E_ERROR => "Error del Sistema",
+			E_WARNING => "Advertencia del Sistema",
+			E_NOTICE => "Aviso informativo del Sistema",
 			E_PARSE => "Error de interpretador", // Se incluye pero no puede ser capturado
-			E_NOTICE => "Aviso",
 			E_CORE_ERROR => "Error de arranque",
 			E_CORE_WARNING => "Advertencia de arranque",
 			E_COMPILE_ERROR => "Error durante compilación",
 			E_COMPILE_WARNING => "Advertencia durante compilación",
-			E_USER_ERROR => "Error generado por el Usuario",
-			E_USER_WARNING => "Advertencia generada por el Usuario",
-			E_USER_NOTICE => "Aviso generado por el Usuario",
+			E_USER_ERROR => "Error en la aplicación",
+			E_USER_WARNING => "Aviso de advertencia",
+			E_USER_NOTICE => "Aviso informativo",
 			E_STRICT => "Error de compatibilidad",
 			E_RECOVERABLE_ERROR => "Error recuperable",
 			E_DEPRECATED => "Contenido Obsoleto",

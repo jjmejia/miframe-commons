@@ -3,6 +3,10 @@
 /**
  * Manejador de errores PHP y de usuario.
  *
+ * Nota: Cuando los errores ocurren dentro de un tag script, pueden no
+ * visualizarse. Por ello se recomienda en desarrollo habilitar la opción
+ * de terminar script al encontrar error.
+ *
  * @author John Mejía
  * @since Diciembre 2024
  */
@@ -11,12 +15,12 @@ namespace miFrame\Commons\Core;
 
 use Exception;
 use miFrame\Commons\Interfaces\RenderErrorInterface;
-use miFrame\Commons\Support\ErrorData;
-use miFrame\Commons\Traits\RemoveDocumentRootContent;
+use miFrame\Commons\Components\ErrorData;
+use miFrame\Commons\Traits\SanitizeRenderContent;
 
 class ErrorHandler
 {
-	use RemoveDocumentRootContent;
+	use SanitizeRenderContent;
 
 	/**
 	 * @var RenderError $render Objeto usado para generar el mensaje a pantalla.
@@ -321,21 +325,14 @@ class ErrorHandler
 		// Registra en el log de errores
 		$this->errorLog($html);
 
-		$content = false;
+		$content = $html;
 		// Ejecuta render registrado (si alguno)
 		if (!empty($this->render)) {
-			$content = trim($this->render->show($error));
+			$content = $this->render->show($error, $html);
 		}
 
-		if ($content === false) {
-			// No pudo ejecutar la vista, muestra vista por defecto.
-			// Valor de cadena vacia no debe interpretarse como FALSE porque
-			// es un valor aceptable.
-			$content = $html;
-		}
-
-		// Remueve Document Root de la salida a pantalla
-		$this->removeDocumentRoot($content);
+		// Remueve Document Root de la salida a pantalla (por precaución)
+		$this->sanitizeDocumentRoot($content);
 
 		// Da salida a pantalla
 		echo PHP_EOL . $content . PHP_EOL;
@@ -384,7 +381,7 @@ class ErrorHandler
 	public function abort(string $message = '')
 	{
 		if ($message !== '') {
-			$message = "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\"><b>Script Interrumpido:</b> {$message}</div>";
+			$message = "<div style=\"background: #fadbd8; padding: 30px; margin: 5px 0\"><b>Script Interrumpido:</b> {$message}</div>";
 			error_log(strip_tags($message));
 			echo $message;
 		}
