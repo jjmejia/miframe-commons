@@ -65,6 +65,11 @@ class ErrorHandler
 	private int $countErrors = 0;
 
 	/**
+	 * @var bool $watching TRUE si ya ejecutó método watch()
+	 */
+	private bool $watching = false;
+
+	/**
 	 * Creación del objeto, inicializa atributos.
 	 *
 	 * @param RenderErrorInterface $render	Objeto usado para generar el mensaje a pantalla (opcional).
@@ -89,6 +94,11 @@ class ErrorHandler
 	public function setRenderer(RenderErrorInterface $render)
 	{
 		$this->render = $render;
+	}
+
+	public function removeRenderer()
+	{
+		$this->render = null;
 	}
 
 	/**
@@ -165,6 +175,13 @@ class ErrorHandler
 	public function watch(int $error_level = E_ALL)
 	{
 		error_reporting($error_level);
+
+		// Si ya está habilitada esta opción, no continúa
+		if ($this->watching) {
+			return;
+		}
+
+		$this->watching = true;
 		// Bloquea salidas a pantalla de mensajes de error
 		ini_set("display_errors", "off");
 		// Registra funciones a usar para despliegue de errores

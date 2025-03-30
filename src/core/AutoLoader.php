@@ -23,12 +23,12 @@ class AutoLoader extends Singleton
 	 * @var array $namespaces	Registra las listas de busqueda. Arreglo asociativo del tipo:
 	 * 							(Patrón de la Clase) => (Path en disco del script que define la Clase)
 	 */
-	private $namespaces = array();
+	private $namespaces = [];
 
 	/**
 	 * @var array $matches Registro de namespaces correctamente identificados.
 	 */
-	private array $matches = array();
+	private array $matches = [];
 
 	/**
 	 * Inicialización de la clase Singleton.

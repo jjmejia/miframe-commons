@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Demo para pruebas de la clase SQLConsultor.
+ * Demo para pruebas de la clase PDOController.
  *
  * @author John Mejía
  * @since Diciembre 2024

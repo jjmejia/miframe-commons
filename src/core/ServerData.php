@@ -20,8 +20,6 @@ use \miFrame\Commons\Traits\GetLocalData;
 
 class ServerData extends Singleton
 {
-	// class ServerData extends GetLocalData {
-
 	/**
 	 * Definiciones y métodos a usar para manejo de datos locales.
 	 * Define el método "superglobal".
@@ -155,24 +153,35 @@ class ServerData extends Singleton
 				// Solamente la IP del último proxy (última IP de la lista) es de fiar.
 				// ( https://stackoverflow.com/questions/11452938/how-to-use-http-x-forwarded-for-properly )
 				// Si no se emplean proxys para la consulta, retorna vacio.
-				$proxys = $this->get('HTTP_X_FORWARDED_FOR');
-				if (!empty($proxys)) {
-					$proxy_list = explode(",", $proxys);
-					$this->ip_client = trim(end($proxy_list));
-				} else {
-					// REMOTE_ADDR:
-					// La dirección IP desde donde el usuario está viendo la página actual.
-					$this->ip_client = $this->get('REMOTE_ADDR');
-					if (empty($this->ip_client)) {
-						// HTTP_CLIENT_IP:
-						// Opcional para algunos servidores Web en remplazo de REMOTE_ADDR.
-						$this->ip_client = $this->get('HTTP_CLIENT_IP');
+				// REMOTE_ADDR:
+				// La dirección IP desde donde el usuario está viendo la página actual.
+				// HTTP_CLIENT_IP:
+				// Opcional para algunos servidores Web en remplazo de REMOTE_ADDR.
+				$options = ['HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR', 'HTTP_CLIENT_IP'];
+				foreach ($options as $key => $name) {
+					$this->ip_client = trim($this->get($name));
+					// Para HTTP_X_FORWARDED_FOR puede encontrar multiples valores separados por
+					// comas. Sólo el último valor es relevante.
+					if (strpos($this->ip_client, ',') !== false) {
+						$proxy_list = explode(",", $this->ip_client);
+						$this->ip_client = trim(array_pop($proxy_list));
 					}
-				}
-
+					if ($this->ip_client !== '') {
+						break;
+					}
+ 				}
 				// En caso que retorne un nombre (como "localhost") se asegura esté en
 				// minusculas para facilitar comparaciones.
 				$this->ip_client = strtolower($this->ip_client);
+				// IPv4, IPv6, Associative name, Consola
+				if (
+					in_array($this->ip_client, ['127.0.0.1', '::1', 'localhost']) ||
+					// Local server IP (Ej. 192.xxx)
+					$this->ip_client === $this->ip()
+					) {
+					// Estandariza resultado
+					$this->ip_client = 'localhost';
+				}
 			}
 		}
 
@@ -186,12 +195,9 @@ class ServerData extends Singleton
 	 */
 	public function isLocalhost(): bool
 	{
-		$client_ip = $this->ipClient();
+		$ip_client = $this->ipClient();
 		return (!$this->isWeb() ||
-			// IPv4, IPv6, Associative name, Consola
-			in_array($client_ip, ['127.0.0.1', '::1', 'localhost', 'cli']) ||
-			// Local server IP (Ej. 192.xxx)
-			$client_ip === $this->ip()
+			in_array($ip_client, ['localhost', 'cli'])
 		);
 	}
 
@@ -220,13 +226,16 @@ class ServerData extends Singleton
 	 */
 	public function domain(): string
 	{
+		// SERVER_NAME:
+		// Nombre del servidor host que está ejecutando este script. Si se ejecuta en
+		// un host virtual, este será el valor asignado a ese host virtual.
 		return $this->get('SERVER_NAME', 'unknown');
 	}
 
 	/**
-	 * URL asociada al servidor Web para la consulta actual.
+	 * URL completa asociada al servidor Web para la consulta actual.
 	 *
-	 * Una URL se compone de los siguientes elementos (los valores entre "[]" son opcionales):
+	 * Una "URL completa" se compone de los siguientes elementos (los valores entre "[]" son opcionales):
 	 *
 	 * (Scheme)://(domain name)[:puerto]/(path)[?(queries)]
 	 *
@@ -248,26 +257,24 @@ class ServerData extends Singleton
 	 */
 	public function host(string $path = '', array $args = []): string
 	{
-		$scheme = 'http://';
-		if ($this->forceHttpsForHost || $this->useHTTPSecure()) {
-			$scheme = 'https://';
-		}
+		// Valida schema usado (http o https)
+		$full_path = ($this->forceHttpsForHost || $this->useHTTPSecure()) ? 'https://' : 'http://';
 
-		// SERVER_NAME:
-		// Nombre del servidor host que está ejecutando este script. Si se ejecuta en un host virtual, este será el valor asignado a ese host virtual.
-		$domain_name = $this->domain();
+		// Domain-name (nombre de dominio, ej: www.misitio.com)
+		$full_path .= $this->domain();
 
 		// SERVER_PORT:
 		// Puerto en la maquina del servidor usado por el servidor Web para comunicación. Por defecto será de '80'; Para SSL (HTTPS) cambia a cualquiera sea
 		// el puerto usado para dicha comunicación (por defecto 443).
-		$port = ':' . $this->get('SERVER_PORT', 80);
+		$port = 0 + $this->get('SERVER_PORT', 80);
 
 		// Ignora puertos estándar 80 (HTTP) y 443 (HTTPS)
-		if (in_array($port, [':80', ':443'])) {
-			$port = '';
+		if ($port > 0 && !in_array($port, [80, 443])) {
+			$full_path .= ':' . $port;
 		}
 
-		return $scheme . $domain_name . $port . $this->url($path, $args);
+		// Complementa path con los parámetros adicionales recibidos (si alguno)
+		return $full_path . $this->url($path, $args);
 	}
 
 	/**
@@ -653,7 +660,7 @@ class ServerData extends Singleton
 	 * @return bool				TRUE si $path es subdirectorio de DOCUMENT_ROOT,
 	 * 							FALSE en otro caso.
 	 */
-	private function inDocumentRoot(string $filename): bool
+	public function inDocumentRoot(string $filename): bool
 	{
 		return $this->inDirectory($filename, $this->document_root);
 	}
@@ -663,18 +670,18 @@ class ServerData extends Singleton
 	 *
 	 * @param string $filename	Path del archivo o directorio a modificar.
 	 * @return string			Path corregido si es un subdirectorio del directorio Web,
-	 * 							FALSE en otro caso.
+	 * 							en otro caso retorna el path original.
 	 */
-	public function removeDocumentRoot(string $filename): string|false
+	public function removeDocumentRoot(string $filename): string
 	{
+		// Debe purgar el path para asegurar que remueva correctamente si incluye ".."
+		$filename = $this->purgeFilename($filename);
 		if ($this->inDocumentRoot($filename)) {
-			// Debe purgar el path para asegurar que remueva correctamente si incluye ".."
-			$filename = $this->purgeFilename($filename);
 			// Remueve el "/" al inicio del path residual (si aplica)
 			return substr($filename, strlen($this->document_root) + 1);
 		}
 
-		return false;
+		return $filename;
 	}
 
 	/**

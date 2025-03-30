@@ -263,8 +263,7 @@ class ExtendedRenderView extends RenderView
 		$styles = miframe_html()->cssExport(true);
 		if ($replaceMark !== '') {
 			$content = str_replace($replaceMark, $styles, $content);
-		}
-		elseif ($styles !== '') {
+		} elseif ($styles !== '') {
 			$content = $styles . PHP_EOL . $content;
 		}
 	}
@@ -446,7 +445,8 @@ class ExtendedRenderView extends RenderView
 	 *
 	 * @param ErrorHandler $errors Objeto que reportará los errores.
 	 */
-	public function errorHandler(ErrorHandler $errors) {
+	public function setErrorHandler(ErrorHandler $errors)
+	{
 		$this->errors = $errors;
 	}
 
@@ -463,8 +463,10 @@ class ExtendedRenderView extends RenderView
 	public function error(string $message, string $file = '', int $line = 0)
 	{
 		if (!empty($this->errors)) {
+			// Asignada manualmente
 			$this->errors->showError(E_USER_ERROR, $message, $file, $line);
 		}
+		// Ejecuta método definido en el padre
 		parent::error($message, $file, $line);
 	}
 }

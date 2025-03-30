@@ -49,7 +49,7 @@ if (!$Test->choice('userview', 'Remover vista de error personalizada', 'usar vis
 if (!$Test->choice('nowatch', 'Deshabilitar personalización de errores', 'No watch')) {
 	$Test->copyNextLines();
 	$errors->watch();
-	$view->errorHandler($errors);
+	$view->setErrorHandler($errors);
 }
 
 // Directorio donde ubicar el layout y las vistas

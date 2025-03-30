@@ -63,16 +63,16 @@ class HTMLSupport extends Singleton
 			if (!$inline) {
 				// En este caso, debe intentar incluirlo como remoto
 				$server = miframe_server();
-				$path = $server->removeDocumentRoot($filename);
-				if ($path !== false) {
+				if ($server->inDocumentRoot($filename)) {
 					// El archivo está dentro del document root, puede accderse por web.
 					// Adiciona a listado de publicados el path real
 					// para prevenir lo duplique si lo invoca como no-inline
 					// o no continuar si ya fue publicado como inline.
 					$key = $this->keyPath($filename);
-
 					if (!$this->isPublished($key)) {
 						$this->published[$key] = true;
+						// Remueve directorio web (DOCUMENT_ROOT)
+						$path = $server->removeDocumentRoot($filename);
 						// Cambia a formato de URL remoto
 						$filename = $server->purgeURLPath($path);
 						// Modifica el calificador

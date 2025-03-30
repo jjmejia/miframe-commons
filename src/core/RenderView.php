@@ -84,9 +84,9 @@ class RenderView extends Singleton
 	{
 		return (
 			array_key_exists($name, $this->globalParams) ?
-				$this->globalParams[$name] :
-				$default
-			);
+			$this->globalParams[$name] :
+			$default
+		);
 	}
 
 	/**
@@ -298,7 +298,9 @@ class RenderView extends Singleton
 		$fun = static function (string $view_filename, array &$view_args) {
 
 			// Previene se invoque un archivo no valido
-			if ($view_filename == '' || !is_file($view_filename)) { return; }
+			if ($view_filename == '' || !is_file($view_filename)) {
+				return;
+			}
 
 			if (count($view_args) > 0) {
 				// EXTR_SKIP previene use $filename o $args y genere colisión de valores.
@@ -341,6 +343,8 @@ class RenderView extends Singleton
 	public function error(string $message, string $file = '', int $line = 0)
 	{
 		if ($file !== '' && $line > 0) {
+			// Remueve root
+			$file = miframe_server()->removeDocumentRoot($file);
 			$message .= " en \"{$file}\" línea {$line}";
 		}
 		// Redefine mensaje para ambientes de producción?

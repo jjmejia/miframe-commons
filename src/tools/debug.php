@@ -30,6 +30,8 @@ function timecheck(string $text = '', int $precision = 4)
 	$time = $server->executionTime($precision);
 	// Obtiene el tiempo total transcurrido.
 	$partial = $server->checkPoint($precision);
+	// Fecha actual
+	$date = date('Y-m-d H:i:s');
 
 	// Adiciona etiquetas a mostrar en pantalla (opcional)
 	if ($text != '') {
@@ -40,6 +42,6 @@ function timecheck(string $text = '', int $precision = 4)
 	echo PHP_EOL .
 		"<div style=\"font-family:Calibri;background:#000;color:#fefefe;padding:5px 10px;margin:5px 0;font-size:14px\">" .
 		"<b style=\"color:yellow\">TIME/CHECK</b> Ellapse time: <b>{$time}</b> / Since last check-point: <b>{$partial}</b>{$text}" .
-		"<div style=\"color:#ccc;font-size:12px;padding-top:3px\">{$source}:{$trace[0]['line']}</div>".
+		"<div style=\"color:#ccc;font-size:12px;padding-top:3px\"><span style=\"color:yellow\">{$date}</span> {$source}:{$trace[0]['line']}</div>".
 		"</div>" . PHP_EOL;
 }
