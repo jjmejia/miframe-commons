@@ -6,8 +6,8 @@
  */
 
 $message = [
-	1 => 'Segunda vista. Ya no incluye el Layout (no se visualiza título) porque fue usado en la primera, que es marcada como la "vista Principal". El layout se incluye entonces solamente para cada iteración de esa vista.',
-	2 => 'Esta tercera vista incluye de nuevo el Layout porque previamente se ha habilitado su uso con <code>$view->layoutReset()</code>, de forma que ahora esta es la "vista Principal".'
+	1 => '<b>Segunda vista.</b> Ya no incluye el Layout (no se visualiza título) porque fue usado en la primera, que es marcada como la "vista Principal". El layout se incluye entonces solamente para cada iteración de esa vista.',
+	2 => 'Esta <b>tercera vista</b> incluye de nuevo el Layout porque previamente se ha habilitado su uso con <code>$view->layoutReset()</code>, de forma que ahora esta es la "vista Principal".'
 ];
 
 ?>

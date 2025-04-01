@@ -59,7 +59,7 @@ class ExtendedRenderError implements RenderErrorInterface
 	 *
 	 * @return bool Retorna FALSE si el error ya ha sido reportado.
 	 */
-	public function show(ErrorData $error, string $html_default): string
+	public function show(ErrorData $error): string
 	{
 		$content = '';
 
@@ -134,7 +134,7 @@ class ExtendedRenderError implements RenderErrorInterface
 
 			// Ejecuta vista solo si no está en el bloque de cierre(?)
 			// Retorna FALSE si ocurre algún error.
-			$content = $render->capture('show-error', $data_error, $html_default);
+			$content = $render->capture('show-error', $data_error, $error->htmlMessage());
 			// Valida errores previamente renderizados
 			$this->evalCachedErrors($content, $error->endScript);
 			// Adiciona estilos previamente guardados

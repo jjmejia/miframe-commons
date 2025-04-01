@@ -5,6 +5,6 @@
 	.local .mfsd .mfsd-content { background:#fff; }
 </style>
 <div class="local">
-	<p class="hero">Invocando <code>miframe_view('a', ...)</code> para validar comportamiento.</p>
+	<p class="hero">Invocando <code>miframe_view('demo-a', ...)</code> para validar comportamiento.</p>
 	<?= miframe_view('demo-a', compact('dato1', 'dato2')) ?>
 </div>

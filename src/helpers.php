@@ -82,6 +82,9 @@ function miframe_dump(mixed $var, string $title = '', bool $escape_dump = true, 
  */
 function miframe_errors(bool $use_extended_render = false)
 {
+	/**
+	 * @var ErrorHandler $errors
+	 */
 	$errors = new ErrorHandler();
 	if ($use_extended_render) {
 		// Hablita render predefinido
@@ -90,10 +93,12 @@ function miframe_errors(bool $use_extended_render = false)
 		$render->inDeveloperModeEndScript = false;
 		// Registra render
 		$errors->setRenderer($render);
+	} else {
+		// Remueve render si ya tenía uno asignado
+		$errors->removeRenderer();
 	}
+	// Observa errores
 	$errors->watch();
-	// Programa miframe_view() para usar este registro de error
-	miframe_render()->errorHandler($errors);
 
 	return $errors;
 }

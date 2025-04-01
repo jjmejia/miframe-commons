@@ -139,11 +139,11 @@ echo "<h2>miframe_autoload()</h2>";
 echo "<p>Respecto al uso de la librería <code>autoload.php</code>, " .
 	"estas son las Clases evaluadas durante esta presentación:</p>";
 
-$Test->dump($matches, 'miframe_autoload()->matches()');
+$Test->dump($matches);
 
 echo "<p>Y estos son los <i>namespaces</i> registrados:</p>";
 
-$Test->dump($namespaces, 'miframe_autoload()->namespaces()');
+$Test->dump($namespaces);
 
 timecheck('FIN');
 

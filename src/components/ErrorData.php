@@ -254,7 +254,7 @@ class ErrorData {
 			E_USER_ERROR => "Error en la aplicación",
 			E_USER_WARNING => "Aviso de advertencia",
 			E_USER_NOTICE => "Aviso informativo",
-			E_STRICT => "Error de compatibilidad",
+			// E_STRICT => "Error de compatibilidad",
 			E_RECOVERABLE_ERROR => "Error recuperable",
 			E_DEPRECATED => "Contenido Obsoleto",
 			E_USER_DEPRECATED => "Contenido Obsoleto de Usuario",

@@ -13,10 +13,7 @@
 
 namespace miFrame\Commons\Core;
 
-use Exception;
 use PDO;
-use PDOException;
-use PDOStatement;
 
 class PDOController
 {
@@ -109,7 +106,7 @@ class PDOController
 			$this->driverName == '' ||
 			!in_array($this->driverName, PDO::getAvailableDrivers())
 		) {
-			throw new Exception(
+			throw new \Exception(
 				"El driver indicado no es soportado para PDO ({$driver})"
 			);
 		}
@@ -192,7 +189,7 @@ class PDOController
 			$dsn = $this->driverName . ':' . implode(';', $elements);
 
 			$this->pdo = new PDO($dsn, $this->user, $this->password, $options);
-		} catch (PDOException $ex) {
+		} catch (\PDOException $ex) {
 			// Aviso de error capturable
 			$this->lastError = 'No pudo realizar conexión a la base de datos: ' . $ex->getMessage();
 			if ($this->debug) {
@@ -262,7 +259,7 @@ class PDOController
 					// Calcula tiempo que tarda en recuperar los datos
 					$this->durationFetch = microtime(true) - $time;
 				}
-			} catch (PDOException $ex) {
+			} catch (\PDOException $ex) {
 				// Aviso de error capturable
 				$this->lastError = 'No pudo recuperar filas de datos: ' . $ex->getMessage();
 				if ($this->debug) {
@@ -289,7 +286,7 @@ class PDOController
 	 * @param array $values Opcional. Un arreglo de valores para enlazar a la consulta. Por defecto es un array vacío.
 	 * @return mixed Objeto PDOStatement para recuperación de datos o false si ocurre algún error en la consulta.
 	 */
-	public function execute(string $query, array $values = []): PDOStatement|false
+	public function execute(string $query, array $values = []): \PDOStatement|false
 	{
 		$result = false;
 
@@ -320,7 +317,7 @@ class PDOController
 			if ($this->debug) {
 				$this->durationExec = microtime(true) - $this->timeQuery;
 			}
-		} catch (PDOException $ex) {
+		} catch (\PDOException $ex) {
 			// Aviso de error capturable
 			$this->lastError = 'No pudo realizar la consulta SQL solicitada: ' . $ex->getMessage();
 			if ($this->debug) {

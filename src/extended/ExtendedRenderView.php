@@ -11,7 +11,6 @@
 
 namespace miFrame\Commons\Extended;
 
-use miFrame\Commons\Core\ErrorHandler;
 use miFrame\Commons\Core\RenderView;
 use miFrame\Commons\Interfaces\FilterContentInterface;
 use miFrame\Commons\Traits\SanitizeRenderContent;
@@ -53,9 +52,12 @@ class ExtendedRenderView extends RenderView
 	private string $theMainView = '';
 
 	/**
-	 * @var ErrorHandler $errors Manejador de errores.
+	 * Nombre de la variable utilizada para almacenar el contenido del layout
+	 * durante el proceso de renderizado.
+	 *
+	 * @var string $layoutContentVar Nombre de la variable para el contenido del layout.
 	 */
-	private ErrorHandler $errors;
+	public string $layoutContentVar = 'RenderViewContent';
 
 	/**
 	 * Acciones a ejecutar al crear un objeto para esta clase.
@@ -68,18 +70,20 @@ class ExtendedRenderView extends RenderView
 		// Deshabilita salida a pantalla de mensajes de error
 		// (se habilita solo para modo Desarrollo)
 		ini_set("display_errors", "off");
+		// Oculta document root de la salida a pantalla para no localhost
+		$this->hideDocumentRoot = !miframe_server()->isLocalhost();
 	}
 
 	/**
 	 * Path para buscar vistas predefinidas.
 	 *
-	 * @param string $viewname Nombre/Path de la vista.
+	 * @param string $viewname Nombre de la vista.
 	 *
 	 * @return string Path.
 	 */
 	private function localPathFiles(string $viewname): string
 	{
-		return __DIR__ . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . $viewname . '.php';
+		return dirname(__DIR__) . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . $viewname . '.php';
 	}
 
 	/**
@@ -141,31 +145,30 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
-	 * Captura el texto enviado a pantalla (o al navegador) por cada vista.
+	 * Captura el texto enviado a pantalla (o al navegador) y adiciona layout.
+	 *
+	 * El layout es una vista adicional que se invoca automáticamente luego de
+	 * rederizar la vista principal (primer vista invocada).
 	 *
 	 * @param string $filename Archivo que contiene la vista.
 	 * @param array $params Arreglo con valores.
+	 * @param string $default Valor a devolver si la vista no existe.
 	 *
 	 * @return string Contenido renderizado.
 	 */
-	protected function renderView(string $filename, array $params = []): string
+	public function view(string $viewname, array $params = [], string $default = ''): string
 	{
+		$content = '';
 		// Registra primera vista como la vista principal
-		// (a menos que se registre como vista sin layout)
-		if ($this->theMainView === '' && $this->layoutExists()) {
-			$this->theMainView = $filename;
-		}
-
-		// Renderiza vista en la forma tradicional
-		$content = parent::renderView($filename, $params);
-
-		if (!empty($content) && $this->developerMode && $this->debug) {
-			$this->showFrameContentDebug($content, $filename);
-		}
-
-		// Validación posterior (cuando termina la ejecución del vista principal)
-		if ($content !== false && $filename === $this->theMainView) {
+		if ($this->theMainView === '') {
+			$this->theMainView = $viewname;
+			// Renderiza vista en la forma tradicional
+			$content = $this->capture($viewname, $params, $default);
+			// Adiciona layout y valida contenido
 			$this->validateMainContent($content);
+		} else {
+			// Ejecuta vista sin layout (no marca "mainView" si esta es la primer invocación)
+			$content = $this->capture($viewname, $params, $default);
 		}
 
 		return $content;
@@ -191,6 +194,10 @@ class ExtendedRenderView extends RenderView
 	 */
 	private function validateMainContent(string &$content)
 	{
+		if (empty($content)) {
+			$content = ''; // Asegura que se retorne una cadena vacia
+			return;
+		}
 
 		$unique_mark = '';
 
@@ -227,16 +234,19 @@ class ExtendedRenderView extends RenderView
 		// Recupera path real del layout
 		// Nota: Al recuperarlo justo antes de invocar el layout, permite a la aplicación
 		// poder cambiarlo en algún momento.
-		$filename = $this->checkFile($this->layoutViewname);
-		if ($filename !== '') {
-			// Asigna contenido a una variabe que pueda ser invocada en la vista
-			$params = ['RenderViewContent' => $content];
-			// Ejecuta vista y recupera nuevo contenido
-			$content = $this->renderView(
-				$filename,
-				$params
-			);
+
+		$params = [];
+		$this->layoutContentVar = trim($this->layoutContentVar);
+		// Asigna contenido a una variabe que pueda ser invocada en la vista
+		if (!empty($this->layoutContentVar)) {
+			// Adiciona variable a usar en la vista
+			$params = [$this->layoutContentVar => $content];
 		}
+		// Ejecuta vista y recupera nuevo contenido
+		$content = $this->view(
+			$this->layoutViewname,
+			$params
+		);
 	}
 
 	/**
@@ -306,19 +316,6 @@ class ExtendedRenderView extends RenderView
 	}
 
 	/**
-	 * Redefine el método viewPaths() de la clase RenderView.
-	 *
-	 * Adiciona path provisto por el método localPathFiles() para la
-	 * busqueda de vistas predefinidas.
-	 */
-	protected function viewPaths(string $viewname): array
-	{
-		$options = parent::viewPaths($viewname);
-		$options[] = $this->localPathFiles($viewname);
-		return $options;
-	}
-
-	/**
 	 * Control para permitir una única ejecución de contenidos.
 	 *
 	 * @return bool TRUE para cuando se invoca la primera vez. FALSE en otro caso.
@@ -344,13 +341,25 @@ class ExtendedRenderView extends RenderView
 	 * Solamente funciona cuando se usa la opció de "modo Debug".
 	 *
 	 * @param string $content Contenido de la vista a renderizar.
-	 * @param string $filename Archivo de la vista a renderizar.
 	 */
-	private function showFrameContentDebug(string &$content, string $filename)
+	private function showFrameContentDebug(string &$content, string $viewname)
 	{
+		if (empty($content)) {
+			$content = ''; // Asegura que se retorne una cadena vacia
+			return;
+		}
+		// Continua si está en modo Desarrollo y se habilitó el modo Debug.
+		// Valida también que la vista no sea "show-frame-content-debug"
+		// para evitar bucle infinito al renderizar la vista de depuración.
+		if (!$this->developerMode || !$this->debug || $viewname === 'show-frame-content-debug') {
+			return;
+		}
+
 		$target = '';
-		if ($this->currentView != '') {
-			$target = $this->views[$this->currentView]['name'];
+		$filename = $this->findView($viewname);
+		// Valida si esta vista es el Layout
+		if ($this->layoutViewname !== $viewname) {
+			$target = $viewname;
 		}
 		$content = $this->capture(
 			'show-frame-content-debug',
@@ -413,8 +422,8 @@ class ExtendedRenderView extends RenderView
 	/**
 	 * Captura contenido de una vista sin aplicar Layout.
 	 *
-	 * La vista a capturar se ejecuta sin considerar el Layout actual. Luego de
-	 * ejecutar la vista, el Layout se restablece a su valor original.
+	 * La vista a capturar se ejecuta sin considerar el Layout actual, incluso
+	 * si es la primera vista ejecutada.
 	 *
 	 * Si la vista a capturar no existe, se devuelve el valor de $default.
 	 *
@@ -426,47 +435,17 @@ class ExtendedRenderView extends RenderView
 	 */
 	public function capture(string $viewname, array $params = [], string $default = ''): string
 	{
-		// Preserva layout actual y luego lo remueve
-		$layout_back = $this->layout();
-		$this->layoutRemove();
+		// Adiciona valor por defecto, a usar en caso que no exista la vista solicitada
+		// en el directorio de vistas de usuario ($pathFiles).
+		$default_filename = $this->localPathFiles($viewname);
+		if (is_file($default_filename)) {
+			$this->defaultFor($viewname, $default_filename);
+		}
+
 		// Ejecuta vista sin layout (no marca "mainView" si esta es la primer invocación)
-		$content = $this->view($viewname, $params);
-		// Restablece el layput
-		$this->layout($layout_back);
-		// Valida respuesta
-		if ($content === false) {
-			return $default;
-		}
+		$content = parent::view($viewname, $params, $default);
+		$this->showFrameContentDebug($content, $viewname);
+
 		return $content;
-	}
-
-	/**
-	 * Asigna un objeto ErrorHandler para reporte de errores.
-	 *
-	 * @param ErrorHandler $errors Objeto que reportará los errores.
-	 */
-	public function setErrorHandler(ErrorHandler $errors)
-	{
-		$this->errors = $errors;
-	}
-
-	/**
-	 * Genera evento de error y termina la ejecución del script.
-	 *
-	 * Si se ha asignado un objeto ErrorHandler, se utiliza para reportar el error.
-	 * Si no se ha asignado, se utiliza el método error() de la clase padre.
-	 *
-	 * @param string $message Mensaje de error.
-	 * @param string $file [optional] Archivo en el que se produjo el error.
-	 * @param int $line [optional] Número de línea en el que se produjo el error.
-	 */
-	public function error(string $message, string $file = '', int $line = 0)
-	{
-		if (!empty($this->errors)) {
-			// Asignada manualmente
-			$this->errors->showError(E_USER_ERROR, $message, $file, $line);
-		}
-		// Ejecuta método definido en el padre
-		parent::error($message, $file, $line);
 	}
 }

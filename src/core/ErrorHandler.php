@@ -13,7 +13,6 @@
 
 namespace miFrame\Commons\Core;
 
-use Exception;
 use miFrame\Commons\Interfaces\RenderErrorInterface;
 use miFrame\Commons\Components\ErrorData;
 use miFrame\Commons\Traits\SanitizeRenderContent;
@@ -84,6 +83,8 @@ class ErrorHandler
 		if (!empty($render)) {
 			$this->setRenderer($render);
 		}
+		// Oculta document root de la salida a pantalla para no localhost
+		$this->hideDocumentRoot = !miframe_server()->isLocalhost();
 	}
 
 	/**
@@ -337,15 +338,14 @@ class ErrorHandler
 		}
 
 		// Mensaje HTML alternativo (al quitar los tags debe ser legible)
-		$html = $error->htmlMessage();
+		$content = $error->htmlMessage();
 
 		// Registra en el log de errores
-		$this->errorLog($html);
+		$this->errorLog($content);
 
-		$content = $html;
 		// Ejecuta render registrado (si alguno)
 		if (!empty($this->render)) {
-			$content = $this->render->show($error, $html);
+			$content = $this->render->show($error);
 		}
 
 		// Remueve Document Root de la salida a pantalla (por precaución)

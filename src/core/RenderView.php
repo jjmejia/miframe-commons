@@ -28,11 +28,6 @@ class RenderView extends Singleton
 	private string $pathFiles = '';
 
 	/**
-	 * @var array $viewCache Path de vistas ya encontradas.
-	 */
-	private array $viewCache = [];
-
-	/**
 	 * @var string $currentView Nombre de la vista actualmente en ejecución.
 	 */
 	protected string $currentView = '';
@@ -41,6 +36,15 @@ class RenderView extends Singleton
 	 * @var array $globalParams Valores disponibles para todas las vistas a usar.
 	 */
 	private array $globalParams = [];
+
+	/**
+	 * Rutas predeterminadas asociadas a vistas, usualmente cuando se encuentra en un path diferente a $pathFiles.
+	 *
+	 * @var array $defaults Arreglo asociativo de valores predeterminados.
+	 */
+	private array $defaults = [];
+
+	public bool $useExceptionForErrors = false;
 
 	/**
 	 * Acciones a ejecutar al crear un objeto para esta clase.
@@ -98,43 +102,6 @@ class RenderView extends Singleton
 	}
 
 	/**
-	 * Retorna arreglo con opciones de dónde buscar los archivos de vistas.
-	 *
-	 * Busca algún archivo que cumpla con alguna de estas condiciones:
-	 *
-	 * - Se encuentre en el directorio $this->pathFiles (si se ha configurado).
-	 * - Se encuentre tal cual como ha sido indicado.
-	 *
-	 * El sistema asume que el archivo que contiene la vista es un script PHP y
-	 * por tanto no es necesario indicar la extensión ".php" en $viewname (hacerlo
-	 * tampoco genera error, en caso que se requiera referirlo completo).
-	 *
-	 * @param string $viewname Nombre/Path de la vista.
-	 *
-	 * @return array Opciones de busqueda.
-	 */
-	protected function viewPaths(string $viewname): array
-	{
-		$options = [];
-		// Busca en el directorio de archivos
-		if ($this->pathFiles !== '') {
-			// $filename no contiene path ni extensión (comportamiento por defecto)
-			$options[] = $this->pathFiles . $viewname . '.php';
-			// $filename no contiene path pero si la extensión
-			$options[] = $this->pathFiles . $viewname;
-		}
-		// En caso que el path contenga una ruta completa (o realtivamente completa)
-		if (strpos($viewname, DIRECTORY_SEPARATOR) !== false || strpos($viewname, '/') !== false) {
-			// $filename contiene path pero no la extensión
-			$options[] = $viewname . '.php';
-			// Path completo dado por el usuario
-			$options[] = $viewname;
-		}
-
-		return $options;
-	}
-
-	/**
 	 * Valida existencia del nombre/path dado a una vista.
 	 *
 	 * @param string $viewname Nombre/Path de la vista.
@@ -145,28 +112,54 @@ class RenderView extends Singleton
 	{
 		$viewname = trim($viewname);
 		if ($viewname !== '') {
-			$key = md5(strtolower($viewname));
 			// Valida si no está registrado en la caché local
-			if (!isset($this->viewCache[$key])) {
-				$options = $this->viewPaths($viewname);
+			// Busca en el directorio de archivos
+			if ($this->pathFiles !== '') {
+				// $filename no contiene path ni extensión (comportamiento por defecto)
+				// Nota: No valida $viewname sin el path indicado para prevenir incluya
+				// por accidente archivos de rutas no habilitadas.
+				$options = [
+					$this->pathFiles . $viewname . '.php',
+					// $filename no contiene path pero si la extensión
+					$this->pathFiles . $viewname
+				];
+
 				// Busca en los directorios indicados
 				foreach ($options as $filename) {
-					if (!is_file($filename)) {
-						// Intenta el mismo pero todo en minusculas para el nombre base,
-						// en caso que el SO diferencia may/min (Linux)
-						$filename = dirname($filename) . DIRECTORY_SEPARATOR . strtolower(basename($filename));
-					}
 					if (is_file($filename)) {
-						$this->viewCache[$key] = realpath($filename);
-						return $this->viewCache[$key];
+						return realpath($filename);
 					}
 				}
-			} else {
-				return $this->viewCache[$key];
+			}
+			// Llegado a este punto, valida en la lista de defaults
+			if (isset($this->defaults[$viewname])) {
+				return $this->defaults[$viewname];
 			}
 		}
 
 		return '';
+	}
+
+
+	/**
+	 * Establece una ruta de archivo predeterminada para un nombre de vista específico.
+	 *
+	 * @param string $viewname El nombre de la vista a asociar con el archivo predeterminado.
+	 * @param string $filename Ruta del archivo que se establecerá como predeterminada para la vista especificada.
+	 */
+	public function defaultFor(string $viewname, string $filename)
+	{
+		$viewname = trim($viewname);
+		$filename = trim($filename);
+		if ($viewname !== '' && $filename !== '') {
+			if (file_exists($filename)) {
+				// Registra path por defecto
+				$this->defaults[$viewname] = realpath($filename);
+			} else {
+				// Genera error ya que el archivo no existe
+				$this->error("El archivo por defecto para la vista {$viewname} no es valido ({$filename})", __FILE__, __LINE__);
+			}
+		}
 	}
 
 	/**
@@ -211,19 +204,19 @@ class RenderView extends Singleton
 	 * prevenir referencias ciclicas (por ejemplo, una vista que se invoca a
 	 * si misma crearía un bucle infinito de una misma vista).
 	 *
-	 * @param string $viewname Nombre/Path de la vista.
+	 * @param string $filename Path de la vista.
 	 *
 	 * @return bool TRUE si crea el espacio para la nueva vista, FALSE si la referencia
 	 * 				deseada ya existe.
 	 */
-	private function newTemplate(string $viewname): bool
+	private function newTemplate(string $filename): bool
 	{
-		$reference = md5($viewname);
+		$reference = md5($filename);
 		if (isset($this->views[$reference])) {
 			return false;
 		}
 
-		$this->views[$reference] = ['name' => $viewname, 'parent' => $this->currentView];
+		$this->views[$reference] = ['file' => $filename, 'parent' => $this->currentView];
 		// Actualiza identificador de vista actual
 		$this->currentView = $reference;
 
@@ -251,28 +244,34 @@ class RenderView extends Singleton
 	 *
 	 * @param string $viewname Nombre/Path de la vista.
 	 * @param array $params Arreglo con valores.
+	 * @param string $default Valor a devolver si la vista no existe.
 	 *
-	 * @return string Contenido renderizado o FALSE si la vista ya está en ejecución.
+	 * @return string Contenido renderizado.
 	 */
-	public function view(string $viewname, array $params = []): false|string
+	public function view(string $viewname, array $params = [], string $default = ''): string
 	{
-		if ($this->newTemplate($viewname)) {
-			// Valida nombre de la vista y recupera nombre de archivo asociado
-			$filename = $this->checkFile($viewname);
+		// Valida nombre de la vista y recupera nombre de archivo asociado
+		$filename = $this->checkFile($viewname);
+		if ($this->newTemplate($filename)) {
+			// Bloquea salida a pantalla
+			ob_start();
 			// Ejecuta vista
-			$content = $this->renderView($filename, $params);
+			$this->includeFile($filename, $params);
+			// Recupera contenido
+			// $content = ob_get_clean();
+			// De Copilot: The use of ob_get_clean() can be replaced with
+			// ob_get_contents() followed by ob_end_clean() for better performance
+			// in some cases.
+			$default = ob_get_contents();
+			ob_end_clean();
 			// Restablece vista previa
 			$this->removeTemplate();
-
-			return $content;
 		}
 
-		return false;
+		return $default;
 	}
 
 	/**
-	 * Captura el texto enviado a pantalla (o al navegador) por cada vista.
-	 *
 	 * Realiza la inclusión de los scripts de vistas.
 	 *
 	 * Para prevenir que pueda modificarse directamente esta clase, en lugar de
@@ -290,16 +289,16 @@ class RenderView extends Singleton
 	 * @param string $filename Archivo que contiene la vista.
 	 * @param array $params Arreglo con valores.
 	 *
-	 * @return string Contenido renderizado.
+	 * @return mixed Valor retornado por el script, si alguno.
 	 */
-	protected function renderView(string $filename, array $params): string
+	private function includeFile(string $filename, array $params): mixed
 	{
 		// La define como una función estática para no incluir $this
 		$fun = static function (string $view_filename, array &$view_args) {
 
 			// Previene se invoque un archivo no valido
 			if ($view_filename == '' || !is_file($view_filename)) {
-				return;
+				return false;
 			}
 
 			if (count($view_args) > 0) {
@@ -308,25 +307,14 @@ class RenderView extends Singleton
 				extract($view_args, EXTR_SKIP | EXTR_REFS);
 			}
 
-			include $view_filename;
+			return include($view_filename);
 		};
 
-		// Bloquea salida a pantalla
-		ob_start();
 		// Adiciona variables globales pero tienen prioridad las locales
 		$params = $params + $this->globalParams;
+
 		// Ejecuta include
-		$fun($filename, $params);
-		// Recupera contenido
-		// $content = ob_get_clean();
-		// De Copilot: The use of ob_get_clean() can be replaced with
-		// ob_get_contents() followed by ob_end_clean() for better performance
-		// in some cases.
-		$content = ob_get_contents();
-
-		ob_end_clean();
-
-		return $content;
+		return $fun($filename, $params);
 	}
 
 	/**
@@ -342,14 +330,32 @@ class RenderView extends Singleton
 	 */
 	public function error(string $message, string $file = '', int $line = 0)
 	{
-		if ($file !== '' && $line > 0) {
-			// Remueve root
-			$file = miframe_server()->removeDocumentRoot($file);
-			$message .= " en \"{$file}\" línea {$line}";
+		$source = '';
+		if ($file !== '') {
+			$server = miframe_server();
+			if (!$server->isLocalhost()) {
+				// Remueve root para entornos no locales
+				$file = $server->removeDocumentRoot($file);
+			}
+			$source .= "\"{$file}\"";
 		}
-		// Redefine mensaje para ambientes de producción?
+		if ($line > 0) {
+			$source .= " línea {$line}";
+		}
+
+		// Valida si usa una Excepción para errores
+		if ($this->useExceptionForErrors) {
+			// El mensaje de excepción adiciona su propio path y línea
+			throw new \Exception("{$message} ({$source})");
+		}
+
+		if ($source !== '') {
+			$message .= " en {$source}";
+		}
+
 		echo "<div style=\"background: #fadbd8; padding: 15px; margin: 5px 0\">" .
-			"<b>Error:</b> {$message}" .
+			"<b>Error:</b> " .
+			nl2br($message) .
 			"</div>";
 
 		exit;

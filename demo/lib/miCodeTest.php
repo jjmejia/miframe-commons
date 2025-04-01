@@ -270,7 +270,11 @@ class miCodeTest
 	 */
 	public function end(bool $show_repo = true)
 	{
-		// Repositorio en Github
+		if ($show_repo && miframe_server()->isLocalhost()) {
+			echo "<h2>Localhost / Clases usadas</h2>";
+			$this->dump(miframe_autoload()->matches());
+		}
+
 		if ($show_repo && !empty($this->config['github-repo'])) {
 			echo '<div class="test-repo">';
 			echo '<h2>¿Tienes curiosidad por el código fuente?</h2>';
@@ -286,13 +290,6 @@ class miCodeTest
 
 		// Registra visita
 		$this->updateVisitorLog();
-
-		// echo '<div class="foot">' .
-		// 	'<b>' . $this->domainName . '</b> &copy; ' . date('Y') . '.' .
-		// 	$this->footer() .
-		// 	'</div>' . PHP_EOL .
-		// 	'</div>' . // Contenedor "test-content" abierto en $this->start()
-		// 	'</body></html>';
 
 		echo '</body></html>';
 	}

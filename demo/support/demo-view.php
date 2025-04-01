@@ -86,7 +86,6 @@ $Test->htmlPasteLines([
 if ($post_view !== 'multiples') {
 	// Para mostrar en pantalla
 	$Test->showNextLines(1, ['$post_view' => "'{$post_view}'"]);
-	echo '<hr size="1">';
 	echo miframe_view($post_view, compact('dato1', 'dato2'));
 } else {
 	// Multiples views
@@ -94,7 +93,6 @@ if ($post_view !== 'multiples') {
 	echo miframe_view('demo-a', compact('dato1', 'dato2'));
 	echo miframe_view('demo-m', ['index' => 1]);
 	$view->layoutReset();
-	echo '<hr size="1">';
 	echo miframe_view('demo-m', ['index' => 2]);
 }
 
