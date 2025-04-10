@@ -194,8 +194,8 @@ class miCodeTest
 	// Apertura del contenedor de la página demo a mostrar
 
 	?>
+	<div class="test-description"><?= $description ?></div>
 	<div class="test-content">
-		<p class="test-description"><?= $description ?></p>
 		<?php
 
 		// Manejo personalizado de errores

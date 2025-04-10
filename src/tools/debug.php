@@ -21,6 +21,8 @@
  */
 function timecheck(string $text = '', int $precision = 4)
 {
+	static $last_check = '';
+
 	$server = miframe_server();
 	// Obtiene el script y línea desde donde se invoca.
 	$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
@@ -33,6 +35,17 @@ function timecheck(string $text = '', int $precision = 4)
 	// Fecha actual
 	$date = date('Y-m-d H:i:s');
 
+	// Complementa info
+	$info_text = '';
+	if ($time !== $partial) {
+		if ($last_check !== '') {
+			$last_check = " ({$last_check})";
+		}
+		$info_text = " / Desde el anterior check{$last_check}: <b>{$partial}</b>";
+	}
+	// Preserva marca (si alguna)
+	$last_check = $text;
+
 	// Adiciona etiquetas a mostrar en pantalla (opcional)
 	if ($text != '') {
 		$text = "<b style=\"float:right;padding-left:5px;color:#b4ffff\">{$text}</b>";
@@ -41,7 +54,7 @@ function timecheck(string $text = '', int $precision = 4)
 	// Muestra el mensaje, adiciona algunos estilos.
 	echo PHP_EOL .
 		"<div style=\"font-family:Calibri;background:#000;color:#fefefe;padding:5px 10px;margin:5px 0;font-size:14px\">" .
-		"<b style=\"color:yellow\">TIME/CHECK</b> Ellapse time: <b>{$time}</b> / Since last check-point: <b>{$partial}</b>{$text}" .
+		"{$text}<b style=\"color:yellow\">TIME/CHECK</b> Tiempo transcurrido: <b>{$time}</b>{$info_text}" .
 		"<div style=\"color:#ccc;font-size:12px;padding-top:3px\"><span style=\"color:yellow\">{$date}</span> {$source}:{$trace[0]['line']}</div>".
 		"</div>" . PHP_EOL;
 }
