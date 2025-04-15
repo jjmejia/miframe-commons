@@ -433,8 +433,8 @@ class ServerData extends Singleton
 	 */
 	public function pathInfo(): string
 	{
-		// URL path al script real ejecutado (remueve nombre del script, incluido siempre)
-		$script_name = dirname($this->self(true)) . '/';
+		// URL path al script real ejecutado
+		$script_name = $this->self(true);
 		// URL path dado por el usuario (puede corresponder a una "URL amigable")
 		$request_uri = $this->self();
 
@@ -451,6 +451,8 @@ class ServerData extends Singleton
 
 			if ($this->path_info == '') {
 				// 3. No existe y debe recuperarlo manualmente.
+				// Remueve nombre del script, incluido siempre
+				$script_name = dirname($script_name) . '/';
 				// Recupera las partes que difieren
 				$len = strlen($script_name);
 				if (substr($request_uri, 0, $len) === $script_name) {
