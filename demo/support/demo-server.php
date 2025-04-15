@@ -36,7 +36,7 @@ timecheck('INICIO');
 // Arreglo de muestras
 $data = array(
 	'miframe_server()->startAt()' => $server->startAt(),
-	'miframe_server()->startAt(\'Y/m/d H:i:s\')' => $server->startAt('Y/m/d H:i:s'),
+	// 'miframe_server()->startAt(\'Y/m/d H:i:s\')' => $server->startAt('Y/m/d H:i:s'),
 	'miframe_server()->checkPoint()' => $server->checkPoint(),
 	// Limpieza
 	'miframe_server()->purgeURLPath($path_dummy)' => $server->purgeURLPath($path_dummy),
@@ -47,21 +47,28 @@ $data = array(
 	'miframe_server()->isWeb()' => $server->isWeb(),
 	'miframe_server()->useHTTPSecure()' => $server->useHTTPSecure(),
 	'miframe_server()->isLocalhost()' => $server->isLocalhost(),
-	'miframe_server()->software()' => $server->software(),
+	'miframe_server()->webserver()' => $server->webserver(),
 	'miframe_server()->browser()' => $server->browser(),
 	// Datos del servidor
 	'miframe_server()->name()' => $server->name(),
+	'miframe_server()->scheme()' => $server->scheme(),
 	'miframe_server()->domain()' => $server->domain(),
+	'miframe_server()->port()' => $server->port(),
 	'miframe_server()->ip()' => $server->ip(),
-	'miframe_server()->host()' => $server->host(),
-	'miframe_server()->host($path_dummy)' => $server->host($path_dummy),
-	'miframe_server()->host($path_dummy, $args)' => $server->host($path_dummy, $args),
+	'miframe_server()->url()' => $server->url(),
+	'miframe_server()->url($path_dummy)' => $server->url($path_dummy),
 	'miframe_server()->url($path_dummy, $args)' => $server->url($path_dummy, $args),
-	'miframe_server()->path()' => $server->path(),
+	// 'miframe_server()->urlPath()' => $server->urlPath(),
+	'miframe_server()->urlPath($path_dummy)' => $server->urlPath($path_dummy),
+	'miframe_server()->urlPath($path_dummy, $args)' => $server->urlPath($path_dummy, $args),
+	// 'miframe_server()->requestUri()' => $server->requestUri(),
 	'miframe_server()->pathInfo()' => $server->pathInfo(),
 	'miframe_server()->self()' => $server->self(),
+	'miframe_server()->self(true)' => $server->self(true),
 	'miframe_server()->relativePath()' => $server->relativePath(),
 	'miframe_server()->relativePath($path_dummy)' => $server->relativePath($path_dummy),
+	// 'miframe_server()->relativePath("", true)' => $server->relativePath('', true),
+	// 'miframe_server()->relativePath($path_dummy, true)' => $server->relativePath($path_dummy, true),
 	'miframe_server()->documentRoot()' => $server->documentRoot(),
 	'miframe_server()->documentRoot($path_dummy)' => $server->documentRoot($path_dummy),
 	'miframe_server()->documentRootSpace()' => $server->documentRootSpace(),
@@ -97,7 +104,7 @@ if (!$server->isLocalhost() || $force_no_localhost) {
 	$data['miframe_server()->name()'] = $ocultar;
 	// $data['miframe_server()->browser()'] = $ocultar;
 	// $data['miframe_server()->ip()'] = $ocultar;
-	$data['miframe_server()->software()'] = $ocultar;
+	$data['miframe_server()->webserver()'] = $ocultar;
 	// Oculta directorios sensibles
 	$que = [$server->tempDir(), $server->documentRoot()];
 	$con = ['[TEMP_DIR]' . DIRECTORY_SEPARATOR, '[DOCUMENT_ROOT]' . DIRECTORY_SEPARATOR];

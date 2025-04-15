@@ -64,7 +64,7 @@ $Test->htmlPasteLines();
 // Descarga estilos
 echo '<h3>HTML generado al procesar los ' . $html->cssUnpublished() . ' recursos previamente configurados</h3>';
 $nocomentar = $Test->choice('no-comments', 'Ocultar comentarios', 'Incluir comentarios');
-$Test->showNextLines(2, ['!$nocomentar' => ($nocomentar ? 'false' : 'true')]);
+$Test->showNextLines(1, ['!$nocomentar' => ($nocomentar ? 'false' : 'true')]);
 $code = $html->cssExport(!$nocomentar);
 echo $code;
 
@@ -77,7 +77,7 @@ $Test->htmlPre(
 
 // Recupera de archivo puntual
 echo '<h3>Exportar estilos tomados de un archivo</h3>';
-$Test->showNextLines(2);
+$Test->showNextLines();
 $styles = $html->cssExportFrom(__DIR__ . '/demo-html-files/cinco.css', true);
 echo $styles;
 

@@ -64,9 +64,6 @@ class ExtendedRenderError implements RenderErrorInterface
 		$content = '';
 
 		// Recupera objeto renderizador
-		/**
-		 * @var ExtendedRenderView $render
-		 */
 		$render = miframe_render();
 
 		if ($render->inDeveloperMode() && $this->inDeveloperModeEndScript) {

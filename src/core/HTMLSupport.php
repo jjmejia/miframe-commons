@@ -3,8 +3,6 @@
 /**
  * Librería de soporte para clases usadas para generar texto HTML.
  *
- * Requiere miframe_server().
- *
  * @author John Mejia
  * @since Octubre 2024
  */
@@ -74,7 +72,7 @@ class HTMLSupport extends Singleton
 						// Remueve directorio web (DOCUMENT_ROOT)
 						$path = $server->removeDocumentRoot($filename);
 						// Cambia a formato de URL remoto
-						$filename = $server->purgeURLPath($path);
+						$filename = $server->urlPath($path);
 						// Modifica el calificador
 						$src = 'remote';
 					}

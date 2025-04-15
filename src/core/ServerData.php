@@ -169,7 +169,7 @@ class ServerData extends Singleton
 					if ($this->ip_client !== '') {
 						break;
 					}
- 				}
+				}
 				// En caso que retorne un nombre (como "localhost") se asegura esté en
 				// minusculas para facilitar comparaciones.
 				$this->ip_client = strtolower($this->ip_client);
@@ -178,7 +178,7 @@ class ServerData extends Singleton
 					in_array($this->ip_client, ['127.0.0.1', '::1', 'localhost']) ||
 					// Local server IP (Ej. 192.xxx)
 					$this->ip_client === $this->ip()
-					) {
+				) {
 					// Estandariza resultado
 					$this->ip_client = 'localhost';
 				}
@@ -233,6 +233,26 @@ class ServerData extends Singleton
 	}
 
 	/**
+	 * Puerto en la maquina del servidor usado por el servidor Web para comunicación. Por defecto
+	 * para HTTP usa 80. Para HTTPS por defecto usa 443.
+	 *
+	 * @return int Puerto en la maquina del servidor.
+	 */
+	public function port(): int
+	{
+		// SERVER_PORT:
+		// Puerto en la maquina del servidor usado por el servidor Web para comunicación. Por defecto
+		// será de '80'; Para SSL (HTTPS) cambia a cualquiera sea
+		// el puerto usado para dicha comunicación (por defecto 443).
+		return 0 + $this->get('SERVER_PORT', ($this->useHTTPSecure() ? 443 : 80));
+	}
+
+	public function scheme(): string
+	{
+		return ($this->forceHttpsForHost || $this->useHTTPSecure()) ? 'https://' : 'http://';
+	}
+
+	/**
 	 * URL completa asociada al servidor Web para la consulta actual.
 	 *
 	 * Una "URL completa" se compone de los siguientes elementos (los valores entre "[]" son opcionales):
@@ -255,18 +275,16 @@ class ServerData extends Singleton
 	 * @param array $args 		Variables a incluir en la URL.
 	 * @return string 			URL.
 	 */
-	public function host(string $path = '', array $args = []): string
+	public function url(string $path = '', array $args = []): string
 	{
 		// Valida schema usado (http o https)
-		$full_path = ($this->forceHttpsForHost || $this->useHTTPSecure()) ? 'https://' : 'http://';
+		$full_path = $this->scheme();
 
 		// Domain-name (nombre de dominio, ej: www.misitio.com)
 		$full_path .= $this->domain();
 
-		// SERVER_PORT:
-		// Puerto en la maquina del servidor usado por el servidor Web para comunicación. Por defecto será de '80'; Para SSL (HTTPS) cambia a cualquiera sea
-		// el puerto usado para dicha comunicación (por defecto 443).
-		$port = 0 + $this->get('SERVER_PORT', 80);
+		// Puerto en la maquina del servidor usado por el servidor Web para comunicación.
+		$port = $this->port();
 
 		// Ignora puertos estándar 80 (HTTP) y 443 (HTTPS)
 		if ($port > 0 && !in_array($port, [80, 443])) {
@@ -274,11 +292,11 @@ class ServerData extends Singleton
 		}
 
 		// Complementa path con los parámetros adicionales recibidos (si alguno)
-		return $full_path . $this->url($path, $args);
+		return $full_path . $this->urlPath($path, $args);
 	}
 
 	/**
-	 * Retorna una URL completa, incluido el esquema y dominio.
+	 * Retorna el path de una URL con parámetros (query string).
 	 *
 	 * @param string $path 		Path a completar con el esquema y dominio.
 	 * @param array $args 		Variables a incluir en la URL.
@@ -286,10 +304,10 @@ class ServerData extends Singleton
 	 * 							redirigir una consulta no segura con "https" a una segura que use "https").
 	 * @return string 			URL.
 	 */
-	public function url(string $path, array $args = []): string
+	public function urlPath(string $path, array $args = []): string
 	{
 		$params = '';
-		$path = '/' . trim($path);
+		$path = trim($path);
 
 		// Valida si el path contiene parámetros
 		$params = '';
@@ -306,22 +324,43 @@ class ServerData extends Singleton
 			$params = '?' . http_build_query($args);
 		}
 		// Retorna URL completo
-		return $this->purgeURLPath($path) . $params;
+		$path = $this->purgeURLPath($path);
+		if (substr($path, 0, 1) !== '/') {
+			$path = '/' . $path;
+		}
+
+		return $path . $params;
 	}
 
 	/**
 	 * Path al script ejecutado en la consulta actual, relativo al directorio Web.
 	 *
-	 * El valor del path es tomado de $_SERVER['SCRIPT_NAME'].
+	 * Si indica $realpath = TRUE el valor del path es tomado de $_SERVER['SCRIPT_NAME'] (URL path del script
+	 * real invocado por el usuario). En otro caso, el valor es tomado de $_SERVER['REQUEST_URI'] (path
+	 * dado por el usuario al realizar la consulta Web). Los dos valores pueden diferir cuando se usan
+	 * URLs "amigables" o cuando se predefine el script asociado a un directorio. Por ejemplo:
 	 *
+	 * - localhost/web --> localhost/web/index.php
+	 * - localhost/web/update --> localhost/web/update.php
+	 *
+	 * @param bool $realpath (Opcional) TRUE usa el path al script real invocado, FALSE retorna el path dado por el usuario.
 	 * @return string Path.
 	 */
-	public function self(): string
+	public function self(bool $realpath = false): string
 	{
-		// SCRIPT_NAME:
-		// Contiene la ruta al script actual, vista desde el servidor Web.
-		// Puede diferir de la ingresada por el usuario cuando se usan "URL amigables".
-		return $this->get('SCRIPT_NAME');
+		if ($realpath) {
+			// SCRIPT_NAME:
+			// Contiene la ruta al script actual, vista desde el servidor Web.
+			// Puede diferir de la ingresada por el usuario cuando se usan "URL amigables".
+			return $this->get('SCRIPT_NAME');
+		}
+
+		// REQUEST_URI:
+		// El URI dado por el usuario para acceder a esta página.
+		// Puede contener valores GET (queryes) separados por "?".
+		// Ejemplo: var1=xxx&var2=zzz...
+		// Se usa parse_url() para garantizar que recupere solamente el path.
+		return parse_url($this->get('REQUEST_URI'), PHP_URL_PATH);
 	}
 
 	/**
@@ -333,12 +372,12 @@ class ServerData extends Singleton
 	 *
 	 *     (dirname(SCRIPT_NAME))/($path).
 	 *
-	 * @param string $path	(Opcional) Path a complementar.
-	 * @return string 		Path.
+	 * @param string $path (Opcional) Path a complementar.
+	 * @return string Path.
 	 */
 	public function relativePath(string $path = ''): string
 	{
-		return $this->connect(dirname($this->self()), $path, '/');
+		return $this->connect(dirname($this->self(true)), $path, '/');
 	}
 
 	/**
@@ -363,33 +402,6 @@ class ServerData extends Singleton
 	}
 
 	/**
-	 * Path Web consultado por el usuario.
-	 *
-	 * Una URL se compone de los siguientes elementos (los valores entre "[]" son opcionales):
-	 *
-	 * (Scheme)://(domain name)[:puerto]/(path)[?(queries)]
-	 *
-	 * Este método retorna el valor del path al recurso solicitado por la consulta Web.
-	 *
-	 * Este valor puede o no coincidir con el valor en $this->self().
-	 * $this->self() retorna el path real del script ejecutado, en tanto que
-	 * este método retorna el componente URI tal como fue consultado por el usuario.
-	 * Son diferentes cuando se emplean "URLs amigables" para acceder a los
-	 * servicios Web disponibles.
-	 *
-	 * @return string Path.
-	 */
-	public function path(): string
-	{
-		// REQUEST_URI:
-		// El URI dado por el usuario para acceder a esta página.
-		// Puede contener valores GET (queryes) separados por "?".
-		// Ejemplo: var1=xxx&var2=zzz...
-		// Se usa parse_url() para garantizar que recupere solamente el path.
-		return parse_url($this->get('REQUEST_URI'), PHP_URL_PATH);
-	}
-
-	/**
 	 * Segmento del path del URL con información útil cuando se usan URL amigables.
 	 *
 	 * Las "URL amigables" son URLs diseñadas para proveer en si mismas información
@@ -404,7 +416,7 @@ class ServerData extends Singleton
 	 *     /public/admin/users/edit/xx
 	 *
 	 * En este caso, asumiendo que se tiene un archivo en "/public/index.php" que
-	 * centraliza las peticiones, tendremos que el PATH_INFo sería entonces:
+	 * centraliza las peticiones, tendremos que el PATH_INFO sería entonces:
 	 *
 	 *     /admin/users/edit/xx
 	 *
@@ -421,8 +433,10 @@ class ServerData extends Singleton
 	 */
 	public function pathInfo(): string
 	{
-		$script_name = $this->self();
-		$request_uri = $this->path();
+		// URL path al script real ejecutado (remueve nombre del script, incluido siempre)
+		$script_name = dirname($this->self(true)) . '/';
+		// URL path dado por el usuario (puede corresponder a una "URL amigable")
+		$request_uri = $this->self();
 
 		// Escenarios:
 		// 1. Ya fue asignada o no existe porque $script_name == $request_uri
@@ -433,16 +447,15 @@ class ServerData extends Singleton
 			// Contiene cualquier información (pathname) diferente a la del script actual,
 			// que precede a la información de queryes.
 			// Nota: No todos los servidores Web reportan este valor.
-			$this->path_info = $this->get('PATH_INFO', false);
+			$this->path_info = $this->get('PATH_INFO', '');
 
-			if ($this->path_info === false) {
+			if ($this->path_info == '') {
 				// 3. No existe y debe recuperarlo manualmente.
-				// Puede venir en el URI:
-				// $request_uri = $script_name . $path_info, o
-				// $request_uri = dirname($script_name) . $path_info
-				$this->path_info = strstr($request_uri, $script_name, true);
-				if ($this->path_info == '') {
-					$this->path_info = strstr($request_uri, dirname($script_name), true);
+				// Recupera las partes que difieren
+				$len = strlen($script_name);
+				if (substr($request_uri, 0, $len) === $script_name) {
+					// Por estándar, siempre comienza con "/"
+					$this->path_info = substr($request_uri, $len - 1);
 				}
 			}
 		}
@@ -678,7 +691,7 @@ class ServerData extends Singleton
 		$filename = $this->purgeFilename($filename);
 		if ($this->inDocumentRoot($filename)) {
 			// Remueve el "/" al inicio del path residual (si aplica)
-			return substr($filename, strlen($this->document_root) + 1);
+			return substr($filename, strlen($this->document_root));
 		}
 
 		return $filename;
@@ -888,7 +901,7 @@ class ServerData extends Singleton
 	 *
 	 * @return string Información del servidor Web.
 	 */
-	public function software()
+	public function webserver()
 	{
 		// SERVER_SOFTWARE:
 		// Cadena de identificación del servidor Web. tal como se envía en los
@@ -936,21 +949,11 @@ class ServerData extends Singleton
 	/**
 	 * Tiempo en que inicia la ejecución del script.
 	 *
-	 * Puede retornarse como texto en un formato de fecha definido por el usuario,
-	 * entre los valores establecidos para el manejo de la función PHP date()
-	 * (consultar https://www.php.net/manual/es/function.date.php ).
-	 *
-	 * @param string $format (Opcional) Formato en que se retorna la fecha de inicio.
 	 * @return float Tiempo de inicio en microsegundos.
 	 */
-	public function startAt(string $format = ''): float|string
+	public function startAt(): float
 	{
-		$time = $this->start_time;
-		if ($format !== '') {
-			$time = date($format, intval($time));
-		}
-
-		return $time;
+		return $this->start_time;
 	}
 
 	/**
