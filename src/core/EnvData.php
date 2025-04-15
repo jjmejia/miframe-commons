@@ -36,10 +36,10 @@ class EnvData extends Singleton
 	 */
 	public function get(string $name, mixed $default = ''): mixed
 	{
+		$this->autoload();
 		// $name es "case insensitive".
 		$name = strtolower(trim($name));
 		if ($name !== '' && array_key_exists($name, $this->data)) {
-			$this->autoload();
 			return $this->data[$name];
 		}
 		return $default;
@@ -51,7 +51,7 @@ class EnvData extends Singleton
 	private function autoload()
 	{
 		// Si no ha cargado ningún dato, carga los datos de entorno por defecto esperados.
-		if (count($this->basenames) === 0) {
+		if (count($this->basenames) <= 0) {
 			$this->load();
 		}
 	}
@@ -222,7 +222,9 @@ class EnvData extends Singleton
 	{
 		$this->reset();
 		foreach ($this->basenames as $path) {
-			$this->read($path);
+			if ($path !== '?') {
+				$this->read($path);
+			}
 		}
 	}
 
