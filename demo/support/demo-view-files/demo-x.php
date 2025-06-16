@@ -11,6 +11,5 @@ if (!miframe_render()->inDeveloperMode()) {
 <?php
 }
 
-$Test->showNextLines(2);
-// Ejemplo de un PHP Fatal Error
+// La siguiente línea causa un PHP Fatal Error (división por cero)
 $x = 5 / 0;

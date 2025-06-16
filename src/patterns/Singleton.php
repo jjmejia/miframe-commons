@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Clase usada para definir patrones Singleton.
  *
@@ -21,7 +22,7 @@ abstract class Singleton
     /**
      * @var array $instances Referencias a las instancias singleton.
      */
-    protected static $instances = array();
+    private static $instances = array();
 
     /**
      * Cada clase a usar este Singleton debe definir su método de
@@ -29,6 +30,16 @@ abstract class Singleton
      * clases sean instanciadas usando "new".
      */
     abstract protected function singletonStart();
+
+    /**
+     * Valida si la instancia o clase asociada a este Singleton ya fue creada.
+     *
+     * @return bool TRUE si ya existe una instancia, FALSE en otro caso.
+     */
+    final public static function alreadyCreated(): bool
+    {
+        return isset(self::$instances[static::class]);
+    }
 
     /**
      * Retorna la instancia actual, creada solamente una vez por tipo de Clase hija.
@@ -41,14 +52,36 @@ abstract class Singleton
      */
     final public static function getInstance()
     {
-        $cls = static::class;
-        if (!isset(self::$instances[$cls])) {
-            static::$instances[$cls] = new static;
+        $cls = static::class; // Nombre de la clase hija
+        if (!self::alreadyCreated()) {
+            self::$instances[$cls] = new static;
             // Ejecuta inicialización de la instancia
-            static::$instances[$cls]->singletonStart();
+            self::$instances[$cls]->singletonStart();
         }
 
-        return static::$instances[$cls];
+        /*
+        Una pequeña aclaración sobre el uso de "static" en este contexto de clases:
+        https://www.php.net/manual/en/language.oop5.late-static-bindings.php
+
+        class A {
+            public static function get_self() {
+                return new self();
+            }
+
+            public static function get_static() {
+                return new static();
+            }
+        }
+
+        class B extends A {}
+
+        echo get_class(B::get_self());   // A
+        echo get_class(B::get_static()); // B
+        echo get_class(A::get_self());   // A
+        echo get_class(A::get_static()); // A
+        */
+
+        return self::$instances[$cls];
     }
 
     /**
@@ -56,22 +89,18 @@ abstract class Singleton
      * Tampoco de ninguna clase que extienda este patrón, esto para
      * prevenir la existencia de múltiples versiones del mismo objeto.
      */
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     /**
      * Previene la clonación de esta instancia, no de sus hijas.
      */
-    private function __clone()
-    {
-    }
+    private function __clone() {}
 
     /**
      * Previene que esta instancia sea serializada.
      */
     public function __wakeup()
     {
-		throw new \Exception("No se permite serialize()/unserialize() esta Clase.");
+        throw new \Exception("No se permite serialize()/unserialize() esta Clase.");
     }
 }

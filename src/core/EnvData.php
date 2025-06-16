@@ -237,4 +237,9 @@ class EnvData extends Singleton
 	{
 		return $this->basenames;
 	}
+
+	public function all(): array
+	{
+		return $this->data;
+	}
 }

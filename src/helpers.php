@@ -60,24 +60,6 @@ function miframe_view(string $viewname, array $params = []): string
 }
 
 /**
- * Realiza volcado de datos en pantalla.
- *
- * Requiere que se encuentre activo tanto el "modo Debug" (miframe_render()->debug = true)
- * como el "modo Desarrollo" (miframe_render()->developerMode = true) o de lo contrario
- * retornará una cadena vacia.
- *
- * @param mixed $var Variable a mostrar contenido.
- * @param string $title Título a usar al mostrar contenido.
- * @param bool $escape_dump TRUE para mostrar información legible (para humanos) sobre
- * 							el contenido de $var. FALSE muestra el contenido tal
- * 							cual sin modificar su formato.
- */
-function miframe_dump(mixed $var, string $title = '', bool $escape_dump = true, bool $ignore_empty = false)
-{
-	echo miframe_render()->dump($var, $title, $escape_dump, $ignore_empty);
-}
-
-/**
  * Habilita manejo de errores personalizados
  */
 function miframe_errors(bool $use_extended_render = false)

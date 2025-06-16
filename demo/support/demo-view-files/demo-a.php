@@ -17,6 +17,8 @@
 	?>
 	<?php if (!miframe_render()->inDeveloperMode()) { ?>
 	<p><b>Nota:</b> Cuando habilita "modo Desarrollo" puede visualizar a continuación el listado de las variables locales en ejecución.</p>
+	<?php } else { ?>
+		<p><b>Nota:</b> El siguiente listado de las variables locales es visible porque está habilitado el "modo Desarrollo".
 	<?php } ?>
-	<p><?= miframe_render()->dump($view_args) ?>
+	<p><?= miframe_dump($view_args) ?>
 </div>

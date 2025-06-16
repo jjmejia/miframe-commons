@@ -6,18 +6,19 @@
  * Visualiza mensajes de error.
  *
  * Puede personalizarse extendiendo esta clase y redefiniendo este método.
+ *
+ * Requiere helpers.php y debug.php
  */
 
 $styles = PHP_EOL;
 
 // Captura referencia al render
-/**
- * @var miFrame\Commons\Extended\ExtendedRenderView $render
- */
 $render = miframe_render();
+// Valida si ha cargado librería debug
+$uses_debug = function_exists('miframe_export_dump');
 
 if ($render->once()) {
-  	// Estilos a usar, se declaran una única vez.
+	// Estilos a usar, se declaran una única vez.
 	// Sin embargo, deben publicarse SI O SI, aunque exista un
 	// Fatal Error posteriormente.
 	$styles = '
@@ -29,6 +30,17 @@ if ($render->once()) {
 	.mvse-label { background:#e74c3c;color:#fff;font-weight:bold;padding:5px;margin:0;margin-bottom:10px; }
 }
 ';
+	if (!$uses_debug) {
+		$styles .= '
+.pre-local {
+	background-color:#f4f4f4;
+	color:#333;
+	border:1px solid #777;
+	padding:10px;
+	margin:10px auto;
+}
+';
+	}
 	// Adiciona al repositorio de estilos
 	$render->saveStyles($styles, 'showError');
 }
@@ -53,7 +65,7 @@ if ($file != '' && $line > 0) {
 // Da formato a contenido capturado (si alguno)
 if ($buffer != '') {
 	$buffer = htmlspecialchars($buffer);
-	$buffer = $render->dump($buffer, 'Contenido parcial', false);
+	$buffer = miframe_export_dump($buffer, 'Contenido parcial', false);
 }
 // Backtrace
 $infotrace = '';
@@ -73,15 +85,22 @@ if (is_array($trace)) {
 
 if ($infotrace != '') {
 	// Enmarca valores
-	$infotrace = $render->dump($infotrace, 'Backtrace', false);
+	if ($uses_debug) {
+		$infotrace = miframe_export_dump($infotrace, 'Backtrace', false);
+	} else {
+		// Enmarcado simple alternativo si no contiene la librería de debug
+		$infotrace = '<pre class="pre-local">' .
+			$infotrace .
+			'</pre>';
+	}
 }
 
 // Adiciona valor del $_SERVER (solamente para localhost y al primer error presente)
-if ($end_script && miframe_server()->isLocalhost()) {
-	$infotrace .= $render->dump($_SERVER, '$_SERVER');
-	$infotrace .= $render->dump($_REQUEST, '$_REQUEST', ignore_empty: true);
-	$infotrace .= $render->dump($_FILES, '$_FILES', ignore_empty: true);
-	$infotrace .= $render->dump($_SESSION, '$_SESSION', ignore_empty: true);
+if ($end_script && $uses_debug && miframe_server()->isLocalhost()) {
+	$infotrace .= miframe_export_dump($_SERVER, '$_SERVER');
+	$infotrace .= miframe_export_dump($_REQUEST, '$_REQUEST', ignore_empty: true);
+	$infotrace .= miframe_export_dump($_FILES, '$_FILES', ignore_empty: true);
+	$infotrace .= miframe_export_dump($_SESSION, '$_SESSION', ignore_empty: true);
 }
 
 $info =

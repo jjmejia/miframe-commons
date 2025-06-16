@@ -17,6 +17,7 @@ $Test->start();
 $base = dirname($_SERVER['SCRIPT_NAME']) . '/';
 
 $links = [
+	'support/demo-check.php' => 'Uso de timecheck()',
 	'support/demo-server.php' => 'Uso de miframe_server() y miframe_autoload()',
 	'support/demo-html.php' => 'Gestión de recursos HTML con miframe_html()',
 	'support/demo-view.php' => 'Uso de miframe_render() y miframe_view()',

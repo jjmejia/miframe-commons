@@ -3,7 +3,7 @@
 /**
  * Funciones de soporte para depuración de código.
  *
- * Requiere helpers.php
+ * Requiere helpers.php (funciones miframe_xxx)
  *
  * @author John Mejia
  * @since Marzo 2025
@@ -57,4 +57,62 @@ function timecheck(string $text = '', int $precision = 4)
 		"{$text}<b style=\"color:yellow\">TIME/CHECK</b> Tiempo transcurrido: <b>{$time}</b>{$info_text}" .
 		"<div style=\"color:#ccc;font-size:12px;padding-top:3px\"><span style=\"color:yellow\">{$date}</span> {$source}:{$trace[0]['line']}</div>".
 		"</div>" . PHP_EOL;
+}
+
+
+/**
+ * Realiza volcado de datos en pantalla.
+ *
+ * Requiere que se encuentre activo tanto el "modo Debug" (miframe_render()->debug = true)
+ * como el "modo Desarrollo" (miframe_render()->developerMode = true) o de lo contrario
+ * retornará una cadena vacia.
+ *
+ * @param mixed $var Variable a mostrar contenido.
+ * @param string $title Título a usar al mostrar contenido.
+ * @param bool $escape_dump TRUE para mostrar información legible (para humanos) sobre
+ * 							el contenido de $var. FALSE muestra el contenido tal
+ * 							cual sin modificar su formato.
+ */
+function miframe_dump(mixed $var, string $title = '', bool $escape_dump = true, bool $ignore_empty = false)
+{
+	// echo miframe_render()->dump($var, $title, $escape_dump, $ignore_empty);
+	echo miframe_export_dump($var, $title, $escape_dump, $ignore_empty);
+}
+
+/**
+ * Realiza volcado de datos en pantalla.
+ *
+ * La información a mostrar se enmarca usando la vista "show-dump". Se usa un
+ * modelo predefinido para esta vista, aunque puede ser personalizada creando una
+ * vista con el mismo nombre en el directorio que contiene las vistas de usuario.
+ *
+ * Requiere que se encuentre activo tanto el "modo Debug" ($this->debug = true)
+ * como el "modo Desarrollo" ($this->developerMode = true) o de lo contrario
+ * retornará una cadena vacia.
+ *
+ * @param mixed $var Variable a mostrar contenido.
+ * @param string $title Título a usar al mostrar contenido.
+ * @param bool $escape_dump TRUE para mostrar información legible (para humanos) sobre
+ * 							el contenido de $var. FALSE muestra el contenido tal
+ * 							cual sin modificar su formato.
+ * @param bool $ignore_empty TRUE para no generar texto alguno si la variable está vacia.
+ *
+ * @return string Texto formateado.
+ */
+function miframe_export_dump(mixed $var, string $title = '', bool $escape_dump = true, bool $ignore_empty = false): string
+{
+	$content = '';
+	$render = miframe_render();
+	if ($render->inDeveloperMode() && (!$ignore_empty || !empty($var))) {
+		if ($escape_dump) {
+			// Convierte en texto protegido
+			$var = htmlspecialchars(print_r($var, true));
+			// Complementa titulo
+			$title = trim('<b>DUMP</b> ' . $title);
+		}
+		// Carga vista respectiva
+		$content = $render->capture('show-dump', compact('var', 'title'));
+	}
+
+	return $content;
 }
