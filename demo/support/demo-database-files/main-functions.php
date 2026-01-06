@@ -92,6 +92,5 @@ if (miframe_server()->isLocalhost() || empty($rows)) {
 	echo "<p class=\"test-aviso\"><b>Mantenimiento:</b> <a href=\"$link\">Crear/reconstruir base de datos <b>{$drivers_list[$type]}</b></a></p>";
 }
 
-$viewName = str_replace(['.php', 'demo-database-'], '', basename(miframe_server()->script()));
 // Ejecuta vista de esta demo
-echo miframe_view($viewName, compact('db', 'Test'));
+echo miframe_view('pdo', compact('db', 'Test'));

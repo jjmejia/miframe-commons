@@ -26,8 +26,8 @@ if (miframe_render()->once())
 	miframe_render()->saveStyles($styles, 'showDump');
 }
 
-$text .= "<div class=\"mfsd\">" .
-	"<span class=\"mfsd-title\">" . PHP_EOL .
+$text .= PHP_EOL . "<div class=\"mfsd\">" .
+	"<span class=\"mfsd-title\">" .
 	"{$title}" . PHP_EOL .
 	"</span>" .
 	"<div class=\"mfsd-content\">" . PHP_EOL .
