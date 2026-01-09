@@ -14,19 +14,27 @@ $Test->title = 'miFrame\\Commons';
 $Test->description = 'Demos para ilustrar uso de la librería <code>miFrame\\Commons</code>.';
 $Test->start();
 
-$base = dirname($_SERVER['SCRIPT_NAME']) . '/';
+$base = $Test->home(true) . '/';
 
 $links = [
-	'support/demo-check.php' => 'Uso de timecheck()',
-	'support/demo-server.php' => 'Uso de miframe_server() y miframe_autoload()',
-	'support/demo-html.php' => 'Gestión de recursos HTML con miframe_html()',
-	'support/demo-view.php' => 'Uso de miframe_render() y miframe_view()',
-	'support/demo-errors.php' => 'Manejo de errores (clase ErrorHandler)',
-	'support/demo-database-pdo.php' => 'Conexión y consulta a base de datos (clase PDOController)',
+	'demo-check' => 'Uso de timecheck()',
+	'demo-server' => 'Uso de miframe_server() y miframe_autoload()',
+	'demo-html' => 'Gestión de recursos HTML con miframe_html()',
+	'demo-view' => 'Uso de miframe_render() y miframe_view()',
+	'demo-errors' => 'Manejo de errores (clase ErrorHandler)',
+	'demo-database-pdo' => 'Conexión y consulta a base de datos (clase PDOController)',
+	// 'demo-inputs' => 'Validación de datos de entrada',
 ];
 
 echo '<ul>' . PHP_EOL;
+// Si no define valores asociados a LEKOSDEV (usa acceso directo)
+// emplea un enlace diferente
+$direct_access = !empty(config('apps_miframe_commons_script', false));
+
 foreach ($links as $href => $title) {
+	if (!$direct_access) {
+		$href = "support/{$href}.php";
+	}
 	echo "<li><a href=\"{$base}{$href}\">{$title}</a></li>" . PHP_EOL;
 }
 echo '</ul>' . PHP_EOL;

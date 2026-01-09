@@ -65,8 +65,7 @@ if (isset($env['file'])) {
 	$db->filename = __DIR__ . DIRECTORY_SEPARATOR . $env['file'];
 	// Ddefine valor para compatibilidad
 	$env['database'] = '';
-}
-else {
+} else {
 	$db->host = $env['host'];
 	$db->user = $env['user'];
 	$db->password = $env['password'];
@@ -86,7 +85,7 @@ $rows = @$db->query($query);
 if (miframe_server()->isLocalhost() || empty($rows)) {
 	// Crea enlace para creación de bases de datos
 	$driver = strtolower($type);
-	$token = $Test->tokenizer('create-db-token', $driver);
+	$token = tokenizer(); // 'create-db-token', $driver
 	$link = "demo-database-files/maintenance/demo-create.php?token={$token}&driver={$driver}";
 	// Visualiza enlace
 	echo "<p class=\"test-aviso\"><b>Mantenimiento:</b> <a href=\"$link\">Crear/reconstruir base de datos <b>{$drivers_list[$type]}</b></a></p>";
@@ -94,3 +93,16 @@ if (miframe_server()->isLocalhost() || empty($rows)) {
 
 // Ejecuta vista de esta demo
 echo miframe_view('pdo', compact('db', 'Test'));
+
+// Funciones de soporte
+
+/**
+ * Genera un token de seguridad.
+ *
+ * El token es almacenado en la sesión.
+ *
+ */
+function tokenizer(): string
+{
+	return session()->csrf(true);
+}

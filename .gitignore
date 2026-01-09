@@ -6,3 +6,4 @@ src/vendor
 *.env
 *.db
 soporte
+*.sql

@@ -21,7 +21,7 @@ $Test->description = 'Crea y/o reconstruye la base de datos usada para las demos
 $Test->start();
 
 // Valida permisos de creación
-$Test->evalToken('token', 'create-db-token', $motor);
+evalToken('token', 'create-db-token', $motor);
 
 // Carga datos
 $filename = __DIR__ . DIRECTORY_SEPARATOR . 'personajes-historicos.csv';
@@ -45,8 +45,7 @@ foreach ($lines as $line) {
 		$fecha = 0 - intval($fecha);
 		$csv[4] = trim($csv[4]) . ' (Nació en el año ' . $fecha . ' A.C)';
 		$fecha = null;
-	}
-	elseif (strpos($fecha, '/01/01') !== false) {
+	} elseif (strpos($fecha, '/01/01') !== false) {
 		// Fecha de nacimiento no conocida
 		$fecha = 0 + intval($fecha);
 		$csv[4] = trim($csv[4]) . ' (Nació en el año ' . $fecha . ')';
@@ -90,8 +89,7 @@ if (miframe_server()->isLocalhost()) {
 $db = new PDOController($motor);
 if ($motor === 'sqlite') {
 	$db->filename = dirname(__DIR__) . DIRECTORY_SEPARATOR . $env['file'];
-}
-else {
+} else {
 	$db->host = $env['host'];
 	$db->user = $env['user'];
 	$db->password = $env['password'];
@@ -167,13 +165,12 @@ function createTables(miCodeTest $Test, PDOController $db, string $filename)
 				$acum .= substr($line, 0, -1);
 				// Ejecuta query
 				if ($db->query($acum) === false) {
-					$k ++;
+					$k++;
 					$Test->abort("No pudo ejecutar query en línea {$k}: {$acum}");
 				}
 				// Limpia variable que acumula comandos
 				$acum = '';
-			}
-			else {
+			} else {
 				$acum .= $line . ' ';
 			}
 		}
@@ -201,8 +198,7 @@ function getTables(PDOController $db): array
 			$data = $db->query($query);
 			// print_r($data); exit;
 		}
-	}
-	elseif ($db->driver() == 'mysql') {
+	} elseif ($db->driver() == 'mysql') {
 		// MySQL
 		$query = 'show tables';
 		$data = $db->query($query);
@@ -305,7 +301,9 @@ function loadDataRef(string $table_name, array &$ref, PDOController $db)
 
 function saveRef(array &$ref, array $csv, int $start, int $finish = 0)
 {
-	if ($finish <= 0) { $finish = $start; }
+	if ($finish <= 0) {
+		$finish = $start;
+	}
 	for ($i = $start; $i <= $finish; $i++) {
 		$tag = trim($csv[$i]);
 		if ($tag !== '') {
@@ -314,5 +312,24 @@ function saveRef(array &$ref, array $csv, int $start, int $finish = 0)
 				'name' => $tag
 			];
 		}
+	}
+}
+
+//**********************************************
+
+/**
+ * Evalúa un token de seguridad.
+ *
+ * Si la validación es fallida, aborta la ejecución del script.
+ *
+ * @param string $param Nombre del parámetro en $_GET a evaluar.
+ * @param string $name Nombre del token.
+ * @param string $key Complemento del token.
+ */
+function evalToken(string $param, string $name, string $key)
+{
+	$user_string = ($_GET[$param] ?? '');
+	if (!session()->csrfCheck($user_string)) {
+		throw new Exception('Acceso no autorizado');
 	}
 }
