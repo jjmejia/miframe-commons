@@ -450,9 +450,7 @@ class miCodeTest
 	 */
 	private function updateVisitorLog()
 	{
-		if (function_exists('registerVisitor')) {
-			// Registra visitas
-			registerVisitor();
+		if (function_exists('lekosdev_footer')) {
 			// Muestra pie de página
 			echo lekosdev_footer();
 		}
