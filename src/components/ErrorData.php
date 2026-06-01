@@ -143,6 +143,13 @@ class ErrorData {
 			];
 			array_unshift($this->trace, $etrace);
 		}
+
+		// Incluye información de errores previos
+		$previous_e = $e->getPrevious();
+		while (!is_null($previous_e)) {
+			$this->message =  $previous_e->getMessage() . PHP_EOL . $this->message;
+			$previous_e = $previous_e->getPrevious();
+		}
 	}
 
 	/**
